@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-
 :root {
   --primary: #4B766B;
   --primary-dark: #1A3021;
@@ -17,12 +15,12 @@
 body {
   background-color: var(--surface);
   color: var(--on-surface);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 .font-serif-italic {
-  font-family: 'Noto Serif', serif;
+  font-family: var(--font-noto-serif), serif;
   font-style: italic;
   font-weight: 400;
 }
