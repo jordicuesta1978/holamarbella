@@ -19,8 +19,8 @@ export default function AdminNav({ unreadCount = 0 }: Props) {
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare, badge: unreadCount },
     { href: '/admin/reservas', label: 'Reservas', icon: BookOpen },
-    { href: '/admin/pagos', label: 'Pagos', icon: CreditCard },
     { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
+    { href: '/admin/pagos', label: 'Pagos', icon: CreditCard },
   ]
 
   return (

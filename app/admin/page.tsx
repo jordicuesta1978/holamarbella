@@ -75,8 +75,8 @@ export default async function AdminPage() {
   const cards = [
     { icon: MessageSquare, label: 'Inbox', sub: 'Mensajes sin leer', value: stats.unread, href: '/admin/inbox', color: '#3b82f6', bg: '#dbeafe' },
     { icon: Clock, label: 'Reservas', sub: 'Pendientes de gestión', value: stats.pending, href: '/admin/reservas?status=pending', color: '#d97706', bg: '#fef3c7' },
-    { icon: CreditCard, label: 'Pagos', sub: 'Pendientes de cobro', value: stats.pagos, href: '/admin/pagos', color: '#8b5cf6', bg: '#ede9fe' },
     { icon: CalendarCheck, label: 'Calendario', sub: 'Llegadas esta semana', value: stats.llegadas, href: '/admin/calendario', color: '#4B766B', bg: '#d1fae5' },
+    { icon: CreditCard, label: 'Pagos', sub: 'Pendientes de cobro', value: stats.pagos, href: '/admin/pagos', color: '#8b5cf6', bg: '#ede9fe' },
   ]
 
   return (
@@ -104,33 +104,10 @@ export default async function AdminPage() {
           ))}
         </div>
 
-        {/* 3 columns */}
+        {/* 3 columns — orden: Inbox, Reservas, Calendario */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
 
-          {/* Últimas solicitudes */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Últimas solicitudes</h2>
-              <Link href="/admin/reservas" style={{ fontSize: 11, color: '#4B766B', fontWeight: 600, textDecoration: 'none' }}>Ver todas →</Link>
-            </div>
-            {ultimasReservas.length === 0 ? (
-              <p style={{ padding: '24px', textAlign: 'center', color: '#bbb', fontSize: 13 }}>Sin solicitudes</p>
-            ) : ultimasReservas.map((r: any, i: number) => (
-              <Link key={r.id} href={`/admin/reservas/${r.id}`} style={{ textDecoration: 'none', display: 'block', padding: '11px 18px', borderBottom: i < ultimasReservas.length - 1 ? '1px solid #f5f5f5' : undefined, background: '#fff' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.guest_name}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#888' }}>{r.apartment_slug} · {fmtDate(r.check_in)} → {fmtDate(r.check_out)}</p>
-                  </div>
-                  <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: S_BG[r.status], color: S_COLOR[r.status], flexShrink: 0 }}>
-                    {S_LABEL[r.status]}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Últimos mensajes */}
+          {/* Últimos mensajes (Inbox) */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Últimos mensajes</h2>
@@ -154,7 +131,30 @@ export default async function AdminPage() {
             ))}
           </div>
 
-          {/* Próximas llegadas */}
+          {/* Últimas solicitudes (Reservas) */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Últimas solicitudes</h2>
+              <Link href="/admin/reservas" style={{ fontSize: 11, color: '#4B766B', fontWeight: 600, textDecoration: 'none' }}>Ver todas →</Link>
+            </div>
+            {ultimasReservas.length === 0 ? (
+              <p style={{ padding: '24px', textAlign: 'center', color: '#bbb', fontSize: 13 }}>Sin solicitudes</p>
+            ) : ultimasReservas.map((r: any, i: number) => (
+              <Link key={r.id} href={`/admin/reservas/${r.id}`} style={{ textDecoration: 'none', display: 'block', padding: '11px 18px', borderBottom: i < ultimasReservas.length - 1 ? '1px solid #f5f5f5' : undefined, background: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.guest_name}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#888' }}>{r.apartment_slug} · {fmtDate(r.check_in)} → {fmtDate(r.check_out)}</p>
+                  </div>
+                  <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: S_BG[r.status], color: S_COLOR[r.status], flexShrink: 0 }}>
+                    {S_LABEL[r.status]}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Próximas llegadas (Calendario) */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Próximas llegadas</h2>
