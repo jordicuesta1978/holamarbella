@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import AdminNavServer from '@/app/admin/AdminNavServer'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReservas(status?: string): Promise<any[]> {
@@ -43,11 +44,7 @@ export default async function ReservasPage({
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
-      <nav style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 24 }}>
-        <Link href="/admin" style={{ fontWeight: 700, fontSize: 15, color: '#4B766B', textDecoration: 'none' }}>HolaMarbella Admin</Link>
-        <Link href="/admin" style={{ fontSize: 13, color: '#555', textDecoration: 'none' }}>Dashboard</Link>
-        <Link href="/admin/reservas" style={{ fontSize: 13, color: '#4B766B', fontWeight: 600, textDecoration: 'none' }}>Reservas</Link>
-      </nav>
+      <AdminNavServer />
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         <h1 style={{ margin: '0 0 24px', fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>Reservas</h1>

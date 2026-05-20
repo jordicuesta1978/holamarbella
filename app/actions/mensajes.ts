@@ -73,6 +73,7 @@ export async function enviarMensajeAdmin(reservaId: number, texto: string) {
   }).catch(() => {})
 
   revalidatePath(`/admin/reservas/${reservaId}`)
+  revalidatePath('/admin/inbox')
 }
 
 export async function enviarMensajeHuesped(token: string, texto: string) {
@@ -100,6 +101,9 @@ export async function enviarMensajeHuesped(token: string, texto: string) {
   }).catch(() => {})
 
   revalidatePath(`/conversacion/${token}`)
+  revalidatePath('/admin')
+  revalidatePath('/admin/inbox')
+  revalidatePath(`/admin/reservas/${reserva.id}`)
 }
 
 export async function solicitarPago(reservaId: number, amount: number) {
@@ -133,6 +137,8 @@ export async function solicitarPago(reservaId: number, amount: number) {
   }).catch(() => {})
 
   revalidatePath(`/admin/reservas/${reservaId}`)
+  revalidatePath('/admin/inbox')
+  revalidatePath('/admin/pagos')
 }
 
 export async function marcarMensajesLeidos(reservaId: number, sender: 'guest' | 'admin') {
