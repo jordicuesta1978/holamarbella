@@ -2,19 +2,20 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { apartments } from '@/lib/apartments';
+import { getApartments } from '@/lib/db';
 
 export const metadata: Metadata = {
   title: 'Nuestros Apartamentos · HolaMarbella',
   description: 'Descubre los 5 apartamentos de HolaMarbella en Marbella. Centro, Casco Antiguo y primera línea de playa.',
 };
 
-export default function ApartamentosPage() {
+export default async function ApartamentosPage() {
+  const apartments = await getApartments();
+
   return (
     <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
       <Header />
 
-      {/* Page header */}
       <div className="py-16 text-center" style={{ backgroundColor: 'var(--arena)' }}>
         <p className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: 'var(--on-surface-variant)' }}>
           Marbella · España
@@ -28,7 +29,6 @@ export default function ApartamentosPage() {
         </p>
       </div>
 
-      {/* Grid */}
       <main className="max-w-7xl mx-auto px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {apartments.map((apt) => (
@@ -37,7 +37,6 @@ export default function ApartamentosPage() {
                 className="rounded-2xl overflow-hidden border hover:shadow-xl transition-all duration-300"
                 style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}
               >
-                {/* Photo */}
                 <div className="aspect-[4/3] overflow-hidden relative">
                   <img
                     src={`/images/${apt.slug}/${apt.slug}-1.jpg`}
@@ -54,7 +53,6 @@ export default function ApartamentosPage() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-yellow-400 text-sm">★</span>

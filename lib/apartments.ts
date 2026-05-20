@@ -38,11 +38,8 @@ export function getPhotos(slug: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => `/images/${slug}/${slug}-${i + 1}.jpg`);
 }
 
-export function getApartment(slug: string): Apartment | undefined {
-  return apartments.find(a => a.slug === slug);
-}
-
-export const apartments: Apartment[] = [
+// Static seed kept for reference — source of truth is Supabase (lib/db.ts)
+const _apartments: Apartment[] = [
   {
     slug: 'paloma',
     title: 'Hola MarBella Centro/Playa · Vistas espectaculares',

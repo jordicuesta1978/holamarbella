@@ -1,0 +1,206 @@
+'use server'
+
+import { createClient } from '@supabase/supabase-js'
+import { Resend } from 'resend'
+import type { Database } from '@/lib/database.types'
+
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
+const MAR = process.env.MAR_EMAIL!
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
+
+export type ReservaInput = {
+  apartmentSlug: string
+  apartmentTitle: string
+  nombre: string
+  email: string
+  telefono: string
+  personas: number
+  checkIn: string
+  checkOut: string
+  mensaje: string
+}
+
+type ReservaInputWithToken = ReservaInput & { conversationToken: string }
+
+export async function crearReserva(
+  input: ReservaInput
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const conversationToken = crypto.randomUUID()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await supabase.from('reservas').insert({
+    apartment_slug: input.apartmentSlug,
+    guest_name: input.nombre,
+    guest_email: input.email,
+    guest_phone: input.telefono || null,
+    check_in: input.checkIn,
+    check_out: input.checkOut,
+    guests: input.personas,
+    status: 'pending' as const,
+    notes: input.mensaje,
+    conversation_token: conversationToken,
+  } as any)
+
+  if (error) return { ok: false, error: error.message }
+
+  const inputWithToken: ReservaInputWithToken = { ...input, conversationToken }
+
+  await Promise.allSettled([
+    resend.emails.send({
+      from: FROM,
+      to: input.email,
+      subject: `Solicitud recibida — ${input.apartmentTitle}`,
+      html: emailHuesped(inputWithToken),
+    }),
+    resend.emails.send({
+      from: FROM,
+      to: MAR,
+      subject: `Nueva solicitud: ${input.apartmentTitle} — ${input.nombre}`,
+      html: emailMar(input),
+    }),
+  ])
+
+  return { ok: true }
+}
+
+function fmt(d: string): string {
+  if (!d) return '—'
+  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function nightsLabel(a: string, b: string): string {
+  if (!a || !b) return ''
+  const n = Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000)
+  return n > 0 ? ` · ${n} noche${n > 1 ? 's' : ''}` : ''
+}
+
+function shell(content: string): string {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#F5F0E8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F0E8;padding:40px 20px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
+      <tr>
+        <td style="background:#4B766B;padding:28px 40px;text-align:center;">
+          <p style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">HolaMarBella!</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px 40px 32px;">
+          ${content}
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#F5F0E8;padding:24px 40px;text-align:center;border-top:1px solid #e8e0d0;">
+          <p style="margin:0;font-size:12px;color:#999;line-height:1.6;">
+            HolaMarbella · Marbella, España<br>
+            © ${new Date().getFullYear()} Todos los derechos reservados
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`
+}
+
+function row(label: string, value: string, border = true): string {
+  return `<tr>
+    <td style="padding:12px 16px;background:#f9f7f4;width:38%;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;${border ? 'border-top:1px solid #e8e0d0;' : ''}vertical-align:top;">${label}</td>
+    <td style="padding:12px 16px;font-size:14px;color:#1A1A1A;line-height:1.6;${border ? 'border-top:1px solid #e8e0d0;' : ''}">${value}</td>
+  </tr>`
+}
+
+function emailHuesped(d: ReservaInputWithToken): string {
+  const firstName = d.nombre.split(' ')[0]
+  const conversationLink = `${BASE_URL}/conversacion/${d.conversationToken}`
+  return shell(`
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud enviada!</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
+      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos recibido tu solicitud para
+      <strong style="color:#1A1A1A;">${d.apartmentTitle}</strong>.
+      La revisaremos y te responderemos en menos de 24&nbsp;horas.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:28px;">
+      ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${row('Llegada', fmt(d.checkIn))}
+      ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
+      ${row('Personas', `${d.personas} persona${d.personas > 1 ? 's' : ''}`)}
+      ${row('Tu mensaje', d.mensaje.replace(/\n/g, '<br>'))}
+    </table>
+
+    <div style="background:#F5F0E8;border-radius:10px;padding:22px 24px;margin-bottom:28px;">
+      <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#4B766B;">¿Qué pasa ahora?</p>
+      <table cellpadding="0" cellspacing="0" width="100%">
+        ${[
+          'Revisaremos tu solicitud y te contactaremos por email.',
+          'Si se aprueba, recibirás los detalles finales para completar la reserva.',
+          'Puedes seguir el estado de tu reserva y enviarnos mensajes desde tu conversación privada.',
+        ].map((text, i) => `
+        <tr>
+          <td style="padding:5px 12px 5px 0;vertical-align:top;width:30px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:#4B766B;color:#fff;text-align:center;line-height:22px;font-size:11px;font-weight:700;">${i + 1}</div>
+          </td>
+          <td style="padding:5px 0;font-size:13px;color:#444;line-height:1.6;">${text}</td>
+        </tr>`).join('')}
+      </table>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${conversationLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:14px;">Ver mi conversación</a>
+      <p style="margin:10px 0 0;font-size:11px;color:#bbb;">Guarda este enlace — es tu acceso privado a esta reserva</p>
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
+      Nunca recibirás instrucciones automáticas de acceso al apartamento.<br>
+      ¿Tienes dudas? Responde directamente a este email.
+    </p>
+  `)
+}
+
+function emailMar(d: ReservaInput): string {
+  const fecha = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return shell(`
+    <h1 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#4B766B;">Nueva solicitud de reserva</h1>
+    <p style="margin:0 0 28px;font-size:13px;color:#999;">${fecha}</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+      ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${row('Huésped', d.nombre)}
+      ${row('Email', `<a href="mailto:${d.email}" style="color:#4B766B;text-decoration:none;">${d.email}</a>`)}
+      ${row('Teléfono', d.telefono || '—')}
+      ${row('Llegada', fmt(d.checkIn))}
+      ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
+      ${row('Personas', `${d.personas}`)}
+    </table>
+
+    <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#888;">Mensaje del huésped</p>
+      <p style="margin:0;font-size:14px;color:#1A1A1A;line-height:1.7;white-space:pre-wrap;">${d.mensaje}</p>
+    </div>
+  `)
+}
