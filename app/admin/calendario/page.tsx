@@ -48,7 +48,6 @@ async function getCalendarData(year: number, month: number) {
       const cellDate = new Date(year, month - 1, d)
       // Reservation covers this day if check_in <= cellDate < check_out
       if (cellDate >= ci && cellDate < co) {
-        const prevDate = new Date(year, month - 1, d - 1)
         const nextDate = new Date(year, month - 1, d + 1)
         const isFirst = cellDate.getTime() === ci.getTime() || d === 1
         const isLast = nextDate >= co || d === daysInMonth
