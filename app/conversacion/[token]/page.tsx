@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import { getConversacionByToken, marcarMensajesLeidos } from '@/app/actions/mensajes'
-import { CreditCard } from 'lucide-react'
+import { CreditCard, CheckCircle } from 'lucide-react'
 import GuestChatInput from './GuestChatInput'
+import PagoButton from './PagoButton'
 
 function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -15,16 +16,17 @@ function fmtFecha(d: string) {
 
 export default async function ConversacionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>
+  searchParams: Promise<{ pago?: string }>
 }) {
-  const { token } = await params
+  const [{ token }, { pago }] = await Promise.all([params, searchParams])
   const data = await getConversacionByToken(token)
   if (!data) notFound()
 
   const { reserva, mensajes } = data
 
-  // Mark admin messages as read when guest opens the conversation
   await marcarMensajesLeidos(reserva.id, 'admin')
 
   const nights =
@@ -32,7 +34,9 @@ export default async function ConversacionPage({
       ? Math.round((new Date(reserva.check_out).getTime() - new Date(reserva.check_in).getTime()) / 86400000)
       : null
 
-  // Find last pending payment request
+  const isPaid = !!(reserva as any).paid_at
+  const pagoOk = pago === 'ok'
+
   const lastPayment = [...mensajes].reverse().find(
     m => m.tipo === 'payment_request' && m.sender === 'admin'
   )
@@ -57,8 +61,21 @@ export default async function ConversacionPage({
       </div>
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 0 40px' }}>
-        {/* Payment request banner */}
-        {lastPayment && lastPayment.payment_amount && (
+
+        {/* Success banner after payment */}
+        {pagoOk && (
+          <div style={{
+            background: '#f0f9f6', border: '2px solid #4B766B', borderTop: 'none',
+            borderRadius: '0 0 12px 12px', padding: '20px', textAlign: 'center', marginBottom: 16,
+          }}>
+            <CheckCircle size={32} color="#4B766B" style={{ display: 'block', margin: '0 auto 10px' }} />
+            <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#4B766B' }}>¡Pago recibido!</p>
+            <p style={{ margin: 0, fontSize: 13, color: '#666' }}>Tu reserva está confirmada. Te hemos enviado un email de confirmación.</p>
+          </div>
+        )}
+
+        {/* Payment request banner (only when not yet paid and not showing success) */}
+        {!pagoOk && lastPayment && lastPayment.payment_amount && (
           <div style={{
             background: '#fff', border: '2px solid #4B766B', borderTop: 'none',
             borderRadius: '0 0 12px 12px', padding: '20px',
@@ -66,26 +83,28 @@ export default async function ConversacionPage({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
               <CreditCard size={18} color="#4B766B" />
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#4B766B' }}>Solicitud de pago pendiente</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: isPaid ? '#4B766B' : '#1a1a2e' }}>
+                {isPaid ? 'Reserva pagada' : 'Solicitud de pago pendiente'}
+              </span>
             </div>
             <p style={{ margin: '0 0 4px', fontSize: 32, fontWeight: 800, color: '#1a1a2e' }}>{lastPayment.payment_amount}€</p>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: '#888' }}>Importe total de tu reserva</p>
-            <button
-              disabled
-              style={{
-                background: '#4B766B', color: '#fff', border: 'none',
+            {isPaid ? (
+              <div style={{
+                background: '#4B766B', color: '#fff',
                 borderRadius: 10, padding: '12px 28px', fontSize: 14,
-                fontWeight: 700, cursor: 'not-allowed', opacity: 0.7, width: '100%',
-              }}
-            >
-              Pagar {lastPayment.payment_amount}€ — Próximamente
-            </button>
-            <p style={{ margin: '8px 0 0', fontSize: 11, color: '#bbb' }}>El pago online estará disponible en breve</p>
+                fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+                <CheckCircle size={16} /> Pagado — ¡Gracias!
+              </div>
+            ) : (
+              <PagoButton token={token} amount={lastPayment.payment_amount} />
+            )}
           </div>
         )}
 
         {/* Chat */}
-        <div style={{ background: '#fff', borderRadius: lastPayment ? '0 0 12px 12px' : 12, border: '1px solid #e2e8f0', marginTop: lastPayment ? 0 : 16, overflow: 'hidden' }}>
+        <div style={{ background: '#fff', borderRadius: (!pagoOk && lastPayment) ? '0 0 12px 12px' : 12, border: '1px solid #e2e8f0', marginTop: (!pagoOk && lastPayment) ? 0 : 16, overflow: 'hidden' }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>
               Conversación

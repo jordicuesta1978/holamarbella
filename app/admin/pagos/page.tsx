@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import SolicitarPagoBtn from './SolicitarPagoBtn'
-import { CreditCard } from 'lucide-react'
+import { CreditCard, CheckCircle } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabaseAdmin as any
@@ -16,12 +16,13 @@ type PagoRow = {
   nights: number
   totalPrice: number
   lastPayReqAt: string | null
+  paidAt: string | null
 }
 
 async function getPagosData(): Promise<PagoRow[]> {
   const [{ data: reservas }, { data: payReqs }] = await Promise.all([
     db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at')
       .eq('status', 'confirmed')
       .not('total_price', 'is', null)
       .order('created_at', { ascending: false }),
@@ -33,7 +34,6 @@ async function getPagosData(): Promise<PagoRow[]> {
 
   if (!reservas) return []
 
-  // Build latest payment request per reserva
   const lastPayReq: Record<number, string> = {}
   for (const m of (payReqs ?? [])) {
     if (!lastPayReq[m.reserva_id]) lastPayReq[m.reserva_id] = m.created_at
@@ -52,6 +52,7 @@ async function getPagosData(): Promise<PagoRow[]> {
       nights,
       totalPrice: r.total_price,
       lastPayReqAt: lastPayReq[r.id] ?? null,
+      paidAt: r.paid_at ?? null,
     }
   })
 }
@@ -73,26 +74,31 @@ export default async function PagosPage() {
   const pagos = await getPagosData()
   const urgentThreshold = Date.now() - 48 * 60 * 60 * 1000
 
+  const pendientes = pagos.filter(p => !p.paidAt)
+  const pagados = pagos.filter(p => p.paidAt)
+
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
       <AdminNavServer />
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '28px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+
+        {/* Pending section */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>Pagos pendientes</h1>
-          {pagos.length > 0 && (
-            <span style={{ background: '#8b5cf6', color: '#fff', borderRadius: 20, fontSize: 11, fontWeight: 800, padding: '2px 8px' }}>{pagos.length}</span>
+          {pendientes.length > 0 && (
+            <span style={{ background: '#8b5cf6', color: '#fff', borderRadius: 20, fontSize: 11, fontWeight: 800, padding: '2px 8px' }}>{pendientes.length}</span>
           )}
         </div>
 
-        {pagos.length === 0 ? (
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '48px 24px', textAlign: 'center' }}>
-            <CreditCard size={32} color="#ddd" style={{ display: 'block', margin: '0 auto 12px' }} />
+        {pendientes.length === 0 ? (
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '36px 24px', textAlign: 'center', marginBottom: 28 }}>
+            <CreditCard size={28} color="#ddd" style={{ display: 'block', margin: '0 auto 10px' }} />
             <p style={{ margin: 0, fontSize: 14, color: '#bbb' }}>No hay pagos pendientes</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {pagos.map(p => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+            {pendientes.map(p => {
               const isUrgent = p.lastPayReqAt && new Date(p.lastPayReqAt).getTime() < urgentThreshold
               return (
                 <div key={p.id} style={{
@@ -101,7 +107,6 @@ export default async function PagosPage() {
                   padding: '16px 20px',
                   display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
                 }}>
-                  {/* Info */}
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{p.guestName}</span>
@@ -116,20 +121,14 @@ export default async function PagosPage() {
                       {fmtDate(p.checkIn)} → {fmtDate(p.checkOut)} · {p.nights} noche{p.nights !== 1 ? 's' : ''}
                     </p>
                   </div>
-
-                  {/* Amount */}
                   <div style={{ textAlign: 'right', minWidth: 100 }}>
                     <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#4B766B' }}>{p.totalPrice}€</p>
                     {p.lastPayReqAt ? (
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: '#aaa' }}>
-                        Solicitado {fmtRelative(p.lastPayReqAt)}
-                      </p>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: '#aaa' }}>Solicitado {fmtRelative(p.lastPayReqAt)}</p>
                     ) : (
                       <p style={{ margin: '2px 0 0', fontSize: 11, color: '#d97706' }}>Sin solicitar</p>
                     )}
                   </div>
-
-                  {/* Actions */}
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <SolicitarPagoBtn reservaId={p.id} amount={p.totalPrice} />
                     <Link href={`/admin/reservas/${p.id}#chat`} style={{
@@ -145,6 +144,52 @@ export default async function PagosPage() {
               )
             })}
           </div>
+        )}
+
+        {/* Paid section */}
+        {pagados.length > 0 && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>Pagos recibidos</h2>
+              <span style={{ background: '#4B766B', color: '#fff', borderRadius: 20, fontSize: 11, fontWeight: 800, padding: '2px 8px' }}>{pagados.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {pagados.map(p => (
+                <div key={p.id} style={{
+                  background: '#fff', borderRadius: 12,
+                  border: '1px solid #b2d4cc',
+                  padding: '16px 20px',
+                  display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+                  opacity: 0.85,
+                }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{p.guestName}</span>
+                      <span style={{ fontSize: 12, color: '#888' }}>· {p.aptSlug}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: '#4B766B', background: '#f0f9f6', border: '1px solid #b2d4cc', borderRadius: 6, padding: '1px 6px' }}>
+                        <CheckCircle size={10} /> Pagado
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 12, color: '#888' }}>
+                      {fmtDate(p.checkIn)} → {fmtDate(p.checkOut)} · {p.nights} noche{p.nights !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right', minWidth: 100 }}>
+                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#4B766B' }}>{p.totalPrice}€</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#aaa' }}>{fmtRelative(p.paidAt)}</p>
+                  </div>
+                  <Link href={`/admin/reservas/${p.id}#chat`} style={{
+                    fontSize: 12, color: '#4B766B', fontWeight: 600,
+                    textDecoration: 'none', padding: '7px 14px',
+                    border: '1px solid #4B766B', borderRadius: 8,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    Ver chat →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

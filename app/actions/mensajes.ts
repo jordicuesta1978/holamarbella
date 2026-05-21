@@ -35,7 +35,7 @@ export async function getMensajesReserva(reservaId: number): Promise<MensajeChat
 export async function getConversacionByToken(token: string) {
   const { data: reserva } = await db
     .from('reservas')
-    .select('id, guest_name, guest_email, apartment_slug, check_in, check_out, status, conversation_token, total_price')
+    .select('id, guest_name, guest_email, apartment_slug, check_in, check_out, status, conversation_token, total_price, paid_at')
     .eq('conversation_token', token)
     .single()
 

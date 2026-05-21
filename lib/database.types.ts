@@ -61,6 +61,8 @@ export type Database = {
           cleaning_fee: number
           extras: Array<{ name: string; amount: number; quantity?: number; unit?: string }>
           conversation_token: string | null
+          stripe_session_id: string | null
+          paid_at: string | null
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['reservas']['Row'], 'id' | 'created_at'>
