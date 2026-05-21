@@ -4,11 +4,11 @@
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
 const db = supabaseAdmin as any
 
 export async function crearSesionPago(token: string): Promise<string> {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
   const { data: reserva } = await db
     .from('reservas')
     .select('id, guest_name, guest_email, apartment_slug, total_price, conversation_token')
