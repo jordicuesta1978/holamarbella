@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
+import { getBookingRef } from '@/lib/booking-ref'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReservas(status?: string): Promise<any[]> {
@@ -75,7 +76,7 @@ export default async function ReservasPage({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
-                  {['Huésped', 'Email', 'Apartamento', 'Llegada', 'Salida', 'Personas', 'Estado', ''].map(h => (
+                  {['Huésped', 'Ref', 'Email', 'Apartamento', 'Llegada', 'Salida', 'Personas', 'Estado', ''].map(h => (
                     <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -84,6 +85,7 @@ export default async function ReservasPage({
                 {reservas.map((r, i) => (
                   <tr key={r.id} style={{ borderBottom: i < reservas.length - 1 ? '1px solid #f0f0f0' : undefined }}>
                     <td style={{ padding: '11px 14px', color: '#1a1a2e', fontWeight: 500, whiteSpace: 'nowrap' }}>{r.guest_name}</td>
+                    <td style={{ padding: '11px 14px', color: '#888', fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }}>{getBookingRef(r.id, r.apartment_slug, r.created_at)}</td>
                     <td style={{ padding: '11px 14px', color: '#555' }}>{r.guest_email}</td>
                     <td style={{ padding: '11px 14px', color: '#555' }}>{r.apartment_slug}</td>
                     <td style={{ padding: '11px 14px', color: '#555', whiteSpace: 'nowrap' }}>{fmt(r.check_in)}</td>

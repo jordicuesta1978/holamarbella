@@ -24,6 +24,7 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
   const [texto, setTexto] = useState('')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [customAmount, setCustomAmount] = useState<string>(totalPrice ? String(totalPrice) : '')
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -53,14 +54,16 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
   }
 
   function handleSolicitarPago() {
-    if (!totalPrice || isPending) return
+    const amount = Number(customAmount)
+    if (!amount || amount <= 0 || isPending) return
     setError(null)
     startTransition(async () => {
       try {
-        await solicitarPago(reservaId, totalPrice)
+        await solicitarPago(reservaId, amount)
         router.refresh()
-      } catch {
-        setError('Error al solicitar pago.')
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error al solicitar pago.'
+        setError(msg)
       }
     })
   }
@@ -72,31 +75,40 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
     }
   }
 
-  // Group messages by date
   let lastDate = ''
 
   return (
-    <section id="chat" style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 16 }}>
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>
+    <section id="chat" style={{ background: '#fff', borderRadius: 12, border: '1.5px solid #d1d5db', overflow: 'hidden', marginBottom: 16 }}>
+      {/* Header */}
+      <div style={{ padding: '14px 20px', borderBottom: '1.5px solid #d1d5db', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#555' }}>
           Chat con {guestName.split(' ')[0]}
         </h2>
-        {totalPrice && (
-          <button
-            onClick={handleSolicitarPago}
-            disabled={isPending}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: '#f0f9f6', border: '1.5px solid #4B766B',
-              borderRadius: 8, padding: '6px 14px', fontSize: 12,
-              fontWeight: 700, color: '#4B766B', cursor: 'pointer',
-              opacity: isPending ? 0.5 : 1,
-            }}
-          >
-            <CreditCard size={13} />
-            Solicitar pago ({totalPrice}€)
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f0f9f6', border: '1.5px solid #4B766B', borderRadius: 8, padding: '5px 8px' }}>
+            <CreditCard size={13} color="#4B766B" />
+            <span style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>Señal / importe:</span>
+            <input
+              type="number"
+              value={customAmount}
+              onChange={e => setCustomAmount(e.target.value)}
+              min={1}
+              placeholder="€"
+              style={{ width: 64, border: '1px solid #b2d4cc', borderRadius: 6, padding: '3px 6px', fontSize: 13, fontWeight: 700, color: '#1a1a2e', outline: 'none', background: '#fff' }}
+            />
+            <button
+              onClick={handleSolicitarPago}
+              disabled={!customAmount || Number(customAmount) <= 0 || isPending}
+              style={{
+                background: '#4B766B', color: '#fff', border: 'none', borderRadius: 6,
+                padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                opacity: (!customAmount || Number(customAmount) <= 0 || isPending) ? 0.5 : 1,
+              }}
+            >
+              Solicitar
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
@@ -116,7 +128,7 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
             <div key={m.id}>
               {showDate && (
                 <div style={{ textAlign: 'center', margin: '8px 0 4px' }}>
-                  <span style={{ fontSize: 11, color: '#aaa', background: '#f0f0f0', borderRadius: 20, padding: '2px 10px' }}>{dateStr}</span>
+                  <span style={{ fontSize: 11, color: '#aaa', background: '#ececec', borderRadius: 20, padding: '2px 10px' }}>{dateStr}</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: isAdmin ? 'flex-end' : 'flex-start', marginBottom: 2 }}>
@@ -141,8 +153,8 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
                     borderRadius: isAdmin ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                     padding: '8px 14px',
                     maxWidth: '72%',
-                    border: isAdmin ? 'none' : '1px solid #e2e8f0',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                    border: isAdmin ? 'none' : '1.5px solid #d1d5db',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
                   }}>
                     <p style={{ margin: '0 0 4px', fontSize: 14, lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.texto}</p>
                     <p style={{ margin: 0, fontSize: 10, opacity: 0.6, textAlign: 'right' }}>{fmtHora(m.created_at)}</p>
@@ -156,7 +168,7 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
       </div>
 
       {/* Input */}
-      <div style={{ borderTop: '1px solid #e2e8f0', padding: '12px 16px', background: '#fff' }}>
+      <div style={{ borderTop: '1.5px solid #d1d5db', padding: '12px 16px', background: '#fff' }}>
         {error && <p style={{ margin: '0 0 8px', fontSize: 12, color: '#e53e3e' }}>{error}</p>}
         <form onSubmit={handleSend} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <textarea
@@ -167,7 +179,7 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
             placeholder="Escribe un mensaje… (Enter para enviar)"
             rows={2}
             style={{
-              flex: 1, border: '1.5px solid #e2e8f0', borderRadius: 10,
+              flex: 1, border: '1.5px solid #d1d5db', borderRadius: 10, background: '#fff',
               padding: '8px 12px', fontSize: 13, resize: 'none',
               outline: 'none', fontFamily: 'inherit', lineHeight: 1.5,
               color: '#1a1a2e',

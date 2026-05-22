@@ -356,8 +356,7 @@ export default function ApartamentoDetail({ apartment, slug }: { apartment: Apar
               Solicitar reserva
             </Link>
             <p className="text-xs text-center mt-3" style={{ color: 'var(--on-surface-variant)' }}>
-              No se te cobrará nada todavía.<br />
-              Revisaremos tu solicitud en menos de 24h.
+              Revisaremos tu solicitud lo antes posible.
             </p>
           </div>
         </div>

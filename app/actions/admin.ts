@@ -34,7 +34,8 @@ export async function logout() {
 
 export async function updateReservaStatus(
   id: number,
-  status: 'confirmed' | 'cancelled'
+  status: 'confirmed' | 'cancelled',
+  cancelMessage?: string
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: reserva, error } = await (supabaseAdmin as any)
@@ -65,7 +66,7 @@ export async function updateReservaStatus(
       from: FROM,
       to: r.guest_email,
       subject: `Actualización sobre tu solicitud — ${aptTitle}`,
-      html: cancelledHtml(r, aptTitle),
+      html: cancelledHtml(r, aptTitle, cancelMessage),
     })
   }
 
@@ -184,19 +185,18 @@ function confirmedHtml(r: any, aptTitle: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function cancelledHtml(r: any, aptTitle: string) {
+function cancelledHtml(r: any, aptTitle: string, customMessage?: string) {
   const firstName = (r.guest_name as string).split(' ')[0]
+  const body = customMessage
+    ? customMessage.replace(/\n/g, '<br>')
+    : `Lamentablemente no podemos confirmar tu solicitud para <strong>${aptTitle}</strong> en las fechas indicadas.<br><br>Si tienes fechas alternativas o quieres consultar disponibilidad, no dudes en contactarnos. Gracias por tu interés en HolaMarBella!`
   return shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">Sobre tu solicitud</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
-      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, lamentablemente no podemos confirmar
-      tu solicitud para <strong style="color:#1A1A1A;">${aptTitle}</strong> en las fechas indicadas.
+      Hola <strong style="color:#1A1A1A;">${firstName}</strong>,
     </p>
     <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;">
-      <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">
-        Si tienes fechas alternativas o quieres consultar disponibilidad, no dudes en contactarnos.<br>
-        Gracias por tu interés en HolaMarBella!
-      </p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">${body}</p>
     </div>
   `)
 }

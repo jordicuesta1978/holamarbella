@@ -39,8 +39,7 @@ function ConfirmacionContent() {
 
       <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface-variant)' }}>
         Tu solicitud ha sido enviada correctamente.{' '}
-        <strong style={{ color: 'var(--on-surface)' }}>La revisaremos y nos pondremos en contacto contigo pronto</strong>{' '}
-        por email con el resultado.
+        <strong style={{ color: 'var(--on-surface)' }}>La revisaremos y nos pondremos en contacto contigo lo antes posible</strong>.
       </p>
 
       {aptInfo && slug && (
@@ -71,7 +70,7 @@ function ConfirmacionContent() {
         <ol className="space-y-3">
           {[
             { Icon: Mail, text: 'Recibirás un email de confirmación con el resumen de tu solicitud.' },
-            { Icon: CheckCircle2, text: 'Revisaremos tu petición y te responderemos en menos de 24h.' },
+            { Icon: CheckCircle2, text: 'Revisaremos tu petición y te responderemos lo antes posible.' },
             { Icon: ArrowRight, text: 'Si es aprobada, recibirás los detalles finales para completar la reserva.' },
           ].map(({ Icon, text }, i) => (
             <li key={i} className="flex items-start gap-3">
@@ -84,9 +83,6 @@ function ConfirmacionContent() {
         </ol>
       </div>
 
-      <p className="text-sm mb-10" style={{ color: 'var(--on-surface-variant)' }}>
-        Nunca recibirás instrucciones automáticas de acceso al apartamento.
-      </p>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Link href="/" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border font-bold text-sm uppercase tracking-widest transition-opacity hover:opacity-70" style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}>

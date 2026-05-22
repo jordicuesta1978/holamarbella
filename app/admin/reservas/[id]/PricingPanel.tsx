@@ -15,12 +15,6 @@ type Props = {
   initialTotal: number | null
 }
 
-const PRESETS: Array<{ name: string; amount: number; unit?: string }> = [
-  { name: 'Parking', amount: 10, unit: 'días' },
-  { name: 'Cuna', amount: 25 },
-  { name: 'Servicio de limpieza adicional', amount: 40 },
-]
-
 export default function PricingPanel({
   id,
   nights,
@@ -41,7 +35,6 @@ export default function PricingPanel({
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
 
-  // new extra form
   const [newName, setNewName] = useState('')
   const [newAmount, setNewAmount] = useState('')
   const [newQty, setNewQty] = useState('1')
@@ -54,10 +47,6 @@ export default function PricingPanel({
   const base = rate * nights
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
-
-  const addPreset = (preset: typeof PRESETS[0]) => {
-    setExtras(prev => [...prev, { name: preset.name, amount: preset.amount, quantity: 1, unit: preset.unit }])
-  }
 
   const addCustom = () => {
     if (!newName.trim() || !newAmount) return
@@ -86,8 +75,8 @@ export default function PricingPanel({
   }
 
   const inp = (extra?: React.CSSProperties): React.CSSProperties => ({
-    border: '1.5px solid #e2e8f0', borderRadius: 8, padding: '8px 10px',
-    fontSize: 13, outline: 'none', color: '#1a1a2e', ...extra,
+    border: '1.5px solid #d1d5db', borderRadius: 8, padding: '8px 10px',
+    fontSize: 13, outline: 'none', color: '#1a1a2e', background: '#fff', ...extra,
   })
   const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', display: 'block', marginBottom: 4 }
   const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', fontSize: 13 }
@@ -123,7 +112,7 @@ export default function PricingPanel({
           <div style={{ marginBottom: 16 }}>
             <label style={lbl}>Extras</label>
             {extras.map((e, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', borderRadius: 8, marginBottom: 4 }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', borderRadius: 8, marginBottom: 4, border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: 13, color: '#1a1a2e' }}>
                   {e.name}{e.quantity && e.quantity > 1 ? ` · ${e.quantity} ${e.unit ?? 'uds'}` : ''} — <strong>{e.amount * (e.quantity ?? 1)}€</strong>
                 </span>
@@ -135,26 +124,13 @@ export default function PricingPanel({
           </div>
         )}
 
-        {/* Add extra presets */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Añadir extra rápido</label>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {PRESETS.map(p => (
-              <button key={p.name} onClick={() => addPreset(p)}
-                style={{ background: '#f0f9f6', border: '1px solid #4B766B', borderRadius: 8, padding: '5px 12px', fontSize: 12, color: '#4B766B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Plus size={11} />{p.name} ({p.amount}€)
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Add custom extra */}
-        <div style={{ marginBottom: 20, background: '#f8fafc', borderRadius: 10, padding: 14 }}>
-          <label style={lbl}>Extra personalizado</label>
+        <div style={{ marginBottom: 20, background: '#f8fafc', borderRadius: 10, padding: 14, border: '1px solid #e2e8f0' }}>
+          <label style={lbl}>Añadir extra</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div>
               <span style={{ ...lbl, fontSize: 10 }}>Nombre</span>
-              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Cuna, servicio..." style={{ ...inp(), width: 140 }} />
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Cuna, parking..." style={{ ...inp(), width: 140 }} />
             </div>
             <div>
               <span style={{ ...lbl, fontSize: 10 }}>Importe (€)</span>

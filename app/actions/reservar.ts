@@ -2,7 +2,10 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { revalidatePath } from 'next/cache'
 import type { Database } from '@/lib/database.types'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { getBookingRef } from '@/lib/booking-ref'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,7 +29,7 @@ export type ReservaInput = {
   mensaje: string
 }
 
-type ReservaInputWithToken = ReservaInput & { conversationToken: string }
+type ReservaInputWithToken = ReservaInput & { conversationToken: string; bookingRef: string }
 
 export async function crearReserva(
   input: ReservaInput
@@ -49,20 +52,34 @@ export async function crearReserva(
 
   if (error) return { ok: false, error: error.message }
 
-  const inputWithToken: ReservaInputWithToken = { ...input, conversationToken }
+  revalidatePath('/admin')
+  revalidatePath('/admin/reservas')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: inserted } = await (supabaseAdmin as any)
+    .from('reservas')
+    .select('id, created_at')
+    .eq('conversation_token', conversationToken)
+    .single()
+
+  const bookingRef = inserted
+    ? getBookingRef(inserted.id, input.apartmentSlug, inserted.created_at)
+    : ''
+
+  const inputWithToken: ReservaInputWithToken = { ...input, conversationToken, bookingRef }
 
   await Promise.allSettled([
     resend.emails.send({
       from: FROM,
       to: input.email,
-      subject: `Solicitud recibida — ${input.apartmentTitle}`,
+      subject: '¡Solicitud recibida!',
       html: emailHuesped(inputWithToken),
     }),
     resend.emails.send({
       from: FROM,
       to: MAR,
-      subject: `Nueva solicitud: ${input.apartmentTitle} — ${input.nombre}`,
-      html: emailMar(input),
+      subject: `🔔 Nueva solicitud — ${input.nombre} · ${input.apartmentTitle}`,
+      html: emailMar(input, bookingRef),
     }),
   ])
 
@@ -131,15 +148,16 @@ function emailHuesped(d: ReservaInputWithToken): string {
   const firstName = d.nombre.split(' ')[0]
   const conversationLink = `${BASE_URL}/conversacion/${d.conversationToken}`
   return shell(`
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud enviada!</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud recibida!</h1>
     <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
       Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos recibido tu solicitud para
       <strong style="color:#1A1A1A;">${d.apartmentTitle}</strong>.
-      La revisaremos y te responderemos en menos de 24&nbsp;horas.
+      La revisaremos y te responderemos lo antes posible.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:28px;">
       ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${d.bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${d.bookingRef}</strong>`) : ''}
       ${row('Llegada', fmt(d.checkIn))}
       ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
       ${row('Personas', `${d.personas} persona${d.personas > 1 ? 's' : ''}`)}
@@ -152,7 +170,6 @@ function emailHuesped(d: ReservaInputWithToken): string {
         ${[
           'Revisaremos tu solicitud y te contactaremos por email.',
           'Si se aprueba, recibirás los detalles finales para completar la reserva.',
-          'Puedes seguir el estado de tu reserva y enviarnos mensajes desde tu conversación privada.',
         ].map((text, i) => `
         <tr>
           <td style="padding:5px 12px 5px 0;vertical-align:top;width:30px;">
@@ -164,18 +181,17 @@ function emailHuesped(d: ReservaInputWithToken): string {
     </div>
 
     <div style="text-align:center;margin-bottom:24px;">
-      <a href="${conversationLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:14px;">Ver mi conversación</a>
+      <a href="${conversationLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:14px;">Ver mi reserva</a>
       <p style="margin:10px 0 0;font-size:11px;color:#bbb;">Guarda este enlace — es tu acceso privado a esta reserva</p>
     </div>
 
     <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
-      Nunca recibirás instrucciones automáticas de acceso al apartamento.<br>
       ¿Tienes dudas? Responde directamente a este email.
     </p>
   `)
 }
 
-function emailMar(d: ReservaInput): string {
+function emailMar(d: ReservaInput, bookingRef = ''): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
@@ -190,6 +206,7 @@ function emailMar(d: ReservaInput): string {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
       ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${bookingRef}</strong>`) : ''}
       ${row('Huésped', d.nombre)}
       ${row('Email', `<a href="mailto:${d.email}" style="color:#4B766B;text-decoration:none;">${d.email}</a>`)}
       ${row('Teléfono', d.telefono || '—')}

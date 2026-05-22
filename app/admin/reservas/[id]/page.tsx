@@ -6,6 +6,7 @@ import PricingPanel from './PricingPanel'
 import ChatPanel from './ChatPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getMensajesReserva, marcarMensajesLeidos } from '@/app/actions/mensajes'
+import { getBookingRef } from '@/lib/booking-ref'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReserva(id: number): Promise<any | null> {
@@ -68,7 +69,10 @@ export default async function ReservaDetailPage({
         <Link href="/admin/reservas" style={{ fontSize: 13, color: '#4B766B', fontWeight: 600, textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}>← Volver</Link>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>Reserva #{reserva.id}</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>
+            {getBookingRef(reserva.id, reserva.apartment_slug, reserva.created_at)}
+            <span style={{ fontSize: 13, fontWeight: 400, color: '#aaa', marginLeft: 10 }}>#{reserva.id}</span>
+          </h1>
           <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: STATUS_BG[reserva.status], color: STATUS_COLOR[reserva.status] }}>
             {STATUS_LABEL[reserva.status]}
           </span>

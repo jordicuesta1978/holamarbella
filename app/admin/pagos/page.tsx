@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import SolicitarPagoBtn from './SolicitarPagoBtn'
+import { getBookingRef } from '@/lib/booking-ref'
 import { CreditCard, CheckCircle } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -9,6 +10,7 @@ const db = supabaseAdmin as any
 
 type PagoRow = {
   id: number
+  bookingRef: string
   guestName: string
   aptSlug: string
   checkIn: string
@@ -19,32 +21,38 @@ type PagoRow = {
   paidAt: string | null
 }
 
-async function getPagosData(): Promise<PagoRow[]> {
-  const [{ data: reservas }, { data: payReqs }] = await Promise.all([
+async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow[] }> {
+  const [{ data: rPend }, { data: rPag }, { data: payReqs }] = await Promise.all([
     db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at')
       .eq('status', 'confirmed')
       .not('total_price', 'is', null)
+      .is('paid_at', null)
       .order('created_at', { ascending: false }),
+    db.from('reservas')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at')
+      .eq('status', 'confirmed')
+      .not('paid_at', 'is', null)
+      .order('paid_at', { ascending: false })
+      .limit(20),
     db.from('mensajes_chat')
       .select('reserva_id, created_at')
       .eq('tipo', 'payment_request')
       .order('created_at', { ascending: false }),
   ])
 
-  if (!reservas) return []
-
   const lastPayReq: Record<number, string> = {}
   for (const m of (payReqs ?? [])) {
     if (!lastPayReq[m.reserva_id]) lastPayReq[m.reserva_id] = m.created_at
   }
 
-  return reservas.map((r: any) => {
+  const toRow = (r: any): PagoRow => {
     const nights = r.check_in && r.check_out
       ? Math.round((new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / 86400000)
       : 0
     return {
       id: r.id,
+      bookingRef: getBookingRef(r.id, r.apartment_slug, r.created_at),
       guestName: r.guest_name,
       aptSlug: r.apartment_slug,
       checkIn: r.check_in,
@@ -54,7 +62,12 @@ async function getPagosData(): Promise<PagoRow[]> {
       lastPayReqAt: lastPayReq[r.id] ?? null,
       paidAt: r.paid_at ?? null,
     }
-  })
+  }
+
+  return {
+    pendientes: (rPend ?? []).map(toRow),
+    pagados: (rPag ?? []).map(toRow),
+  }
 }
 
 function fmtDate(d: string) {
@@ -71,11 +84,8 @@ function fmtRelative(d: string | null) {
 }
 
 export default async function PagosPage() {
-  const pagos = await getPagosData()
+  const { pendientes, pagados } = await getPagosData()
   const urgentThreshold = Date.now() - 48 * 60 * 60 * 1000
-
-  const pendientes = pagos.filter(p => !p.paidAt)
-  const pagados = pagos.filter(p => p.paidAt)
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
@@ -110,7 +120,7 @@ export default async function PagosPage() {
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{p.guestName}</span>
-                      <span style={{ fontSize: 12, color: '#888' }}>· {p.aptSlug}</span>
+                      <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>{p.bookingRef}</span>
                       {isUrgent && (
                         <span style={{ fontSize: 10, fontWeight: 700, color: '#e53e3e', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, padding: '1px 6px' }}>
                           +48h sin pago

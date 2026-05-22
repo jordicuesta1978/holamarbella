@@ -284,7 +284,7 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
               </div>
 
               <p className="text-xs pt-1" style={{ color: 'var(--on-surface-variant)' }}>
-                El precio exacto será confirmado al aprobar tu solicitud.
+                El precio exacto será confirmado al revisar tu solicitud.
               </p>
             </div>
           </div>

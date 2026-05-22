@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from './AdminNavServer'
+import DashboardRefresh from './DashboardRefresh'
 import { Clock, MessageSquare, CreditCard, CalendarCheck } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,7 +14,7 @@ async function getDashboardData() {
   const [pending, unread, pagos, llegadas, ultimasReservas, proximasLlegadas] = await Promise.all([
     db.from('reservas').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('mensajes_chat').select('id', { count: 'exact', head: true }).eq('sender', 'guest').eq('leido', false),
-    db.from('reservas').select('id', { count: 'exact', head: true }).eq('status', 'confirmed').not('total_price', 'is', null),
+    db.from('reservas').select('id', { count: 'exact', head: true }).eq('status', 'confirmed').not('total_price', 'is', null).is('paid_at', null),
     db.from('reservas').select('id', { count: 'exact', head: true }).eq('status', 'confirmed').gte('check_in', today).lte('check_in', in7days),
     db.from('reservas').select('id, guest_name, apartment_slug, check_in, check_out, status, created_at').order('created_at', { ascending: false }).limit(5),
     db.from('reservas').select('id, guest_name, apartment_slug, check_in').eq('status', 'confirmed').gte('check_in', today).order('check_in', { ascending: true }).limit(5),
@@ -73,16 +74,17 @@ export default async function AdminPage() {
   const { stats, ultimasReservas, proximasLlegadas, ultimosMensajes } = await getDashboardData()
 
   const cards = [
-    { icon: MessageSquare, label: 'Inbox', sub: 'Mensajes sin leer', value: stats.unread, href: '/admin/inbox', color: '#3b82f6', bg: '#dbeafe' },
-    { icon: Clock, label: 'Reservas', sub: 'Pendientes de gestión', value: stats.pending, href: '/admin/reservas?status=pending', color: '#d97706', bg: '#fef3c7' },
+    { icon: MessageSquare, label: 'Inbox', sub: 'Mensajes sin leer', value: stats.unread, href: '/admin/inbox', color: '#4B766B', bg: '#d1fae5' },
+    { icon: Clock, label: 'Reservas', sub: 'Pendientes de gestión', value: stats.pending, href: '/admin/reservas?status=pending', color: '#4B766B', bg: '#d1fae5' },
     { icon: CalendarCheck, label: 'Calendario', sub: 'Llegadas esta semana', value: stats.llegadas, href: '/admin/calendario', color: '#4B766B', bg: '#d1fae5' },
-    { icon: CreditCard, label: 'Pagos', sub: 'Pendientes de cobro', value: stats.pagos, href: '/admin/pagos', color: '#8b5cf6', bg: '#ede9fe' },
+    { icon: CreditCard, label: 'Pagos', sub: 'Pendientes de cobro', value: stats.pagos, href: '/admin/pagos', color: '#4B766B', bg: '#d1fae5' },
   ]
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
       <AdminNavServer />
 
+      <DashboardRefresh />
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
         <h1 style={{ margin: '0 0 20px', fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>Dashboard</h1>
 
