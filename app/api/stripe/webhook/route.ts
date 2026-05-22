@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
 
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabaseAdmin as any

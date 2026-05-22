@@ -4,7 +4,7 @@
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 const db = supabaseAdmin as any
 
 export async function crearSesionPago(token: string): Promise<string> {

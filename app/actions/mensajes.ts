@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const MAR = process.env.MAR_EMAIL!
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
 const db = supabaseAdmin as any
 
@@ -114,6 +114,7 @@ export async function solicitarPago(reservaId: number, amount: number) {
     .single()
 
   if (!reserva) throw new Error('Reserva no encontrada')
+  if (!reserva.conversation_token) throw new Error('La reserva no tiene token de conversación')
 
   const texto = `Hemos preparado el pago para tu reserva. Importe total: ${amount}€. Haz clic en el botón de abajo para completar el pago.`
 

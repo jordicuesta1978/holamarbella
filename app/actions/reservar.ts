@@ -12,7 +12,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const MAR = process.env.MAR_EMAIL!
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://holamarbella.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
 export type ReservaInput = {
   apartmentSlug: string
