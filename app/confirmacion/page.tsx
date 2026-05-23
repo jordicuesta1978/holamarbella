@@ -70,8 +70,7 @@ function ConfirmacionContent() {
         <ol className="space-y-3">
           {[
             { Icon: Mail, text: 'Recibirás un email de confirmación con el resumen de tu solicitud.' },
-            { Icon: CheckCircle2, text: 'Revisaremos tu petición y te responderemos lo antes posible.' },
-            { Icon: ArrowRight, text: 'Si es aprobada, recibirás los detalles finales para completar la reserva.' },
+            { Icon: CheckCircle2, text: 'Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.' },
           ].map(({ Icon, text }, i) => (
             <li key={i} className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5" style={{ backgroundColor: 'var(--primary)' }}>

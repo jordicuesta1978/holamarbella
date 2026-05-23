@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+
+const MapboxMap = dynamic(() => import('./MapboxMap'), { ssr: false });
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -43,11 +46,11 @@ function getTopAmenityIcon(label: string): React.ComponentType<{ size?: number; 
 }
 
 const APT_COORDS: Record<string, { lng: number; lat: number }> = {
-  paloma:  { lng: -4.8852, lat: 36.5099 },
-  micu:    { lng: -4.8847, lat: 36.5106 },
-  larysol: { lng: -4.8907, lat: 36.5078 },
-  ami:     { lng: -4.8843, lat: 36.5112 },
-  banesto: { lng: -4.8849, lat: 36.5094 },
+  paloma:  { lng: -4.889767747525261, lat: 36.51172291221833 },
+  micu:    { lng: -4.889447320540719, lat: 36.51164955871326 },
+  larysol: { lng: -4.896228389853668, lat: 36.50957364983489 },
+  ami:     { lng: -4.888339196628418, lat: 36.51164611321041 },
+  banesto: { lng: -4.887352242670257, lat: 36.50973673900918 },
 };
 
 function calcNights(checkIn: string, checkOut: string): number {
@@ -224,13 +227,8 @@ export default function ApartamentoDetail({ apartment, slug }: { apartment: Apar
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--on-surface)' }}>Ubicación</h2>
             <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>Marbella, Málaga, España</p>
-            {process.env.NEXT_PUBLIC_MAPBOX_TOKEN && APT_COORDS[slug] ? (
-              <img
-                src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-l+4B766B(${APT_COORDS[slug].lng},${APT_COORDS[slug].lat})/${APT_COORDS[slug].lng},${APT_COORDS[slug].lat},15,0/600x280@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
-                alt="Ubicación del apartamento en Marbella"
-                className="w-full rounded-2xl object-cover"
-                style={{ height: 280 }}
-              />
+            {APT_COORDS[slug] && process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
+              <MapboxMap lng={APT_COORDS[slug].lng} lat={APT_COORDS[slug].lat} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN} />
             ) : (
               <div className="w-full rounded-2xl flex items-center justify-center" style={{ height: 280, backgroundColor: 'var(--arena)', border: '1px solid var(--outline-variant)' }}>
                 <div className="text-center">

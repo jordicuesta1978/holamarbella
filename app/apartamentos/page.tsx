@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getApartments } from '@/lib/db';
 import { getAvailability } from '@/app/actions/availability';
+import ClearDatesLink from '@/components/ClearDatesLink';
 
 export const metadata: Metadata = {
   title: 'Nuestros Apartamentos · HolaMarbella',
@@ -73,14 +74,10 @@ export default async function ApartamentosPage({
                       src={`/images/${apt.slug}/${apt.slug}-1.jpg`}
                       alt={apt.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      style={isAvailable === false ? { filter: 'grayscale(1)' } : undefined}
                     />
-                    {apt.badge && (
-                      <span
-                        className="absolute top-3 left-3 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full text-white"
-                        style={{ backgroundColor: 'var(--primary)' }}
-                      >
-                        {apt.badge}
-                      </span>
+                    {isAvailable === false && (
+                      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(255,255,255,0.3)' }} />
                     )}
                     {isAvailable !== null && (
                       <span
@@ -99,35 +96,31 @@ export default async function ApartamentosPage({
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-yellow-400 text-sm">★</span>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
+                      <span className="text-sm font-semibold" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface)' }}>
                         {apt.rating.toFixed(2)}
                       </span>
                       <span className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                         ({apt.reviewCount} reseñas)
                       </span>
                     </div>
-                    <h2 className="text-base font-bold leading-snug mb-1" style={{ color: 'var(--on-surface)' }}>
+                    <h2 className="text-base font-bold leading-snug mb-1" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface)' }}>
                       {apt.title}
                     </h2>
                     <p className="text-sm mb-3" style={{ color: 'var(--on-surface-variant)' }}>
                       {apt.capacity.persons} personas · {apt.capacity.bedrooms} dorm · {apt.capacity.bathrooms} baño
                     </p>
-                    {isAvailable === false && (
-                      <p className="text-xs mb-3" style={{ color: '#9ca3af' }}>
-                        Puedes comprobar otras fechas
-                      </p>
-                    )}
+                    {isAvailable === false && <ClearDatesLink />}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>
+                      <span className="text-sm font-medium" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
                         Desde{' '}
-                        <span className="font-bold text-base" style={{ color: 'var(--primary)' }}>
+                        <span className="font-bold text-base" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}>
                           {apt.priceRange[0]}€
                         </span>
                         {' '}/noche
                       </span>
                       <span
                         className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border transition-all group-hover:text-white"
-                        style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                        style={{ borderColor: isAvailable === false ? '#d1d5db' : 'var(--primary)', color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}
                       >
                         Ver →
                       </span>

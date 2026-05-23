@@ -42,7 +42,7 @@ export function getPhotos(slug: string, count: number): string[] {
 const _apartments: Apartment[] = [
   {
     slug: 'paloma',
-    title: 'Hola MarBella Centro/Playa · Vistas espectaculares',
+    title: 'Paloma · Centro/Playa · Vistas espectaculares',
     subtitle: 'Centro · Playa · Vistas espectaculares',
     rating: 5.0,
     reviewCount: 42,
@@ -82,7 +82,7 @@ const _apartments: Apartment[] = [
   },
   {
     slug: 'micu',
-    title: 'Hola MarBella · Casco Antiguo y playa a 5 minutos',
+    title: 'Micu · Casco Antiguo · Playa a 5 minutos',
     subtitle: 'Casco Antiguo · Playa · Vistas al mar',
     rating: 5.0,
     reviewCount: 19,
@@ -120,7 +120,7 @@ const _apartments: Apartment[] = [
   },
   {
     slug: 'larysol',
-    title: 'Hola MarBella · Playa de la Fontanilla / Centro',
+    title: 'Larysol · Playa de la Fontanilla / Centro',
     subtitle: 'Fontanilla · 1 min a la playa · Wifi 607 Mbps',
     rating: 4.99,
     reviewCount: 80,
@@ -160,7 +160,7 @@ const _apartments: Apartment[] = [
   },
   {
     slug: 'ami',
-    title: 'Hola MarBella · Coqueto Ático · Ubicación inmejorable',
+    title: 'AMI · Coqueto Ático · Ubicación inmejorable',
     subtitle: 'Casco Antiguo · Vistas a La Concha · Netflix incluido',
     rating: 4.99,
     reviewCount: 88,
@@ -200,7 +200,7 @@ const _apartments: Apartment[] = [
   },
   {
     slug: 'banesto',
-    title: 'Hola MarBella · Ático en La Alameda · Centro / Playa',
+    title: 'Banesto · Ático en La Alameda · Centro / Playa',
     subtitle: 'La Alameda · 200m playa La Venus · Baño en suite',
     rating: 4.97,
     reviewCount: 74,

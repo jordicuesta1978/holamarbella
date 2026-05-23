@@ -173,8 +173,7 @@ function emailHuesped(d: ReservaInputWithToken): string {
       <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#4B766B;">¿Qué pasa ahora?</p>
       <table cellpadding="0" cellspacing="0" width="100%">
         ${[
-          'Revisaremos tu solicitud y te contactaremos por email.',
-          'Si se aprueba, recibirás los detalles finales para completar la reserva.',
+          'Revisaremos tu solicitud y nos pondremos en contacto contigo lo antes posible.',
         ].map((text, i) => `
         <tr>
           <td style="padding:5px 12px 5px 0;vertical-align:top;width:30px;">
