@@ -8,17 +8,20 @@ const APT_CODES: Record<string, string> = {
   banesto: 'BAN',
 }
 
-export function getBookingRef(id: number, slug: string, createdAt: string): string {
-  const d = new Date(createdAt)
-  const date = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }).replace(/-/g, '')
+// Returns "YYYYMMDD" from a date string like "2026-05-30"
+function dateCode(checkIn: string): string {
+  return checkIn.slice(0, 10).replace(/-/g, '')
+}
+
+export function getBookingRef(id: number, slug: string, checkIn: string): string {
+  const date = dateCode(checkIn)
   const code = APT_CODES[slug] ?? slug.slice(0, 3).toUpperCase()
   const counter = String(id % 99 + 1).padStart(2, '0')
   return `${date}${code}${counter}`
 }
 
-export async function generateDailyBookingRef(id: number, slug: string, createdAt: string): Promise<string> {
-  const d = new Date(createdAt)
-  const date = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }).replace(/-/g, '')
+export async function generateDailyBookingRef(id: number, slug: string, checkIn: string): Promise<string> {
+  const date = dateCode(checkIn)
   const code = APT_CODES[slug] ?? slug.slice(0, 3).toUpperCase()
   const prefix = `${date}${code}`
 

@@ -97,7 +97,16 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
       return;
     }
 
-    router.push(`/confirmacion?apartment=${slug}&name=${encodeURIComponent(form.nombre.split(' ')[0])}`);
+    const qs = new URLSearchParams({
+      apartment: slug,
+      name: form.nombre.split(' ')[0],
+      token: result.token,
+      ref: result.bookingRef,
+      checkin: form.checkIn,
+      checkout: form.checkOut,
+      personas: String(form.personas),
+    })
+    router.push(`/confirmacion?${qs.toString()}`);
   };
 
   const maxPersonas = apartment.capacity.persons;
@@ -232,7 +241,7 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
               <img src={`/images/${slug}/${slug}-1.jpg`} alt={apartment.title} className="w-20 h-20 object-cover rounded-xl shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--on-surface-variant)' }}>{apartment.subtitle}</p>
-                <p className="text-sm font-bold leading-snug" style={{ color: 'var(--on-surface)' }}>{apartment.title}</p>
+                <p className="text-sm font-bold leading-snug" style={{ color: 'var(--on-surface)' }}>Apartamento {apartment.title.split(' · ')[0]}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <span className="text-yellow-400 text-xs">★</span>
                   <span className="text-xs font-semibold">{apartment.rating.toFixed(2)}</span>

@@ -49,7 +49,7 @@ export default async function ApartamentosPage({
           </p>
         ) : (
           <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>
-            5 apartamentos únicos en el corazón de Marbella, gestionados con mimo por Mar.
+            5 apartamentos únicos en el corazón de Marbella, gestionados con mimo.
           </p>
         )}
         {hasDates && (
@@ -103,10 +103,13 @@ export default async function ApartamentosPage({
                         ({apt.reviewCount} reseñas)
                       </span>
                     </div>
-                    <h2 className="text-base font-bold leading-snug mb-1" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface)' }}>
-                      {apt.title}
+                    <h2 className="text-base font-bold leading-snug mb-0.5" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface)' }}>
+                      Apartamento {apt.title.split(' · ')[0]}
                     </h2>
-                    <p className="text-sm mb-3" style={{ color: 'var(--on-surface-variant)' }}>
+                    <p className="text-xs mb-2" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
+                      {apt.subtitle}
+                    </p>
+                    <p className="text-sm mb-3" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
                       {apt.capacity.persons} personas · {apt.capacity.bedrooms} dorm · {apt.capacity.bathrooms} baño
                     </p>
                     {isAvailable === false && <ClearDatesLink />}

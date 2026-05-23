@@ -14,8 +14,16 @@ const supabase = createClient<Database>(
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
-const MAR = process.env.MAR_EMAIL!
+const MAR = process.env.MAR_EMAIL
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
+
+const APT_NAMES: Record<string, string> = {
+  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
+}
+
+function aptDisplay(slug: string): string {
+  return APT_NAMES[slug] ? `Apartamento ${APT_NAMES[slug]}` : slug
+}
 
 export type ReservaInput = {
   apartmentSlug: string
@@ -33,7 +41,7 @@ type ReservaInputWithToken = ReservaInput & { conversationToken: string; booking
 
 export async function crearReserva(
   input: ReservaInput
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; token: string; bookingRef: string } | { ok: false; error: string }> {
   const conversationToken = crypto.randomUUID()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,8 +70,9 @@ export async function crearReserva(
     .eq('conversation_token', conversationToken)
     .single()
 
+  // Use check-in date for the booking ref
   const bookingRef = inserted
-    ? await generateDailyBookingRef(inserted.id, input.apartmentSlug, inserted.created_at)
+    ? await generateDailyBookingRef(inserted.id, input.apartmentSlug, input.checkIn)
     : ''
 
   if (inserted && bookingRef) {
@@ -72,23 +81,31 @@ export async function crearReserva(
   }
 
   const inputWithToken: ReservaInputWithToken = { ...input, conversationToken, bookingRef }
+  const displayTitle = aptDisplay(input.apartmentSlug)
 
-  await Promise.allSettled([
+  const emailTasks: Promise<unknown>[] = [
     resend.emails.send({
       from: FROM,
       to: input.email,
       subject: '¡Solicitud recibida!',
-      html: emailHuesped(inputWithToken),
+      html: emailHuesped(inputWithToken, displayTitle),
     }),
-    resend.emails.send({
-      from: FROM,
-      to: MAR,
-      subject: `🔔 Nueva solicitud — ${input.nombre} · ${input.apartmentTitle}`,
-      html: emailMar(input, bookingRef),
-    }),
-  ])
+  ]
 
-  return { ok: true }
+  if (MAR) {
+    emailTasks.push(
+      resend.emails.send({
+        from: FROM,
+        to: MAR,
+        subject: `🔔 Nueva solicitud — ${input.nombre} · ${displayTitle}`,
+        html: emailMar(input, bookingRef, displayTitle),
+      })
+    )
+  }
+
+  await Promise.allSettled(emailTasks)
+
+  return { ok: true, token: conversationToken, bookingRef }
 }
 
 function fmt(d: string): string {
@@ -149,40 +166,25 @@ function row(label: string, value: string, border = true): string {
   </tr>`
 }
 
-function emailHuesped(d: ReservaInputWithToken): string {
+function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
   const firstName = d.nombre.split(' ')[0]
   const conversationLink = `${BASE_URL}/conversacion/${d.conversationToken}`
   return shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud recibida!</h1>
     <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
       Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos recibido tu solicitud para
-      <strong style="color:#1A1A1A;">${d.apartmentTitle}</strong>.
-      La revisaremos y te responderemos lo antes posible.
+      <strong style="color:#1A1A1A;">${displayTitle}</strong>.
+      Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:28px;">
-      ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${row('Apartamento', `<strong>${displayTitle}</strong>`, false)}
       ${d.bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${d.bookingRef}</strong>`) : ''}
       ${row('Llegada', fmt(d.checkIn))}
       ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
       ${row('Personas', `${d.personas} persona${d.personas > 1 ? 's' : ''}`)}
       ${row('Tu mensaje', d.mensaje.replace(/\n/g, '<br>'))}
     </table>
-
-    <div style="background:#F5F0E8;border-radius:10px;padding:22px 24px;margin-bottom:28px;">
-      <p style="margin:0 0 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#4B766B;">¿Qué pasa ahora?</p>
-      <table cellpadding="0" cellspacing="0" width="100%">
-        ${[
-          'Revisaremos tu solicitud y nos pondremos en contacto contigo lo antes posible.',
-        ].map((text, i) => `
-        <tr>
-          <td style="padding:5px 12px 5px 0;vertical-align:top;width:30px;">
-            <div style="width:22px;height:22px;border-radius:50%;background:#4B766B;color:#fff;text-align:center;line-height:22px;font-size:11px;font-weight:700;">${i + 1}</div>
-          </td>
-          <td style="padding:5px 0;font-size:13px;color:#444;line-height:1.6;">${text}</td>
-        </tr>`).join('')}
-      </table>
-    </div>
 
     <div style="text-align:center;margin-bottom:24px;">
       <a href="${conversationLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:14px;">Ver mi reserva</a>
@@ -195,7 +197,7 @@ function emailHuesped(d: ReservaInputWithToken): string {
   `)
 }
 
-function emailMar(d: ReservaInput, bookingRef = ''): string {
+function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
@@ -209,7 +211,7 @@ function emailMar(d: ReservaInput, bookingRef = ''): string {
     <p style="margin:0 0 28px;font-size:13px;color:#999;">${fecha}</p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
-      ${row('Apartamento', `<strong>${d.apartmentTitle}</strong>`, false)}
+      ${row('Apartamento', `<strong>${displayTitle}</strong>`, false)}
       ${bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${bookingRef}</strong>`) : ''}
       ${row('Huésped', d.nombre)}
       ${row('Email', `<a href="mailto:${d.email}" style="color:#4B766B;text-decoration:none;">${d.email}</a>`)}

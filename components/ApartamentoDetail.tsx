@@ -46,11 +46,11 @@ function getTopAmenityIcon(label: string): React.ComponentType<{ size?: number; 
 }
 
 const APT_COORDS: Record<string, { lng: number; lat: number }> = {
-  paloma:  { lng: -4.889767747525261, lat: 36.51172291221833 },
-  micu:    { lng: -4.889447320540719, lat: 36.51164955871326 },
-  larysol: { lng: -4.896228389853668, lat: 36.50957364983489 },
-  ami:     { lng: -4.888339196628418, lat: 36.51164611321041 },
-  banesto: { lng: -4.887352242670257, lat: 36.50973673900918 },
+  paloma:  { lng: -4.889834920035644, lat: 36.511517004070356 },
+  micu:    { lng: -4.889333,          lat: 36.511278 },
+  larysol: { lng: -4.896333,          lat: 36.509444 },
+  ami:     { lng: -4.8882644866596054,lat: 36.510975629067595 },
+  banesto: { lng: -4.887222,          lat: 36.509000 },
 };
 
 function calcNights(checkIn: string, checkOut: string): number {
@@ -166,8 +166,11 @@ export default function ApartamentoDetail({ apartment, slug }: { apartment: Apar
                 · {apartment.reviewCount} reseñas
               </span>
             </div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--on-surface-variant)' }}>
+              {apartment.subtitle}
+            </p>
             <h1 className="text-2xl md:text-3xl font-bold leading-snug mb-3" style={{ color: 'var(--primary)' }}>
-              {apartment.title}
+              Apartamento {apartment.title.split(' · ')[0]}
             </h1>
             <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
               {apartment.capacity.persons} personas · {apartment.capacity.bedrooms} dormitorio · {apartment.capacity.bed} · {apartment.capacity.bathrooms} baño

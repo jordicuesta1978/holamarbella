@@ -127,14 +127,14 @@ export async function solicitarPago(reservaId: number, amount: number) {
     leido: false,
   })
 
-  const link = `${BASE_URL}/conversacion/${reserva.conversation_token}`
+  const pagarLink = `${BASE_URL}/api/pagar/${reserva.conversation_token}`
   const firstName = (reserva.guest_name as string).split(' ')[0]
 
   await resend.emails.send({
     from: FROM,
     to: reserva.guest_email,
     subject: 'Solicitud de pago — HolaMarbella',
-    html: emailPagoGuest(firstName, amount, link),
+    html: emailPagoGuest(firstName, amount, pagarLink),
   }).catch(() => {})
 
   revalidatePath(`/admin/reservas/${reservaId}`)
@@ -186,18 +186,18 @@ function emailToGuest(firstName: string, texto: string, link: string) {
   `)
 }
 
-function emailPagoGuest(firstName: string, amount: number, link: string) {
+function emailPagoGuest(firstName: string, amount: number, pagarLink: string) {
   return shell(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#4B766B;">Solicitud de pago</h1>
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#4B766B;">Solicitud de pago para tu reserva</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
-      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, tu reserva está lista para confirmar el pago.
+      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos preparado el pago para tu reserva.
     </p>
     <div style="background:#f0f9f6;border:2px solid #4B766B;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4B766B;">Importe total</p>
-      <p style="margin:0;font-size:36px;font-weight:800;color:#1A1A1A;">${amount}€</p>
+      <p style="margin:0;font-size:40px;font-weight:800;color:#1A1A1A;">${amount}€</p>
     </div>
-    <a href="${link}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;">Ir a la conversación</a>
-    <p style="margin:20px 0 0;font-size:12px;color:#aaa;">O copia este enlace: ${link}</p>
+    <div style="text-align:center;">
+      <a href="${pagarLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;">Pagar ahora</a>
+    </div>
   `)
 }
 
