@@ -115,7 +115,7 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: 'var(--primary)' }}>Solicitar reserva</h1>
           <p className="text-sm mb-8" style={{ color: 'var(--on-surface-variant)' }}>
-            Rellena el formulario y revisaremos tu solicitud. No se te cobrará nada todavía.
+            Rellena el formulario y revisaremos tu solicitud.
           </p>
 
           {errors.global && (

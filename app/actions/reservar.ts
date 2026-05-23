@@ -5,7 +5,7 @@ import { Resend } from 'resend'
 import { revalidatePath } from 'next/cache'
 import type { Database } from '@/lib/database.types'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getBookingRef } from '@/lib/booking-ref'
+import { generateDailyBookingRef, getBookingRef } from '@/lib/booking-ref'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,8 +63,13 @@ export async function crearReserva(
     .single()
 
   const bookingRef = inserted
-    ? getBookingRef(inserted.id, input.apartmentSlug, inserted.created_at)
+    ? await generateDailyBookingRef(inserted.id, input.apartmentSlug, inserted.created_at)
     : ''
+
+  if (inserted && bookingRef) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabaseAdmin as any).from('reservas').update({ booking_ref: bookingRef }).eq('id', inserted.id)
+  }
 
   const inputWithToken: ReservaInputWithToken = { ...input, conversationToken, bookingRef }
 

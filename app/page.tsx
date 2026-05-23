@@ -6,28 +6,28 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const HERO_SLIDES = [
-  { src: "/images/paloma/paloma-1.jpg",   label: "Piso Paloma" },
-  { src: "/images/micu/micu-1.jpg",       label: "Piso Micu" },
-  { src: "/images/larysol/larysol-1.jpg", label: "Piso Larysol" },
+  { src: "/images/paloma/paloma-1.jpg",   label: "Apartamento Paloma" },
+  { src: "/images/micu/micu-1.jpg",       label: "Apartamento Micu" },
+  { src: "/images/larysol/larysol-1.jpg", label: "Apartamento Larysol" },
   { src: "/images/banesto/banesto-1.jpg", label: "Ático Banesto" },
   { src: "/images/ami/ami-1.jpg",         label: "Ático AMI" },
 ];
 
 const apartments = [
   {
-    name: "Piso Paloma",
+    name: "Apartamento Paloma",
     location: "Centro · Playa con vistas espectaculares",
     slug: "paloma",
     img: "/images/paloma/paloma-1.jpg",
   },
   {
-    name: "Piso Micu",
+    name: "Apartamento Micu",
     location: "Casco Antiguo · Playa a 5 minutos",
     slug: "micu",
     img: "/images/micu/micu-1.jpg",
   },
   {
-    name: "Piso Larysol",
+    name: "Apartamento Larysol",
     location: "Playa de la Fontanilla · Centro",
     slug: "larysol",
     img: "/images/larysol/larysol-1.jpg",
@@ -144,71 +144,71 @@ export default function Home() {
 
         {/* SEARCH BAR — desktop: pill overlapping next section; mobile: card below hero */}
         {/* Desktop pill */}
-        <div className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
+        <form action="/apartamentos" method="get" className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
           <div className="bg-white shadow-2xl rounded-full p-3 pl-8 flex flex-row gap-4 items-center w-full max-w-5xl">
             <div className="flex-1 min-w-0">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
-              <select className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option>Cualquier apartamento</option>
-                {apartments.map(a => <option key={a.slug}>{a.name}</option>)}
+              <select name="apt" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
+                <option value="">Cualquier apartamento</option>
+                {apartments.map(a => <option key={a.slug} value={a.slug}>{a.name}</option>)}
               </select>
             </div>
             <div className="w-px h-8 bg-stone-200 shrink-0" />
             <div className="flex-1 min-w-0">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-              <input type="date" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+              <input type="date" name="checkIn" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
             </div>
             <div className="w-px h-8 bg-stone-200 shrink-0" />
             <div className="flex-1 min-w-0">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-              <input type="date" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+              <input type="date" name="checkOut" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
             </div>
             <div className="w-px h-8 bg-stone-200 shrink-0" />
             <div className="w-32 shrink-0">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
+              <select name="personas" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
                 <option value="1">1 persona</option>
                 <option value="2">2 personas</option>
               </select>
             </div>
-            <button className="text-white font-bold text-xs px-10 h-12 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
+            <button type="submit" className="text-white font-bold text-xs px-10 h-12 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
               Buscar
             </button>
           </div>
-        </div>
+        </form>
 
         {/* Mobile search */}
-        <div className="md:hidden px-4 py-4" style={{ backgroundColor: 'var(--arena)' }}>
+        <form action="/apartamentos" method="get" className="md:hidden px-4 py-4" style={{ backgroundColor: 'var(--arena)' }}>
           <div className="bg-white shadow-lg rounded-2xl p-5 flex flex-col gap-4">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
-              <select className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
-                <option>Cualquier apartamento</option>
-                {apartments.map(a => <option key={a.slug}>{a.name}</option>)}
+              <select name="apt" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
+                <option value="">Cualquier apartamento</option>
+                {apartments.map(a => <option key={a.slug} value={a.slug}>{a.name}</option>)}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-                <input type="date" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+                <input type="date" name="checkIn" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
               </div>
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-                <input type="date" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+                <input type="date" name="checkOut" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
               </div>
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
+              <select name="personas" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
                 <option value="1">1 persona</option>
                 <option value="2">2 personas</option>
               </select>
             </div>
-            <button className="text-white font-bold text-sm py-3 rounded-full uppercase tracking-widest w-full transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
+            <button type="submit" className="text-white font-bold text-sm py-3 rounded-full uppercase tracking-widest w-full transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
               Buscar
             </button>
           </div>
-        </div>
+        </form>
       </div>
 
       {/* APARTMENTS */}

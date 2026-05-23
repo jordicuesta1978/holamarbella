@@ -50,9 +50,10 @@ CREATE TABLE IF NOT EXISTS reservas (
   check_out        DATE NOT NULL,
   guests           INT NOT NULL DEFAULT 1,
   status           TEXT NOT NULL DEFAULT 'pending'
-                     CHECK (status IN ('pending','confirmed','cancelled')),
+                     CHECK (status IN ('pending','confirmed','cancelled','blocked')),
   notes            TEXT,
   total_price      INT,
+  booking_ref      TEXT UNIQUE,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT check_dates CHECK (check_out > check_in)
 );

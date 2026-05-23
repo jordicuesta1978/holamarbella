@@ -9,7 +9,7 @@ import type { Apartment } from '@/lib/apartments';
 import {
   X, ChevronLeft, ChevronRight, Grid3X3, Check, Wifi, Wind,
   Waves, Mountain, ChefHat, Tv, Laptop, Sun, Car, Star, BedDouble,
-  Droplets, ShieldCheck, Building2, Shirt, Coffee, Award, Users,
+  Droplets, ShieldCheck, Building2, Shirt, Coffee, Users,
   Clock, Ban, Cigarette, Volume2, Camera,
 } from 'lucide-react';
 
@@ -41,6 +41,14 @@ function getTopAmenityIcon(label: string): React.ComponentType<{ size?: number; 
   if (l.includes('desayuno') || l.includes('café')) return Coffee;
   return Check;
 }
+
+const APT_COORDS: Record<string, { lng: number; lat: number }> = {
+  paloma:  { lng: -4.8852, lat: 36.5099 },
+  micu:    { lng: -4.8847, lat: 36.5106 },
+  larysol: { lng: -4.8907, lat: 36.5078 },
+  ami:     { lng: -4.8843, lat: 36.5112 },
+  banesto: { lng: -4.8849, lat: 36.5094 },
+};
 
 function calcNights(checkIn: string, checkOut: string): number {
   if (!checkIn || !checkOut) return 0;
@@ -149,12 +157,7 @@ export default function ApartamentoDetail({ apartment, slug }: { apartment: Apar
         <div>
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <div className="flex flex-wrap gap-2 items-center mb-3">
-              {apartment.badge && (
-                <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full text-white" style={{ backgroundColor: 'var(--primary)' }}>
-                  <Award size={12} /> {apartment.badge}
-                </span>
-              )}
-              <span className="flex items-center gap-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+<span className="flex items-center gap-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                 <span className="text-yellow-400">★</span>
                 <strong style={{ color: 'var(--on-surface)' }}>{apartment.rating.toFixed(2)}</strong>
                 · {apartment.reviewCount} reseñas
@@ -221,13 +224,22 @@ export default function ApartamentoDetail({ apartment, slug }: { apartment: Apar
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--on-surface)' }}>Ubicación</h2>
             <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>Marbella, Málaga, España</p>
-            <div className="w-full rounded-2xl flex items-center justify-center" style={{ height: 280, backgroundColor: 'var(--arena)', border: '1px solid var(--outline-variant)' }}>
-              <div className="text-center">
-                <Mountain size={32} strokeWidth={1} style={{ color: 'var(--primary)', margin: '0 auto 8px' }} />
-                <p className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>Mapa disponible próximamente</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--outline-variant)' }}>Mapbox · Pin exacto</p>
+            {process.env.NEXT_PUBLIC_MAPBOX_TOKEN && APT_COORDS[slug] ? (
+              <img
+                src={`https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-l+4B766B(${APT_COORDS[slug].lng},${APT_COORDS[slug].lat})/${APT_COORDS[slug].lng},${APT_COORDS[slug].lat},15,0/600x280@2x?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
+                alt="Ubicación del apartamento en Marbella"
+                className="w-full rounded-2xl object-cover"
+                style={{ height: 280 }}
+              />
+            ) : (
+              <div className="w-full rounded-2xl flex items-center justify-center" style={{ height: 280, backgroundColor: 'var(--arena)', border: '1px solid var(--outline-variant)' }}>
+                <div className="text-center">
+                  <Mountain size={32} strokeWidth={1} style={{ color: 'var(--primary)', margin: '0 auto 8px' }} />
+                  <p className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>Mapa disponible próximamente</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--outline-variant)' }}>Mapbox · Pin exacto</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>

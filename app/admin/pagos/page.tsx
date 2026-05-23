@@ -26,7 +26,6 @@ async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow
     db.from('reservas')
       .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at')
       .eq('status', 'confirmed')
-      .not('total_price', 'is', null)
       .is('paid_at', null)
       .order('created_at', { ascending: false }),
     db.from('reservas')
