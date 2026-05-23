@@ -99,7 +99,7 @@ export default async function ConversacionPage({
             ['Llegada', fmtDate(reserva.check_in)],
             ['Salida', fmtDate(reserva.check_out)],
             nights ? ['Duración', `${nights} noche${nights > 1 ? 's' : ''}`] : null,
-          ].filter(Boolean).map(([label, value]) => (
+          ].filter((row): row is [React.ReactNode, React.ReactNode] => row !== null).map(([label, value]) => (
             <div key={String(label)} style={{ display: 'flex', padding: '12px 20px', borderBottom: '1px solid #f5f5f5', gap: 16 }}>
               <span style={{ width: 110, flexShrink: 0, fontSize: 13, color: '#888', fontWeight: 500 }}>{label}</span>
               <span style={{ fontSize: 13, color: '#1a1a2e', fontWeight: 500 }}>{value as React.ReactNode}</span>
