@@ -59,13 +59,23 @@ function calcNights(checkIn: string, checkOut: string): number {
   return Math.max(0, Math.round(diff / 86400000));
 }
 
-export default function ApartamentoDetail({ apartment, slug }: { apartment: Apartment; slug: string }) {
+export default function ApartamentoDetail({
+  apartment,
+  slug,
+  initialCheckIn = '',
+  initialCheckOut = '',
+}: {
+  apartment: Apartment;
+  slug: string;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+}) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [persons, setPersons] = useState(1);
 
   const photos = getPhotos(slug, apartment.photoCount);

@@ -70,8 +70,7 @@ export default async function ReservaDetailPage({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>
-            {getBookingRef(reserva.id, reserva.apartment_slug, reserva.check_in ?? reserva.created_at)}
-            <span style={{ fontSize: 13, fontWeight: 400, color: '#aaa', marginLeft: 10 }}>#{reserva.id}</span>
+            {reserva.booking_ref || getBookingRef(reserva.id, reserva.apartment_slug, reserva.check_in ?? reserva.created_at)}
           </h1>
           <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: STATUS_BG[reserva.status], color: STATUS_COLOR[reserva.status] }}>
             {STATUS_LABEL[reserva.status]}

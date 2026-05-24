@@ -22,6 +22,9 @@ function ConfirmacionContent() {
   const checkin = searchParams.get('checkin') || '';
   const checkout = searchParams.get('checkout') || '';
   const personas = searchParams.get('personas') || '';
+  const rate = searchParams.get('rate') || '';
+  const nights = searchParams.get('nights') || '';
+  const total = searchParams.get('total') || '';
 
   const [aptInfo, setAptInfo] = useState<{ title: string; subtitle: string } | null>(null);
 
@@ -45,6 +48,7 @@ function ConfirmacionContent() {
     ...(checkin ? [['Llegada', fmtDate(checkin)] as [string, string]] : []),
     ...(checkout ? [['Salida', fmtDate(checkout)] as [string, string]] : []),
     ...(personas ? [['Personas', `${personas} persona${Number(personas) > 1 ? 's' : ''}`] as [string, string]] : []),
+    ...(total ? [['Precio estimado', `${rate}€/noche × ${nights} noches = ${total}€`] as [string, string]] : []),
   ];
 
   return (
@@ -79,6 +83,12 @@ function ConfirmacionContent() {
             </div>
           ))}
         </div>
+      )}
+
+      {total && (
+        <p className="text-xs mb-6 text-center" style={{ color: 'var(--on-surface-variant)' }}>
+          * El precio exacto será confirmado al revisar tu solicitud.
+        </p>
       )}
 
       <p className="text-base leading-relaxed mb-10" style={{ color: 'var(--on-surface)' }}>

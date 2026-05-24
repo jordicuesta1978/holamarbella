@@ -12,15 +12,29 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const apt = await getApartmentBySlug(slug);
   if (!apt) return {};
+  const displayName = `Apartamento ${apt.title.split(' · ')[0]}`;
   return {
-    title: `${apt.title} · HolaMarbella`,
+    title: `${displayName} · HolaMarbella`,
     description: apt.description.slice(0, 160),
   };
 }
 
-export default async function ApartamentoPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ApartamentoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ checkin?: string; checkout?: string }>
+}) {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const apartment = await getApartmentBySlug(slug);
   if (!apartment) notFound();
-  return <ApartamentoDetail apartment={apartment} slug={slug} />;
+  return (
+    <ApartamentoDetail
+      apartment={apartment}
+      slug={slug}
+      initialCheckIn={sp.checkin ?? ''}
+      initialCheckOut={sp.checkout ?? ''}
+    />
+  );
 }

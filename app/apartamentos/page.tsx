@@ -64,7 +64,7 @@ export default async function ApartamentosPage({
           {filteredApts.map((apt) => {
             const isAvailable = availability ? availability[apt.slug] : null
             return (
-              <Link key={apt.slug} href={`/apartamentos/${apt.slug}`} className="group block">
+              <Link key={apt.slug} href={`/apartamentos/${apt.slug}${hasDates ? `?checkin=${checkIn}&checkout=${checkOut}` : ''}`} className="group block">
                 <div
                   className="rounded-2xl overflow-hidden border hover:shadow-xl transition-all duration-300"
                   style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}

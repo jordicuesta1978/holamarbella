@@ -8,6 +8,13 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 
+const APT_NAMES: Record<string, string> = {
+  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
+}
+function aptDisplay(slug: string, fallbackTitle: string): string {
+  return APT_NAMES[slug] ? `Apartamento ${APT_NAMES[slug]}` : fallbackTitle
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function login(prevState: string | null, formData: FormData) {
@@ -52,7 +59,7 @@ export async function updateReservaStatus(
   const apt = await (supabaseAdmin as any).from('apartments').select('title').eq('slug', (reserva as any).apartment_slug).single()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const r = reserva as any
-  const aptTitle = apt.data?.title ?? r.apartment_slug
+  const aptTitle = aptDisplay(r.apartment_slug, apt.data?.title ?? r.apartment_slug)
 
   if (status === 'confirmed') {
     await resend.emails.send({

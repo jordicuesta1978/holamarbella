@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import type { Apartment } from '@/lib/apartments';
 import { crearReserva } from '@/app/actions/reservar';
+import { getAvailability } from '@/app/actions/availability';
 
 function calcNights(a: string, b: string): number {
   if (!a || !b) return 0;
@@ -79,6 +80,14 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
     if (!validate()) return;
     setSubmitting(true);
 
+    // Verify availability before submitting
+    const avail = await getAvailability(form.checkIn, form.checkOut);
+    if (avail[slug] === false) {
+      setErrors({ global: 'Este apartamento no está disponible para las fechas seleccionadas. Por favor, elige otras fechas.' });
+      setSubmitting(false);
+      return;
+    }
+
     const result = await crearReserva({
       apartmentSlug: slug,
       apartmentTitle: apartment.title,
@@ -105,6 +114,7 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
       checkin: form.checkIn,
       checkout: form.checkOut,
       personas: String(form.personas),
+      ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), total: String(total) } : {}),
     })
     router.push(`/confirmacion?${qs.toString()}`);
   };
