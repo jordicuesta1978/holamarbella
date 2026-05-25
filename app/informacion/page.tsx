@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/lib/supabase'
 
 export const metadata: Metadata = {
@@ -18,12 +19,11 @@ interface Articulo {
 }
 
 async function getPublishedArticulos(): Promise<Articulo[]> {
-  const { data } = await supabase
+  const { data } = await (supabase as any)
     .from('articulos')
     .select('id, titulo, slug, contenido, imagen_url, created_at')
     .eq('publicado', true)
     .order('created_at', { ascending: false })
-    .catch(() => ({ data: [] }))
   return (data ?? []) as Articulo[]
 }
 
