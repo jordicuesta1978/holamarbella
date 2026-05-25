@@ -17,11 +17,18 @@ export default async function ApartamentosPage({
   searchParams: Promise<{ checkIn?: string; checkOut?: string; apt?: string; flex?: string }>
 }) {
   const { checkIn, checkOut, apt, flex: flexParam } = await searchParams
-  const flex = Math.min(3, Math.max(0, Number(flexParam) || 0))
+  const flex = Math.min(7, Math.max(0, Number(flexParam) || 0))
   const apartments = await getApartments()
 
   const hasDates = !!(checkIn && checkOut && checkIn < checkOut)
-  const availability = hasDates ? await getAvailability(checkIn!, checkOut!, flex) : null
+  let availability: Record<string, boolean> | null = null
+  if (hasDates) {
+    try {
+      availability = await getAvailability(checkIn!, checkOut!, flex)
+    } catch {
+      // availability stays null — page renders without availability badges
+    }
+  }
 
   const filteredApts = apt
     ? apartments.filter(a => a.slug === apt)
