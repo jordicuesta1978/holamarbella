@@ -18,7 +18,7 @@ if (!existsSync(SCREENSHOTS)) mkdirSync(SCREENSHOTS, { recursive: true })
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
 const results = []
 
-async function check(browser, name, url, checks) {
+async function check(browser, name, url, checks, opts = {}) {
   const page = await browser.newPage()
   await page.setViewportSize({ width: 1280, height: 900 })
   const passed = []
@@ -28,7 +28,7 @@ async function check(browser, name, url, checks) {
   try {
     const res = await page.goto(BASE + url, { waitUntil: 'domcontentloaded', timeout: 30000 })
     const status = res?.status() ?? 0
-    if (status >= 400) {
+    if (status >= 400 && !opts.allowHttpErrors) {
       failed.push(`HTTP ${status}`)
     } else {
       await page.waitForTimeout(2500)
@@ -124,11 +124,14 @@ await check(browser, 'Reservar Micu (detalle)', '/apartamentos/micu', [
 ])
 
 await check(browser, 'API Pagar (ruta existe)', '/api/pagar/token-inexistente', [
-  { desc: 'Ruta responde y redirige (no da 404 de Next.js)', fn: async p => {
+  { desc: 'Ruta redirige a /conversacion (no se queda en /api/pagar)', fn: async p => {
+    // Si la ruta existe, redirige a /conversacion/[token] (que puede dar 404 por token inválido)
+    // Lo importante: la URL cambió de /api/pagar → confirmamos que la ruta existe
     const url = p.url()
-    if (url.includes('/api/pagar/')) throw new Error('Ruta no redirigió — puede no existir en el deploy')
+    if (url.includes('/api/pagar/token-inexistente')) throw new Error('Ruta no existe en el deploy — URL no cambió')
+    // Si llegó a /conversacion/token-inexistente y da 404, la ruta funciona correctamente
   }},
-])
+], { allowHttpErrors: true })
 
 await check(browser, 'Admin contenido', '/admin/contenido', [
   { desc: 'Carga sin error (redirige a login o contenido)', fn: async p => {
