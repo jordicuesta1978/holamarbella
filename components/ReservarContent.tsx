@@ -83,43 +83,47 @@ export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT
     if (!validate()) return;
     setSubmitting(true);
 
-    // Verify availability before submitting
-    const avail = await getAvailability(form.checkIn, form.checkOut);
-    if (avail[slug] === false) {
-      setErrors({ global: 'Este apartamento no está disponible para las fechas seleccionadas. Por favor, elige otras fechas.' });
+    try {
+      const avail = await getAvailability(form.checkIn, form.checkOut);
+      if (avail[slug] === false) {
+        setErrors({ global: 'Este apartamento no está disponible para las fechas seleccionadas. Por favor, elige otras fechas.' });
+        setSubmitting(false);
+        return;
+      }
+
+      const result = await crearReserva({
+        apartmentSlug: slug,
+        apartmentTitle: apartment.title,
+        nombre: form.nombre,
+        email: form.email,
+        telefono: form.telefono,
+        personas: form.personas,
+        checkIn: form.checkIn,
+        checkOut: form.checkOut,
+        mensaje: form.mensaje,
+      });
+
+      if (!result.ok) {
+        setErrors({ global: `No se pudo enviar la solicitud: ${result.error}` });
+        setSubmitting(false);
+        return;
+      }
+
+      const qs = new URLSearchParams({
+        apartment: slug,
+        name: form.nombre.split(' ')[0],
+        token: result.token,
+        ref: result.bookingRef,
+        checkin: form.checkIn,
+        checkout: form.checkOut,
+        personas: String(form.personas),
+        ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), subtotal: String(subtotal), cleaning: String(cleaningFee), total: String(total) } : {}),
+      });
+      router.push(`/confirmacion?${qs.toString()}`);
+    } catch {
+      setErrors({ global: 'Error al conectar con el servidor. Por favor, inténtalo de nuevo.' });
       setSubmitting(false);
-      return;
     }
-
-    const result = await crearReserva({
-      apartmentSlug: slug,
-      apartmentTitle: apartment.title,
-      nombre: form.nombre,
-      email: form.email,
-      telefono: form.telefono,
-      personas: form.personas,
-      checkIn: form.checkIn,
-      checkOut: form.checkOut,
-      mensaje: form.mensaje,
-    });
-
-    if (!result.ok) {
-      setErrors({ global: 'No se pudo enviar la solicitud. Por favor, inténtalo de nuevo.' });
-      setSubmitting(false);
-      return;
-    }
-
-    const qs = new URLSearchParams({
-      apartment: slug,
-      name: form.nombre.split(' ')[0],
-      token: result.token,
-      ref: result.bookingRef,
-      checkin: form.checkIn,
-      checkout: form.checkOut,
-      personas: String(form.personas),
-      ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), subtotal: String(subtotal), cleaning: String(cleaningFee), total: String(total) } : {}),
-    })
-    router.push(`/confirmacion?${qs.toString()}`);
   };
 
   const maxPersonas = apartment.capacity.persons;

@@ -44,7 +44,10 @@
       "Bash(gh run *)",
       "WebFetch(domain:holamarbella.vercel.app)",
       "Bash(npx playwright *)",
-      "Bash(not exist *)"
+      "Bash(not exist *)",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(Start-Sleep -Seconds 60)"
     ]
   }
 }

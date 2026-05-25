@@ -44,8 +44,9 @@ export async function crearReserva(
 ): Promise<{ ok: true; token: string; bookingRef: string } | { ok: false; error: string }> {
   const conversationToken = crypto.randomUUID()
 
+  // Use service-role client to bypass RLS on inserts
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await supabase.from('reservas').insert({
+  const { error } = await (supabaseAdmin as any).from('reservas').insert({
     apartment_slug: input.apartmentSlug,
     guest_name: input.nombre,
     guest_email: input.email,
@@ -53,10 +54,10 @@ export async function crearReserva(
     check_in: input.checkIn,
     check_out: input.checkOut,
     guests: input.personas,
-    status: 'pending' as const,
+    status: 'pending',
     notes: input.mensaje,
     conversation_token: conversationToken,
-  } as any)
+  })
 
   if (error) return { ok: false, error: error.message }
 

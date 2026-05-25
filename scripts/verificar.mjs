@@ -149,6 +149,33 @@ await check(browser, 'Detalle con fechas', '/apartamentos/paloma?checkin=2026-07
   }},
 ])
 
+await check(browser, '/informacion (blog)', '/informacion', [
+  { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
+  { desc: 'Sin error de aplicación', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+  }},
+])
+
+await check(browser, '/apartamentos con fechas', '/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07', [
+  { desc: 'Carga sin error de servidor', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+  }},
+  { desc: 'Muestra apartamentos', fn: p => p.locator('h2').first().waitFor({ timeout: 8000 }) },
+])
+
+await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
+  { desc: 'Formulario carga', fn: p => p.locator('h1:has-text("Solicitar reserva")').waitFor({ timeout: 8000 }) },
+  { desc: 'Botón enviar visible y sin error previo', fn: async p => {
+    await p.waitForTimeout(500)
+    const btn = await p.locator('button[type="submit"]').first()
+    await btn.waitFor({ timeout: 5000 })
+    const text = await btn.textContent()
+    if (text?.includes('Application error')) throw new Error('Error de aplicación en botón')
+  }},
+])
+
 await browser.close()
 
 // ── Informe ──────────────────────────────────────────────────────────────────

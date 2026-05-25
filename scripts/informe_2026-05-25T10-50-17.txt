@@ -1,0 +1,70 @@
+════════════════════════════════════════════════════════════════
+  INFORME DE VERIFICACIÓN — HolaMarbella
+  25/5/2026, 12:51:00
+  Base URL: https://holamarbella.vercel.app
+════════════════════════════════════════════════════════════════
+
+✅  Home  (/)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" visible
+   ✓ "Apartamento Micu" visible
+   ✓ Buscador con fechas
+   ✓ Sin "por Mar"
+   📸 scripts/screenshots/2026-05-25T10-50-17_Home.png
+
+✅  Apartamentos  (/apartamentos)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" en tarjeta
+   ✓ "Apartamento Micu" en tarjeta
+   ✓ Subtítulo descriptivo visible
+   ✓ Sin badges TOP AIRBNB
+   📸 scripts/screenshots/2026-05-25T10-50-17_Apartamentos.png
+
+✅  Detalle Paloma  (/apartamentos/paloma)
+   ✓ Carga sin error
+   ✓ H1 "Apartamento Paloma"
+   ✓ Subtítulo descriptivo
+   ✓ Sección Ubicación con mapa
+   ✓ Botón "Solicitar reserva"
+   📸 scripts/screenshots/2026-05-25T10-50-17_Detalle_Paloma.png
+
+✅  Reservar Paloma  (/reservar/paloma)
+   ✓ Carga sin error
+   ✓ Formulario visible
+   ✓ "Apartamento Paloma" en resumen
+   ✓ Campo nombre
+   ✓ Campo email
+   📸 scripts/screenshots/2026-05-25T10-50-17_Reservar_Paloma.png
+
+✅  Confirmacion (vacía)  (/confirmacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   ✓ "Solicitud enviada" visible
+   📸 scripts/screenshots/2026-05-25T10-50-17_Confirmacion__vac_a_.png
+
+✅  Admin login  (/admin/login)
+   ✓ Carga sin error
+   ✓ Campo email
+   ✓ Campo contraseña
+   📸 scripts/screenshots/2026-05-25T10-50-17_Admin_login.png
+
+✅  Reservar Micu (detalle)  (/apartamentos/micu)
+   ✓ H1 "Apartamento Micu"
+   📸 scripts/screenshots/2026-05-25T10-50-17_Reservar_Micu__detalle_.png
+
+✅  API Pagar (ruta existe)  (/api/pagar/token-inexistente)
+   ✓ Ruta redirige a /conversacion (no se queda en /api/pagar)
+   📸 scripts/screenshots/2026-05-25T10-50-17_API_Pagar__ruta_existe_.png
+
+✅  Admin contenido  (/admin/contenido)
+   ✓ Carga sin error (redirige a login o contenido)
+   📸 scripts/screenshots/2026-05-25T10-50-17_Admin_contenido.png
+
+✅  Detalle con fechas  (/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07)
+   ✓ Carga con fechas en URL
+   ✓ Fecha llegada pre-rellenada
+   📸 scripts/screenshots/2026-05-25T10-50-17_Detalle_con_fechas.png
+
+════════════════════════════════════════════════════════════════
+  Resultado: 31 OK  ·  0 fallos
+════════════════════════════════════════════════════════════════

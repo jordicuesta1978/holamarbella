@@ -1,0 +1,61 @@
+════════════════════════════════════════════════════════════════
+  INFORME DE VERIFICACIÓN — HolaMarbella
+  24/5/2026, 23:55:15
+  Base URL: https://holamarbella.vercel.app
+════════════════════════════════════════════════════════════════
+
+⚠️  Home  (/)
+   ✓ Carga sin error
+   ✓ Sin "por Mar"
+   ✗ "Apartamento Paloma" visible → locator.waitFor: Timeout 8000ms exceeded.
+   ✗ "Apartamento Micu" visible → locator.waitFor: Timeout 5000ms exceeded.
+   ✗ Buscador con fechas → locator.waitFor: Error: strict mode violation: locator('input[name="checkIn"]') resolved to 2 elements:
+   📸 scripts/screenshots/2026-05-24T21-54-32_Home.png
+
+✅  Apartamentos  (/apartamentos)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" en tarjeta
+   ✓ "Apartamento Micu" en tarjeta
+   ✓ Subtítulo descriptivo visible
+   ✓ Sin badges TOP AIRBNB
+   📸 scripts/screenshots/2026-05-24T21-54-32_Apartamentos.png
+
+✅  Detalle Paloma  (/apartamentos/paloma)
+   ✓ Carga sin error
+   ✓ H1 "Apartamento Paloma"
+   ✓ Subtítulo descriptivo
+   ✓ Sección Ubicación con mapa
+   ✓ Botón "Solicitar reserva"
+   📸 scripts/screenshots/2026-05-24T21-54-32_Detalle_Paloma.png
+
+✅  Reservar Paloma  (/reservar/paloma)
+   ✓ Carga sin error
+   ✓ Formulario visible
+   ✓ "Apartamento Paloma" en resumen
+   ✓ Campo nombre
+   ✓ Campo email
+   📸 scripts/screenshots/2026-05-24T21-54-32_Reservar_Paloma.png
+
+⚠️  Confirmacion (vacía)  (/confirmacion)
+   ✓ Carga sin error
+   ✗ Sin error 500 → Error 500 detectado
+   📸 scripts/screenshots/2026-05-24T21-54-32_Confirmacion__vac_a_.png
+
+✅  Admin login  (/admin/login)
+   ✓ Carga sin error
+   ✓ Campo email
+   ✓ Campo contraseña
+   📸 scripts/screenshots/2026-05-24T21-54-32_Admin_login.png
+
+✅  Reservar Micu (detalle)  (/apartamentos/micu)
+   ✓ H1 "Apartamento Micu"
+   📸 scripts/screenshots/2026-05-24T21-54-32_Reservar_Micu__detalle_.png
+
+⚠️  Detalle con fechas  (/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07)
+   ✓ Carga con fechas en URL
+   ✗ Fecha llegada pre-rellenada → page is not defined
+   📸 scripts/screenshots/2026-05-24T21-54-32_Detalle_con_fechas.png
+
+════════════════════════════════════════════════════════════════
+  Resultado: 23 OK  ·  5 fallos
+════════════════════════════════════════════════════════════════

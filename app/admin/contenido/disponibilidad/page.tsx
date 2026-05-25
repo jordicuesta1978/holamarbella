@@ -1,4 +1,5 @@
 import { getBloqueos, addBloqueo, deleteBloqueo } from '../actions'
+import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
 
 const APTS = [
   { slug: 'paloma', label: 'Paloma' },
@@ -12,11 +13,45 @@ function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function expandRanges(bloqueos: { apartment_slug: string; fecha_inicio: string; fecha_fin: string; motivo: string }[]) {
+  const marks: Record<string, DayMark> = {}
+  for (const b of bloqueos) {
+    const start = new Date(b.fecha_inicio + 'T00:00:00')
+    const end = new Date(b.fecha_fin + 'T00:00:00')
+    for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split('T')[0]
+      marks[key] = { bg: '#e5e7eb', color: '#6b7280', label: b.motivo || 'Bloqueado' }
+    }
+  }
+  return marks
+}
+
 export default async function DisponibilidadPage() {
   const bloqueos = await getBloqueos().catch(() => [])
+  const markedDates = expandRanges(bloqueos)
+
+  const now = new Date()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Calendar */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
+          <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Calendario de disponibilidad</h2>
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          <CalendarGrid
+            markedDates={markedDates}
+            initialYear={now.getFullYear()}
+            initialMonth={now.getMonth()}
+            legend={[
+              { bg: '#e5e7eb', label: 'Bloqueado manualmente' },
+              { bg: '#f8fafc', label: 'Libre' },
+            ]}
+          />
+        </div>
+      </div>
+
       {/* Add block */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
@@ -41,7 +76,7 @@ export default async function DisponibilidadPage() {
             <input type="date" name="desde" required style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Hasta</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Hasta (excl.)</label>
             <input type="date" name="hasta" required style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
@@ -63,7 +98,7 @@ export default async function DisponibilidadPage() {
           <p style={{ padding: '20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>No hay bloqueos activos</p>
         ) : bloqueos.map((b: { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; motivo: string }, i: number) => (
           <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < bloqueos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
-            <span style={{ width: 70, fontSize: 12, fontWeight: 700, color: '#4B766B', background: '#f0f9f6', borderRadius: 6, padding: '3px 8px', textAlign: 'center' }}>
+            <span style={{ width: 70, fontSize: 12, fontWeight: 700, color: '#4B766B', background: '#f0f9f6', borderRadius: 6, padding: '3px 8px', textAlign: 'center', flexShrink: 0 }}>
               {APTS.find(a => a.slug === b.apartment_slug)?.label ?? b.apartment_slug}
             </span>
             <span style={{ fontSize: 13, color: '#1a1a2e', flex: 1 }}>
@@ -75,7 +110,7 @@ export default async function DisponibilidadPage() {
               await deleteBloqueo(b.id)
             }}>
               <button type="submit" style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                Eliminar
+                Desbloquear
               </button>
             </form>
           </div>

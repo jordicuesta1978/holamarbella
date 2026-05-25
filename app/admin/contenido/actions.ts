@@ -28,7 +28,8 @@ export async function getCleaningFee(slug: string): Promise<number> {
 // ── Bloqueos ──────────────────────────────────────────────────────────────────
 
 export async function addBloqueo(slug: string, desde: string, hasta: string, motivo: string) {
-  await db.from('bloqueos').insert({ apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, motivo })
+  const { error } = await db.from('bloqueos').insert({ apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, motivo })
+  if (error) throw new Error(error.message)
   revalidatePath('/admin/contenido/disponibilidad')
 }
 
@@ -45,7 +46,8 @@ export async function getBloqueos() {
 // ── Precios ───────────────────────────────────────────────────────────────────
 
 export async function addPrecio(slug: string, desde: string, hasta: string, precio: number) {
-  await db.from('precios').insert({ apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, precio_noche: precio })
+  const { error } = await db.from('precios').insert({ apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, precio_noche: precio })
+  if (error) throw new Error(error.message)
   revalidatePath('/admin/contenido/precios')
 }
 
@@ -59,11 +61,50 @@ export async function getPrecios() {
   return data ?? []
 }
 
-// ── Apartamentos content ──────────────────────────────────────────────────────
+// ── Apartamentos ──────────────────────────────────────────────────────────────
+
+export async function getApartamentos(): Promise<Record<string, any>[]> {
+  const { data } = await db.from('apartments').select('*').order('id').catch(() => ({ data: [] }))
+  return data ?? []
+}
 
 export async function saveApartamento(slug: string, fields: { title?: string; subtitle?: string; description?: string }) {
   await db.from('apartments').update(fields).eq('slug', slug)
   revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath(`/apartamentos/${slug}`)
+}
+
+export async function saveApartamentoFull(slug: string, fields: {
+  title?: string
+  subtitle?: string
+  description?: string
+  persons?: number
+  bedrooms?: number
+  bed?: string
+  bathrooms?: number
+  bed_extras?: string
+  license?: string
+  price_min?: number
+  price_max?: number
+  top_amenities?: string[]
+  active?: boolean
+  cleaning_fee?: number
+}) {
+  const { active, cleaning_fee, ...rest } = fields
+
+  // Core fields (always exist)
+  await db.from('apartments').update(rest).eq('slug', slug)
+
+  // New fields (post-migration v2) — graceful degradation
+  const newFields: Record<string, unknown> = {}
+  if (active !== undefined) newFields.active = active
+  if (cleaning_fee !== undefined) newFields.cleaning_fee = cleaning_fee
+  if (Object.keys(newFields).length > 0) {
+    await db.from('apartments').update(newFields).eq('slug', slug).catch(() => {})
+  }
+
+  revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath('/apartamentos')
   revalidatePath(`/apartamentos/${slug}`)
 }
 
@@ -74,11 +115,14 @@ export async function getArticulos() {
   return data ?? []
 }
 
-export async function saveArticulo(id: number | null, titulo: string, slug: string, contenido: string, publicado: boolean) {
+export async function saveArticulo(id: number | null, titulo: string, slug: string, contenido: string, publicado: boolean, imagen_url?: string) {
+  const payload: Record<string, unknown> = { titulo, slug, contenido, publicado }
+  if (imagen_url !== undefined) payload.imagen_url = imagen_url || null
   if (id) {
-    await db.from('articulos').update({ titulo, slug, contenido, publicado, updated_at: new Date().toISOString() }).eq('id', id)
+    payload.updated_at = new Date().toISOString()
+    await db.from('articulos').update(payload).eq('id', id)
   } else {
-    await db.from('articulos').insert({ titulo, slug, contenido, publicado })
+    await db.from('articulos').insert(payload)
   }
   revalidatePath('/admin/contenido/blog')
   revalidatePath('/informacion')
@@ -92,7 +136,12 @@ export async function deleteArticulo(id: number) {
 // ── Reseñas ───────────────────────────────────────────────────────────────────
 
 export async function getResenas() {
-  const { data } = await db.from('resenas').select('*').order('id', { ascending: false }).catch(() => ({ data: [] }))
+  const { data } = await db
+    .from('resenas')
+    .select('*')
+    .order('sort_order', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true })
+    .catch(() => ({ data: [] }))
   return data ?? []
 }
 
@@ -102,12 +151,37 @@ export async function saveResena(id: number | null, fields: {
   if (id) {
     await db.from('resenas').update(fields).eq('id', id)
   } else {
-    await db.from('resenas').insert(fields)
+    const { data: last } = await db.from('resenas').select('sort_order').order('sort_order', { ascending: false }).limit(1)
+    const nextOrder = ((last?.[0]?.sort_order ?? 0) as number) + 1
+    await db.from('resenas').insert({ ...fields, sort_order: nextOrder })
   }
   revalidatePath('/admin/contenido/resenas')
 }
 
 export async function deleteResena(id: number) {
   await db.from('resenas').delete().eq('id', id)
+  revalidatePath('/admin/contenido/resenas')
+}
+
+export async function moveResena(id: number, direction: 'up' | 'down') {
+  const { data: current } = await db.from('resenas').select('id, sort_order').eq('id', id).single()
+  if (!current) return
+
+  const currentOrder = current.sort_order ?? current.id
+
+  let adjacentQuery = db.from('resenas').select('id, sort_order')
+  if (direction === 'up') {
+    adjacentQuery = adjacentQuery.lt('sort_order', currentOrder).order('sort_order', { ascending: false }).limit(1)
+  } else {
+    adjacentQuery = adjacentQuery.gt('sort_order', currentOrder).order('sort_order', { ascending: true }).limit(1)
+  }
+  const { data: adjacents } = await adjacentQuery
+  const adjacent = adjacents?.[0]
+  if (!adjacent) return
+
+  const adjOrder = adjacent.sort_order ?? adjacent.id
+  await db.from('resenas').update({ sort_order: adjOrder }).eq('id', id)
+  await db.from('resenas').update({ sort_order: currentOrder }).eq('id', adjacent.id)
+
   revalidatePath('/admin/contenido/resenas')
 }

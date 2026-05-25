@@ -82,9 +82,18 @@ const FEATURES = [
   },
 ];
 
+const FLEX_OPTIONS = [
+  { value: '0', label: 'Fecha exacta' },
+  { value: '1', label: '±1 día' },
+  { value: '2', label: '±2 días' },
+  { value: '3', label: '±3 días' },
+  { value: '7', label: '±7 días' },
+]
+
 export default function Home() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [flex, setFlex] = useState('0');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -145,50 +154,65 @@ export default function Home() {
         {/* SEARCH BAR — desktop: pill overlapping next section; mobile: card below hero */}
         {/* Desktop pill */}
         <form action="/apartamentos" method="get" className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
-          <div className="bg-white shadow-2xl rounded-full p-3 pl-8 flex flex-row gap-4 items-center w-full max-w-5xl">
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
-              <select name="apt" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value="">Cualquier apartamento</option>
-                {apartments.map(a => <option key={a.slug} value={a.slug}>{a.name}</option>)}
-              </select>
+          <input type="hidden" name="flex" value={flex} />
+          <div className="bg-white shadow-2xl rounded-3xl p-4 pl-8 flex flex-col gap-3 w-full max-w-5xl">
+            {/* Row 1: Apt, dates, personas, buscar */}
+            <div className="flex flex-row gap-4 items-center">
+              <div className="flex-1 min-w-0">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
+                <select name="apt" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
+                  <option value="">Cualquier apartamento</option>
+                  {apartments.map(a => <option key={a.slug} value={a.slug}>{a.name}</option>)}
+                </select>
+              </div>
+              <div className="w-px h-8 bg-stone-200 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
+                <input type="date" name="checkIn" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+              </div>
+              <div className="w-px h-8 bg-stone-200 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
+                <input type="date" name="checkOut" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+              </div>
+              <div className="w-px h-8 bg-stone-200 shrink-0" />
+              <div className="w-28 shrink-0">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
+                <select name="personas" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
+                  <option value="1">1 persona</option>
+                  <option value="2">2 personas</option>
+                </select>
+              </div>
+              <button type="submit" className="text-white font-bold text-xs px-10 h-10 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
+                Buscar
+              </button>
             </div>
-            <div className="w-px h-8 bg-stone-200 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-              <input type="date" name="checkIn" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
+            {/* Row 2: Flex pills */}
+            <div className="flex items-center gap-2 border-t pt-3" style={{ borderColor: '#f0f0f0' }}>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 shrink-0">Flexibilidad:</span>
+              {FLEX_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFlex(opt.value)}
+                  className="text-xs px-3 py-1 rounded-full border transition-all"
+                  style={{
+                    borderColor: flex === opt.value ? 'var(--primary)' : '#e2e8f0',
+                    background: flex === opt.value ? 'var(--primary)' : 'transparent',
+                    color: flex === opt.value ? '#fff' : 'var(--on-surface-variant)',
+                    fontWeight: flex === opt.value ? 700 : 400,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <div className="w-px h-8 bg-stone-200 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-              <input type="date" name="checkOut" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
-            </div>
-            <div className="w-px h-8 bg-stone-200 shrink-0" />
-            <div className="w-32 shrink-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select name="personas" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value="1">1 persona</option>
-                <option value="2">2 personas</option>
-              </select>
-            </div>
-            <div className="w-px h-8 bg-stone-200 shrink-0" />
-            <div className="w-28 shrink-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Flexibilidad</label>
-              <select name="flex" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value="0">Fecha exacta</option>
-                <option value="1">±1 día</option>
-                <option value="2">±2 días</option>
-                <option value="3">±3 días</option>
-              </select>
-            </div>
-            <button type="submit" className="text-white font-bold text-xs px-10 h-12 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
-              Buscar
-            </button>
           </div>
         </form>
 
         {/* Mobile search */}
         <form action="/apartamentos" method="get" className="md:hidden px-4 py-4" style={{ backgroundColor: 'var(--arena)' }}>
+          <input type="hidden" name="flex" value={flex} />
           <div className="bg-white shadow-lg rounded-2xl p-5 flex flex-col gap-4">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
@@ -216,12 +240,24 @@ export default function Home() {
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Flexibilidad de fechas</label>
-              <select name="flex" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
-                <option value="0">Fecha exacta</option>
-                <option value="1">±1 día</option>
-                <option value="2">±2 días</option>
-                <option value="3">±3 días</option>
-              </select>
+              <div className="flex flex-wrap gap-2">
+                {FLEX_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFlex(opt.value)}
+                    className="text-xs px-3 py-1.5 rounded-full border transition-all"
+                    style={{
+                      borderColor: flex === opt.value ? 'var(--primary)' : '#e2e8f0',
+                      background: flex === opt.value ? 'var(--primary)' : 'transparent',
+                      color: flex === opt.value ? '#fff' : 'var(--on-surface-variant)',
+                      fontWeight: flex === opt.value ? 700 : 400,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <button type="submit" className="text-white font-bold text-sm py-3 rounded-full uppercase tracking-widest w-full transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
               Buscar
