@@ -98,7 +98,7 @@ export async function crearReserva(
         from: FROM,
         to: MAR,
         subject: `🔔 Nueva solicitud — ${input.nombre} · ${displayTitle}`,
-        html: emailMar(input, bookingRef, displayTitle),
+        html: emailMar(input, bookingRef, displayTitle, inserted?.id ?? 0),
       })
     )
   }
@@ -168,7 +168,6 @@ function row(label: string, value: string, border = true): string {
 
 function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
   const firstName = d.nombre.split(' ')[0]
-  const conversationLink = `${BASE_URL}/conversacion/${d.conversationToken}`
   return shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud recibida!</h1>
     <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
@@ -186,26 +185,19 @@ function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
       ${row('Tu mensaje', d.mensaje.replace(/\n/g, '<br>'))}
     </table>
 
-    <div style="text-align:center;margin-bottom:24px;">
-      <a href="${conversationLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:14px;">Ver mi reserva</a>
-      <p style="margin:10px 0 0;font-size:11px;color:#bbb;">Guarda este enlace — es tu acceso privado a esta reserva</p>
-    </div>
-
     <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
       ¿Tienes dudas? Responde directamente a este email.
     </p>
   `)
 }
 
-function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string): string {
+function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
+  const adminLink = `${BASE_URL}/admin/reservas/${reservaId}`
+  const nightsStr = nightsLabel(d.checkIn, d.checkOut).replace(' · ', '') // "X noches"
+
   return shell(`
     <h1 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#4B766B;">Nueva solicitud de reserva</h1>
     <p style="margin:0 0 28px;font-size:13px;color:#999;">${fecha}</p>
@@ -218,12 +210,17 @@ function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string): st
       ${row('Teléfono', d.telefono || '—')}
       ${row('Llegada', fmt(d.checkIn))}
       ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
+      ${nightsStr ? row('Duración', nightsStr) : ''}
       ${row('Personas', `${d.personas}`)}
     </table>
 
-    <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;">
+    <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#888;">Mensaje del huésped</p>
       <p style="margin:0;font-size:14px;color:#1A1A1A;line-height:1.7;white-space:pre-wrap;">${d.mensaje}</p>
     </div>
+
+    ${reservaId ? `<div style="text-align:center;">
+      <a href="${adminLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:13px 28px;border-radius:10px;font-weight:700;font-size:14px;">Ver reserva en admin →</a>
+    </div>` : ''}
   `)
 }

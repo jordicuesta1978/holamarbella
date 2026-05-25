@@ -124,6 +124,30 @@ export default async function ReservaDetailPage({
           </section>
         )}
 
+        {/* Resumen de pagos */}
+        {reserva.total_price && (
+          <section style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 16, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>Pagos</h2>
+            </div>
+            {([
+              ['Total reserva', `${reserva.total_price}€`],
+              reserva.paid_at
+                ? ['Pagado', `${reserva.total_price}€ · ${new Date(reserva.paid_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`]
+                : null,
+              !reserva.paid_at ? ['Pendiente', `${reserva.total_price}€`] : null,
+            ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value]) => (
+              <div key={label} style={{ display: 'flex', padding: '12px 20px', borderBottom: '1px solid #f5f5f5', gap: 16 }}>
+                <span style={{ width: 160, flexShrink: 0, fontSize: 13, color: '#888', fontWeight: 500 }}>{label}</span>
+                <span style={{
+                  fontSize: 13, fontWeight: 600,
+                  color: label === 'Pagado' ? '#4B766B' : label === 'Pendiente' ? '#d97706' : '#1a1a2e',
+                }}>{value}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
         {/* Pricing */}
         <PricingPanel
           id={reserva.id}

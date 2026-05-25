@@ -106,7 +106,7 @@ export async function enviarMensajeHuesped(token: string, texto: string) {
   revalidatePath(`/admin/reservas/${reserva.id}`)
 }
 
-export async function solicitarPago(reservaId: number, amount: number) {
+export async function solicitarPago(reservaId: number, amount: number, comment?: string) {
   const { data: reserva } = await db
     .from('reservas')
     .select('guest_name, guest_email, conversation_token, apartment_slug')
@@ -116,7 +116,9 @@ export async function solicitarPago(reservaId: number, amount: number) {
   if (!reserva) throw new Error('Reserva no encontrada')
   if (!reserva.conversation_token) throw new Error('La reserva no tiene token de conversación')
 
-  const texto = `Hemos preparado el pago para tu reserva. Importe total: ${amount}€. Haz clic en el botón de abajo para completar el pago.`
+  const texto = comment
+    ? `${comment}\n\nImporte: ${amount}€`
+    : `Hemos preparado el pago para tu reserva. Importe: ${amount}€.`
 
   await db.from('mensajes_chat').insert({
     reserva_id: reservaId,
@@ -134,7 +136,7 @@ export async function solicitarPago(reservaId: number, amount: number) {
     from: FROM,
     to: reserva.guest_email,
     subject: 'Solicitud de pago — HolaMarbella',
-    html: emailPagoGuest(firstName, amount, pagarLink),
+    html: emailPagoGuest(firstName, amount, pagarLink, comment),
   }).catch(() => {})
 
   revalidatePath(`/admin/reservas/${reservaId}`)
@@ -186,13 +188,20 @@ function emailToGuest(firstName: string, texto: string, link: string) {
   `)
 }
 
-function emailPagoGuest(firstName: string, amount: number, pagarLink: string) {
+function emailPagoGuest(firstName: string, amount: number, pagarLink: string, comment?: string) {
+  const commentHtml = comment
+    ? `<div style="background:#f9f7f4;border-left:4px solid #4B766B;padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:24px;">
+        <p style="margin:0;font-size:14px;color:#1A1A1A;line-height:1.7;white-space:pre-wrap;">${comment.replace(/\n/g, '<br>')}</p>
+      </div>`
+    : ''
   return shell(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#4B766B;">Solicitud de pago para tu reserva</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
-      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos preparado el pago para tu reserva.
+      Hola <strong style="color:#1A1A1A;">${firstName}</strong>,
     </p>
+    ${commentHtml}
     <div style="background:#f0f9f6;border:2px solid #4B766B;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
+      <p style="margin:0 0 4px;font-size:13px;color:#888;">Importe total</p>
       <p style="margin:0;font-size:40px;font-weight:800;color:#1A1A1A;">${amount}€</p>
     </div>
     <div style="text-align:center;">

@@ -171,6 +171,16 @@ export default function Home() {
                 <option value="2">2 personas</option>
               </select>
             </div>
+            <div className="w-px h-8 bg-stone-200 shrink-0" />
+            <div className="w-28 shrink-0">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Flexibilidad</label>
+              <select name="flex" className="w-full border-none bg-transparent py-2 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
+                <option value="0">Fecha exacta</option>
+                <option value="1">±1 día</option>
+                <option value="2">±2 días</option>
+                <option value="3">±3 días</option>
+              </select>
+            </div>
             <button type="submit" className="text-white font-bold text-xs px-10 h-12 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
               Buscar
             </button>
@@ -202,6 +212,15 @@ export default function Home() {
               <select name="personas" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
                 <option value="1">1 persona</option>
                 <option value="2">2 personas</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Flexibilidad de fechas</label>
+              <select name="flex" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
+                <option value="0">Fecha exacta</option>
+                <option value="1">±1 día</option>
+                <option value="2">±2 días</option>
+                <option value="3">±3 días</option>
               </select>
             </div>
             <button type="submit" className="text-white font-bold text-sm py-3 rounded-full uppercase tracking-widest w-full transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>

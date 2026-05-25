@@ -34,7 +34,9 @@ type FormState = {
 
 type FormErrors = Partial<Record<keyof FormState | 'global', string>>;
 
-export default function ReservarContent({ apartment, slug }: { apartment: Apartment; slug: string }) {
+const DEFAULT_CLEANING_FEE = 40
+
+export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT_CLEANING_FEE }: { apartment: Apartment; slug: string; cleaningFee?: number }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -52,7 +54,8 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
 
   const nights = calcNights(form.checkIn, form.checkOut);
   const midPrice = Math.round((apartment.priceRange[0] + apartment.priceRange[1]) / 2);
-  const total = nights > 0 ? nights * midPrice : 0;
+  const subtotal = nights > 0 ? nights * midPrice : 0;
+  const total = subtotal > 0 ? subtotal + cleaningFee : 0;
 
   const set = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -114,7 +117,7 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
       checkin: form.checkIn,
       checkout: form.checkOut,
       personas: String(form.personas),
-      ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), total: String(total) } : {}),
+      ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), subtotal: String(subtotal), cleaning: String(cleaningFee), total: String(total) } : {}),
     })
     router.push(`/confirmacion?${qs.toString()}`);
   };
@@ -287,7 +290,11 @@ export default function ReservarContent({ apartment, slug }: { apartment: Apartm
                   <>
                     <div className="flex justify-between text-sm">
                       <span style={{ color: 'var(--on-surface-variant)' }}>{midPrice}€ × {nights} noche{nights > 1 ? 's' : ''}</span>
-                      <span style={{ color: 'var(--on-surface)' }}>{total}€</span>
+                      <span style={{ color: 'var(--on-surface)' }}>{subtotal}€</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: 'var(--on-surface-variant)' }}>Gastos de limpieza</span>
+                      <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>
                     </div>
                     <div className="flex justify-between font-bold border-t pt-2" style={{ borderColor: 'var(--outline-variant)', color: 'var(--primary)' }}>
                       <span>Total estimado</span>

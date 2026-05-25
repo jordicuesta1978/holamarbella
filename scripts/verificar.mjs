@@ -123,6 +123,20 @@ await check(browser, 'Reservar Micu (detalle)', '/apartamentos/micu', [
   { desc: 'H1 "Apartamento Micu"', fn: p => p.locator('h1:has-text("Apartamento Micu")').waitFor({ timeout: 8000 }) },
 ])
 
+await check(browser, 'API Pagar (ruta existe)', '/api/pagar/token-inexistente', [
+  { desc: 'Ruta responde y redirige (no da 404 de Next.js)', fn: async p => {
+    const url = p.url()
+    if (url.includes('/api/pagar/')) throw new Error('Ruta no redirigió — puede no existir en el deploy')
+  }},
+])
+
+await check(browser, 'Admin contenido', '/admin/contenido', [
+  { desc: 'Carga sin error (redirige a login o contenido)', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+  }},
+])
+
 await check(browser, 'Detalle con fechas', '/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07', [
   { desc: 'Carga con fechas en URL', fn: p => p.waitForSelector('body') },
   { desc: 'Fecha llegada pre-rellenada', fn: async p => {

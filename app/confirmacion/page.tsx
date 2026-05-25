@@ -24,6 +24,8 @@ function ConfirmacionContent() {
   const personas = searchParams.get('personas') || '';
   const rate = searchParams.get('rate') || '';
   const nights = searchParams.get('nights') || '';
+  const subtotal = searchParams.get('subtotal') || '';
+  const cleaning = searchParams.get('cleaning') || '';
   const total = searchParams.get('total') || '';
 
   const [aptInfo, setAptInfo] = useState<{ title: string; subtitle: string } | null>(null);
@@ -48,7 +50,9 @@ function ConfirmacionContent() {
     ...(checkin ? [['Llegada', fmtDate(checkin)] as [string, string]] : []),
     ...(checkout ? [['Salida', fmtDate(checkout)] as [string, string]] : []),
     ...(personas ? [['Personas', `${personas} persona${Number(personas) > 1 ? 's' : ''}`] as [string, string]] : []),
-    ...(total ? [['Precio estimado', `${rate}€/noche × ${nights} noches = ${total}€`] as [string, string]] : []),
+    ...(subtotal ? [['Alojamiento', `${rate}€/noche × ${nights} noches = ${subtotal}€`] as [string, string]] : []),
+    ...(cleaning ? [['Gastos de limpieza', `${cleaning}€`] as [string, string]] : []),
+    ...(total ? [['Total estimado', `${total}€`] as [string, string]] : []),
   ];
 
   return (
@@ -85,7 +89,7 @@ function ConfirmacionContent() {
         </div>
       )}
 
-      {total && (
+      {(total || subtotal) && (
         <p className="text-xs mb-6 text-center" style={{ color: 'var(--on-surface-variant)' }}>
           * El precio exacto será confirmado al revisar tu solicitud.
         </p>

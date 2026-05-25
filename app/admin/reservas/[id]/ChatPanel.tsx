@@ -25,6 +25,7 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [customAmount, setCustomAmount] = useState<string>(totalPrice ? String(totalPrice) : '')
+  const [paymentComment, setPaymentComment] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -59,7 +60,8 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
     setError(null)
     startTransition(async () => {
       try {
-        await solicitarPago(reservaId, amount)
+        await solicitarPago(reservaId, amount, paymentComment.trim() || undefined)
+        setPaymentComment('')
         router.refresh()
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Error al solicitar pago.'
@@ -85,28 +87,37 @@ export default function ChatPanel({ reservaId, initialMensajes, totalPrice, gues
           Chat con {guestName.split(' ')[0]}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f0f9f6', border: '1.5px solid #4B766B', borderRadius: 8, padding: '5px 8px' }}>
-            <CreditCard size={13} color="#4B766B" />
-            <span style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>Importe:</span>
-            <input
-              type="number"
-              value={customAmount}
-              onChange={e => setCustomAmount(e.target.value)}
-              min={1}
-              placeholder="€"
-              style={{ width: 64, border: '1px solid #b2d4cc', borderRadius: 6, padding: '3px 6px', fontSize: 13, fontWeight: 700, color: '#1a1a2e', outline: 'none', background: '#fff' }}
+          <div style={{ background: '#f0f9f6', border: '1.5px solid #4B766B', borderRadius: 8, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CreditCard size={13} color="#4B766B" />
+              <span style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>Importe:</span>
+              <input
+                type="number"
+                value={customAmount}
+                onChange={e => setCustomAmount(e.target.value)}
+                min={1}
+                placeholder="€"
+                style={{ width: 64, border: '1px solid #b2d4cc', borderRadius: 6, padding: '3px 6px', fontSize: 13, fontWeight: 700, color: '#1a1a2e', outline: 'none', background: '#fff' }}
+              />
+              <button
+                onClick={handleSolicitarPago}
+                disabled={!customAmount || Number(customAmount) <= 0 || isPending}
+                style={{
+                  background: '#4B766B', color: '#fff', border: 'none', borderRadius: 6,
+                  padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  opacity: (!customAmount || Number(customAmount) <= 0 || isPending) ? 0.5 : 1,
+                }}
+              >
+                Solicitar pago
+              </button>
+            </div>
+            <textarea
+              value={paymentComment}
+              onChange={e => setPaymentComment(e.target.value)}
+              placeholder="Comentario para el huésped (opcional)"
+              rows={2}
+              style={{ width: '100%', border: '1px solid #b2d4cc', borderRadius: 6, padding: '5px 8px', fontSize: 12, resize: 'none', outline: 'none', fontFamily: 'inherit', color: '#1a1a2e', background: '#fff', boxSizing: 'border-box' }}
             />
-            <button
-              onClick={handleSolicitarPago}
-              disabled={!customAmount || Number(customAmount) <= 0 || isPending}
-              style={{
-                background: '#4B766B', color: '#fff', border: 'none', borderRadius: 6,
-                padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                opacity: (!customAmount || Number(customAmount) <= 0 || isPending) ? 0.5 : 1,
-              }}
-            >
-              Solicitar pago
-            </button>
           </div>
         </div>
       </div>
