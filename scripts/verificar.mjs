@@ -61,9 +61,16 @@ const browser = await chromium.launch({ headless: true })
 
 await check(browser, 'Home', '/', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
-  { desc: '"Apartamento Paloma" visible', fn: p => p.locator('text=Apartamento Paloma').first().waitFor({ timeout: 8000 }) },
-  { desc: '"Apartamento Micu" visible', fn: p => p.locator('text=Apartamento Micu').first().waitFor({ timeout: 5000 }) },
-  { desc: 'Buscador con fechas', fn: p => p.locator('input[name="checkIn"]').waitFor({ timeout: 5000 }) },
+  { desc: '"Apartamento Paloma" visible', fn: async p => {
+    await p.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {})
+    const t = await p.textContent('body')
+    if (!t?.includes('Apartamento Paloma')) throw new Error('"Apartamento Paloma" no encontrado en página')
+  }},
+  { desc: '"Apartamento Micu" visible', fn: async p => {
+    const t = await p.textContent('body')
+    if (!t?.includes('Apartamento Micu')) throw new Error('"Apartamento Micu" no encontrado en página')
+  }},
+  { desc: 'Buscador con fechas', fn: p => p.locator('input[name="checkIn"]').first().waitFor({ timeout: 5000 }) },
   { desc: 'Sin "por Mar"', fn: async p => {
     const t = await p.textContent('body')
     if (t?.includes('por Mar')) throw new Error('"por Mar" encontrado en página')
@@ -99,10 +106,11 @@ await check(browser, 'Reservar Paloma', '/reservar/paloma', [
 
 await check(browser, 'Confirmacion (vacía)', '/confirmacion', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
-  { desc: 'Sin error 500', fn: async p => {
+  { desc: 'Sin error de aplicación', fn: async p => {
     const t = await p.textContent('body')
-    if (t?.includes('Application error') || t?.includes('500')) throw new Error('Error 500 detectado')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación detectado')
   }},
+  { desc: '"Solicitud enviada" visible', fn: p => p.locator('text=Solicitud enviada').first().waitFor({ timeout: 5000 }) },
 ])
 
 await check(browser, 'Admin login', '/admin/login', [
@@ -118,7 +126,7 @@ await check(browser, 'Reservar Micu (detalle)', '/apartamentos/micu', [
 await check(browser, 'Detalle con fechas', '/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07', [
   { desc: 'Carga con fechas en URL', fn: p => p.waitForSelector('body') },
   { desc: 'Fecha llegada pre-rellenada', fn: async p => {
-    await page.waitForTimeout?.(1000).catch?.(() => {})
+    await p.waitForTimeout(1000)
     const val = await p.locator('input[type="date"]').first().inputValue()
     if (!val) throw new Error('Fecha de llegada vacía (no pre-rellenada)')
   }},

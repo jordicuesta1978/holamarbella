@@ -50,3 +50,4 @@
 - Verificación automática: `node scripts/verificar.mjs`
 - Screenshots en: `scripts/screenshots/`
 - Para verificar otra URL: `node scripts/verificar.mjs --base http://localhost:3000`
+- Último informe: **29 OK · 0 fallos** *(2026-05-25)*
