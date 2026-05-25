@@ -20,7 +20,6 @@ async function checkExact(checkIn: string, checkOut: string): Promise<Record<str
     .select('apartment_slug')
     .lt('fecha_inicio', checkOut)
     .gt('fecha_fin', checkIn)
-    .catch(() => ({ data: [] }))
 
   const occupiedSlugs = new Set([
     ...(occupied ?? []).map((r: any) => r.apartment_slug as string),

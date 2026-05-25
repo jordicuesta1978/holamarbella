@@ -14,7 +14,7 @@ export async function saveCleaningFee(slug: string, fee: number) {
 }
 
 export async function getCleaningFees(): Promise<Record<string, number>> {
-  const { data } = await db.from('configuracion').select('apartment_slug, cleaning_fee').catch(() => ({ data: [] }))
+  const { data } = await db.from('configuracion').select('apartment_slug, cleaning_fee')
   const map: Record<string, number> = {}
   for (const row of data ?? []) map[row.apartment_slug] = row.cleaning_fee
   return map
@@ -39,7 +39,7 @@ export async function deleteBloqueo(id: number) {
 }
 
 export async function getBloqueos() {
-  const { data } = await db.from('bloqueos').select('*').order('fecha_inicio').catch(() => ({ data: [] }))
+  const { data } = await db.from('bloqueos').select('*').order('fecha_inicio')
   return data ?? []
 }
 
@@ -57,14 +57,14 @@ export async function deletePrecio(id: number) {
 }
 
 export async function getPrecios() {
-  const { data } = await db.from('precios').select('*').order('apartment_slug').order('fecha_inicio').catch(() => ({ data: [] }))
+  const { data } = await db.from('precios').select('*').order('apartment_slug').order('fecha_inicio')
   return data ?? []
 }
 
 // ── Apartamentos ──────────────────────────────────────────────────────────────
 
 export async function getApartamentos(): Promise<Record<string, any>[]> {
-  const { data } = await db.from('apartments').select('*').order('id').catch(() => ({ data: [] }))
+  const { data } = await db.from('apartments').select('*').order('id')
   return data ?? []
 }
 
@@ -95,12 +95,12 @@ export async function saveApartamentoFull(slug: string, fields: {
   // Core fields (always exist)
   await db.from('apartments').update(rest).eq('slug', slug)
 
-  // New fields (post-migration v2) — graceful degradation
+  // New fields (post-migration v2) — graceful degradation if columns don't exist yet
   const newFields: Record<string, unknown> = {}
   if (active !== undefined) newFields.active = active
   if (cleaning_fee !== undefined) newFields.cleaning_fee = cleaning_fee
   if (Object.keys(newFields).length > 0) {
-    await db.from('apartments').update(newFields).eq('slug', slug).catch(() => {})
+    await db.from('apartments').update(newFields).eq('slug', slug)
   }
 
   revalidatePath('/admin/contenido/apartamentos')
@@ -111,7 +111,7 @@ export async function saveApartamentoFull(slug: string, fields: {
 // ── Articulos ─────────────────────────────────────────────────────────────────
 
 export async function getArticulos() {
-  const { data } = await db.from('articulos').select('*').order('created_at', { ascending: false }).catch(() => ({ data: [] }))
+  const { data } = await db.from('articulos').select('*').order('created_at', { ascending: false })
   return data ?? []
 }
 
@@ -141,7 +141,6 @@ export async function getResenas() {
     .select('*')
     .order('sort_order', { ascending: true, nullsFirst: false })
     .order('id', { ascending: true })
-    .catch(() => ({ data: [] }))
   return data ?? []
 }
 
