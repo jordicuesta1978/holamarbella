@@ -83,8 +83,17 @@ await check(browser, 'Home', '/', [
 
 await check(browser, 'Apartamentos', '/apartamentos', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
-  { desc: '"Apartamento Paloma" en tarjeta', fn: p => p.locator('h2:has-text("Apartamento Paloma")').waitFor({ timeout: 8000 }) },
-  { desc: '"Apartamento Micu" en tarjeta', fn: p => p.locator('h2:has-text("Apartamento Micu")').waitFor({ timeout: 5000 }) },
+  { desc: '"Apartamento Paloma" en tarjeta H3', fn: p => p.locator('h3:has-text("Apartamento Paloma")').waitFor({ timeout: 8000 }) },
+  { desc: '"Apartamento Micu" en tarjeta H3', fn: p => p.locator('h3:has-text("Apartamento Micu")').waitFor({ timeout: 5000 }) },
+  { desc: 'Nombre en H3 con color verde (--primary)', fn: async p => {
+    const el = p.locator('h3:has-text("Apartamento Paloma")').first()
+    await el.waitFor({ timeout: 5000 })
+    const color = await el.evaluate(e => window.getComputedStyle(e).color)
+    // var(--primary) = #4B766B = rgb(75, 118, 107)
+    if (!color.includes('75') && !color.includes('4B766B') && !color.includes('4b766b')) {
+      throw new Error(`Color H3 inesperado: ${color} (esperado verde ~rgb(75, 118, 107))`)
+    }
+  }},
   { desc: 'Subtítulo descriptivo visible', fn: p => p.locator('text=Centro · Playa').first().waitFor({ timeout: 5000 }) },
   { desc: 'Sin badges TOP AIRBNB', fn: async p => {
     const t = await p.textContent('body')

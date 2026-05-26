@@ -40,9 +40,7 @@ function ConfirmacionContent() {
       .then(({ data }) => { if (data) setAptInfo(data as { title: string; subtitle: string }); });
   }, [slug]);
 
-  const aptName = aptInfo
-    ? `Apartamento ${aptInfo.title.split(' · ')[0]}`
-    : '';
+  const aptName = aptInfo?.title || '';
 
   const details: [string, string][] = [
     ...(aptName ? [['Apartamento', aptName] as [string, string]] : []),

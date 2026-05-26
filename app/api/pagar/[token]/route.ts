@@ -28,11 +28,10 @@ export async function GET(
     }
 
     const APT_NAMES: Record<string, string> = {
-      paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
+      paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
+      ami: 'Ático AMI', banesto: 'Ático Banesto',
     }
-    const aptName = APT_NAMES[reserva.apartment_slug]
-      ? `Apartamento ${APT_NAMES[reserva.apartment_slug]}`
-      : reserva.apartment_slug
+    const aptName = APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

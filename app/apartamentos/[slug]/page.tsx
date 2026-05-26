@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const apt = await getApartmentBySlug(slug);
   if (!apt) return {};
-  const displayName = `Apartamento ${apt.title.split(' · ')[0]}`;
+  const displayName = apt.title;
   return {
     title: `${displayName} · HolaMarbella`,
     description: apt.description.slice(0, 160),

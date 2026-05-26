@@ -17,12 +17,13 @@ const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const MAR = process.env.MAR_EMAIL
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
+const APT_NAMES_FALLBACK: Record<string, string> = {
+  paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
+  ami: 'Ático AMI', banesto: 'Ático Banesto',
 }
 
 function aptDisplay(slug: string): string {
-  return APT_NAMES[slug] ? `Apartamento ${APT_NAMES[slug]}` : slug
+  return APT_NAMES_FALLBACK[slug] || slug
 }
 
 export type ReservaInput = {
@@ -82,7 +83,7 @@ export async function crearReserva(
   }
 
   const inputWithToken: ReservaInputWithToken = { ...input, conversationToken, bookingRef }
-  const displayTitle = aptDisplay(input.apartmentSlug)
+  const displayTitle = input.apartmentTitle || aptDisplay(input.apartmentSlug)
 
   const emailTasks: Promise<unknown>[] = [
     resend.emails.send({

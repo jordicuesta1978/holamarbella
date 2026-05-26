@@ -1,22 +1,25 @@
 import { supabase } from './supabase'
 import type { Apartment, ApartmentReview, AmenityCategory } from './apartments'
+import { computeKeyFeatures } from './apartments'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapRow(row: any): Apartment {
+  const capacity = {
+    persons: row.persons,
+    bedrooms: row.bedrooms,
+    bed: row.bed,
+    bathrooms: row.bathrooms,
+    extras: row.bed_extras ?? undefined,
+  }
   return {
     slug: row.slug,
     title: row.title,
     subtitle: row.subtitle,
+    key_features: computeKeyFeatures(capacity),
     rating: Number(row.rating),
     reviewCount: row.review_count,
     badge: row.badge ?? undefined,
-    capacity: {
-      persons: row.persons,
-      bedrooms: row.bedrooms,
-      bed: row.bed,
-      bathrooms: row.bathrooms,
-      extras: row.bed_extras ?? undefined,
-    },
+    capacity,
     description: row.description,
     license: row.license,
     photoCount: row.photo_count,

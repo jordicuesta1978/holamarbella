@@ -170,7 +170,7 @@ export default function ApartamentoDetail({
         <div>
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <div className="flex flex-wrap gap-2 items-center mb-3">
-<span className="flex items-center gap-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+              <span className="flex items-center gap-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                 <span className="text-yellow-400">★</span>
                 <strong style={{ color: 'var(--on-surface)' }}>{apartment.rating.toFixed(2)}</strong>
                 · {apartment.reviewCount} reseñas
@@ -179,12 +179,11 @@ export default function ApartamentoDetail({
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--on-surface-variant)' }}>
               {apartment.subtitle}
             </p>
-            <h1 className="text-2xl md:text-3xl font-bold leading-snug mb-3" style={{ color: 'var(--primary)' }}>
-              Apartamento {apartment.title.split(' · ')[0]}
+            <h1 className="text-2xl md:text-3xl font-bold leading-snug mb-2" style={{ color: 'var(--primary)' }}>
+              {apartment.title}
             </h1>
-            <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              {apartment.capacity.persons} personas · {apartment.capacity.bedrooms} dormitorio · {apartment.capacity.bed} · {apartment.capacity.bathrooms} baño
-              {apartment.capacity.extras ? ` · ${apartment.capacity.extras}` : ''}
+            <p className="text-sm mb-1" style={{ color: 'var(--on-surface-variant)' }}>
+              {apartment.key_features}
             </p>
             <p className="text-xs mt-2" style={{ color: 'var(--on-surface-variant)' }}>
               Licencia turística: {apartment.license}
@@ -319,6 +318,10 @@ export default function ApartamentoDetail({
         {/* RIGHT COLUMN — Sticky booking panel */}
         <div className="hidden lg:block">
           <div className="sticky top-24 rounded-2xl border shadow-xl p-6" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}>
+            <div className="mb-4 pb-3 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
+              <p className="font-bold text-sm" style={{ color: 'var(--on-surface)' }}>{apartment.title}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--on-surface-variant)' }}>{apartment.subtitle}</p>
+            </div>
             <div className="mb-5">
               {nights > 0 ? (
                 <>

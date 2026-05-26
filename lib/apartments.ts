@@ -15,6 +15,7 @@ export type Apartment = {
   slug: string;
   title: string;
   subtitle: string;
+  key_features: string;
   rating: number;
   reviewCount: number;
   badge?: string;
@@ -33,6 +34,15 @@ export type Apartment = {
   priceRange: [number, number];
   reviews: ApartmentReview[];
 };
+
+export function computeKeyFeatures(capacity: Apartment['capacity']): string {
+  const extrasLower = capacity.extras?.toLowerCase() ?? ''
+  const bath = extrasLower.includes('baño')
+    ? extrasLower.replace('baño', `${capacity.bathrooms} baño`)
+    : `${capacity.bathrooms} baño${capacity.bathrooms > 1 ? 's' : ''}`
+  const extras = capacity.extras && !extrasLower.includes('baño') ? ` · ${capacity.extras}` : ''
+  return `${capacity.persons} persona${capacity.persons > 1 ? 's' : ''} · ${capacity.bedrooms} dormitorio · ${capacity.bed} · ${bath}${extras}`
+}
 
 export function getPhotos(slug: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => `/images/${slug}/${slug}-${i + 1}.jpg`);

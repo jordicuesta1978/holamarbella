@@ -7,7 +7,7 @@ import { getBookingRef } from '@/lib/booking-ref'
 async function getReservas(status?: string): Promise<any[]> {
   let q = supabaseAdmin
     .from('reservas')
-    .select('id, guest_name, guest_email, guest_phone, apartment_slug, check_in, check_out, guests, status, notes, created_at')
+    .select('id, guest_name, guest_email, guest_phone, apartment_slug, check_in, check_out, guests, status, notes, created_at, booking_ref')
     .order('created_at', { ascending: false })
 
   if (status && ['pending', 'confirmed', 'cancelled'].includes(status)) {
@@ -85,7 +85,7 @@ export default async function ReservasPage({
                 {reservas.map((r, i) => (
                   <tr key={r.id} style={{ borderBottom: i < reservas.length - 1 ? '1px solid #f0f0f0' : undefined }}>
                     <td style={{ padding: '11px 14px', color: '#1a1a2e', fontWeight: 500, whiteSpace: 'nowrap' }}>{r.guest_name}</td>
-                    <td style={{ padding: '11px 14px', color: '#888', fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }}>{getBookingRef(r.id, r.apartment_slug, r.created_at)}</td>
+                    <td style={{ padding: '11px 14px', color: '#888', fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }}>{r.booking_ref || getBookingRef(r.id, r.apartment_slug, r.check_in || r.created_at)}</td>
                     <td style={{ padding: '11px 14px', color: '#555' }}>{r.guest_email}</td>
                     <td style={{ padding: '11px 14px', color: '#555' }}>{r.apartment_slug}</td>
                     <td style={{ padding: '11px 14px', color: '#555', whiteSpace: 'nowrap' }}>{fmt(r.check_in)}</td>

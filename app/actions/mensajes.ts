@@ -204,7 +204,6 @@ function emailPagoGuest(firstName: string, amount: number, pagarLink: string, co
     </p>
     ${commentHtml}
     <div style="background:#f0f9f6;border:2px solid #4B766B;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
-      <p style="margin:0 0 4px;font-size:13px;color:#888;">Importe total</p>
       <p style="margin:0;font-size:40px;font-weight:800;color:#1A1A1A;">${amount}€</p>
     </div>
     <div style="text-align:center;">

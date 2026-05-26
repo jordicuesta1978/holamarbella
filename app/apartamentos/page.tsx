@@ -121,14 +121,14 @@ export default async function ApartamentosPage({
                         ({apt.reviewCount} reseñas)
                       </span>
                     </div>
-                    <h2 className="text-base font-bold leading-snug mb-0.5" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface)' }}>
-                      Apartamento {apt.title.split(' · ')[0]}
-                    </h2>
+                    <h3 className="text-base font-bold leading-snug mb-0.5" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}>
+                      {apt.title}
+                    </h3>
                     <p className="text-xs mb-2" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
                       {apt.subtitle}
                     </p>
-                    <p className="text-sm mb-3" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
-                      {apt.capacity.persons} personas · {apt.capacity.bedrooms} dorm · {apt.capacity.bathrooms} baño
+                    <p className="text-xs mb-3" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
+                      {apt.key_features}
                     </p>
                     {isAvailable === false && <ClearDatesLink />}
                     <div className="flex items-center justify-between">

@@ -257,8 +257,8 @@ export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT
             <div className="flex gap-3 p-4 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
               <img src={`/images/${slug}/${slug}-1.jpg`} alt={apartment.title} className="w-20 h-20 object-cover rounded-xl shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--on-surface-variant)' }}>{apartment.subtitle}</p>
-                <p className="text-sm font-bold leading-snug" style={{ color: 'var(--on-surface)' }}>Apartamento {apartment.title.split(' · ')[0]}</p>
+                <p className="text-sm font-bold leading-snug" style={{ color: 'var(--on-surface)' }}>{apartment.title}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--on-surface-variant)' }}>{apartment.subtitle}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <span className="text-yellow-400 text-xs">★</span>
                   <span className="text-xs font-semibold">{apartment.rating.toFixed(2)}</span>

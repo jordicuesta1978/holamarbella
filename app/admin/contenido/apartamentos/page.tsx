@@ -50,7 +50,7 @@ export default async function ApartamentosContentPage() {
                 style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#e2e8f0' }}
               />
               <div style={{ flex: 1 }}>
-                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Apartamento {apt.title}</h2>
+                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{apt.title}</h2>
                 <span style={{ fontSize: 11, color: '#888', fontFamily: 'monospace' }}>{apt.slug}</span>
               </div>
               <span style={{
@@ -106,7 +106,7 @@ export default async function ApartamentosContentPage() {
               {/* Nombre corto y subtítulo */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  {label('Nombre corto', 'Se mostrará como "Apartamento [nombre]" en la web')}
+                  {label('Nombre', 'Nombre completo del apartamento (ej: Apartamento Paloma, Ático AMI)')}
                   {field('title', apt.title)}
                 </div>
                 <div>

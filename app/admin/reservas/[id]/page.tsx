@@ -101,7 +101,10 @@ export default async function ReservaDetailPage({
             <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>Estancia</h2>
           </div>
           {[
-            ['Apartamento', reserva.apartment_slug],
+            ['Apartamento', (() => {
+              const APT_NAMES: Record<string, string> = { paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol', ami: 'Ático AMI', banesto: 'Ático Banesto' }
+              return APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
+            })()],
             ['Llegada', fmt(reserva.check_in)],
             ['Salida', fmt(reserva.check_out)],
             ['Duración', nights ? `${nights} noche${nights > 1 ? 's' : ''}` : '—'],
