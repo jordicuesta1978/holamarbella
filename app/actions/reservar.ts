@@ -94,12 +94,15 @@ export async function crearReserva(
   ]
 
   if (MAR) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: aptData } = await (supabaseAdmin as any).from('apartments').select('price_min, price_max').eq('slug', input.apartmentSlug).single()
+    const priceRange: [number, number] | undefined = aptData ? [aptData.price_min, aptData.price_max] : undefined
     emailTasks.push(
       resend.emails.send({
         from: FROM,
         to: MAR,
         subject: `🔔 Nueva solicitud — ${input.nombre} · ${displayTitle}`,
-        html: emailMar(input, bookingRef, displayTitle, inserted?.id ?? 0),
+        html: emailMar(input, bookingRef, displayTitle, inserted?.id ?? 0, priceRange),
       })
     )
   }
@@ -192,12 +195,18 @@ function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
   `)
 }
 
-function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number): string {
+function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number, priceRange?: [number, number]): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
   const adminLink = `${BASE_URL}/admin/reservas/${reservaId}`
   const nightsStr = nightsLabel(d.checkIn, d.checkOut).replace(' · ', '') // "X noches"
+  const nights = d.checkIn && d.checkOut
+    ? Math.round((new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000)
+    : 0
+  const estimatedPrice = priceRange && nights > 0
+    ? `${priceRange[0] * nights}€ – ${priceRange[1] * nights}€ <span style="font-size:11px;color:#aaa;">(${priceRange[0]}–${priceRange[1]}€/noche × ${nights} noches, sin tasas)</span>`
+    : ''
 
   return shell(`
     <h1 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#4B766B;">Nueva solicitud de reserva</h1>
@@ -213,6 +222,7 @@ function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, res
       ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
       ${nightsStr ? row('Duración', nightsStr) : ''}
       ${row('Personas', `${d.personas}`)}
+      ${estimatedPrice ? row('Precio estimado', estimatedPrice) : ''}
     </table>
 
     <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;margin-bottom:24px;">

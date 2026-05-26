@@ -191,15 +191,6 @@ export default function ApartamentoDetail({
             </p>
           </div>
 
-          <div className="py-6 border-b flex items-center gap-4" style={{ borderColor: 'var(--outline-variant)' }}>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{ backgroundColor: 'var(--primary)' }}>
-              M
-            </div>
-            <div>
-              <p className="font-bold" style={{ color: 'var(--on-surface)' }}>Anfitriona: Mar</p>
-              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>Airbnb Superhost · Recepción personal en el apartamento</p>
-            </div>
-          </div>
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>Descripción</h2>

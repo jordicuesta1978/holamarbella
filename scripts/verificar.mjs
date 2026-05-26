@@ -75,6 +75,10 @@ await check(browser, 'Home', '/', [
     const t = await p.textContent('body')
     if (t?.includes('por Mar')) throw new Error('"por Mar" encontrado en página')
   }},
+  { desc: 'Flex pills per-date (±1, ±2)', fn: async p => {
+    const t = await p.textContent('body')
+    if (!t?.includes('±1') || !t?.includes('±2')) throw new Error('Pills de flexibilidad por fecha no encontradas')
+  }},
 ])
 
 await check(browser, 'Apartamentos', '/apartamentos', [
@@ -94,6 +98,10 @@ await check(browser, 'Detalle Paloma', '/apartamentos/paloma', [
   { desc: 'Subtítulo descriptivo', fn: p => p.locator('text=Centro · Playa').first().waitFor({ timeout: 5000 }) },
   { desc: 'Sección Ubicación con mapa', fn: p => p.locator('text=Ubicación').first().waitFor({ timeout: 5000 }) },
   { desc: 'Botón "Solicitar reserva"', fn: p => p.locator('text=Solicitar reserva').first().waitFor({ timeout: 5000 }) },
+  { desc: 'Sin "Anfitriona: Mar"', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Anfitriona: Mar') || t?.includes('Airbnb Superhost')) throw new Error('"Anfitriona: Mar" aún aparece en la página de detalle')
+  }},
 ])
 
 await check(browser, 'Reservar Paloma', '/reservar/paloma', [
@@ -137,6 +145,21 @@ await check(browser, 'Admin contenido', '/admin/contenido', [
   { desc: 'Carga sin error (redirige a login o contenido)', fn: async p => {
     const t = await p.textContent('body')
     if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+  }},
+])
+
+await check(browser, 'Admin contenido apartamentos', '/admin/contenido/apartamentos', [
+  { desc: 'Carga sin error de aplicación', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+  }},
+  { desc: 'Sección galería de fotos visible (o login)', fn: async p => {
+    const t = await p.textContent('body')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación en página')
+    // If redirected to login, that's fine; otherwise check for gallery
+    if (!t?.includes('email') && !t?.includes('contraseña') && !t?.includes('Galería')) {
+      throw new Error('Sección "Galería" no encontrada y no es login')
+    }
   }},
 ])
 

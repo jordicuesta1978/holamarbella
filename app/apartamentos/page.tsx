@@ -14,10 +14,13 @@ export const metadata: Metadata = {
 export default async function ApartamentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkIn?: string; checkOut?: string; apt?: string; flex?: string }>
+  searchParams: Promise<{ checkIn?: string; checkOut?: string; apt?: string; flex?: string; flexIn?: string; flexOut?: string }>
 }) {
-  const { checkIn, checkOut, apt, flex: flexParam } = await searchParams
-  const flex = Math.min(7, Math.max(0, Number(flexParam) || 0))
+  const { checkIn, checkOut, apt, flex: flexParam, flexIn: flexInParam, flexOut: flexOutParam } = await searchParams
+  // Support both legacy ?flex= and new per-date ?flexIn=&flexOut= params
+  const flexIn = Math.min(7, Math.max(0, Number(flexInParam ?? flexParam) || 0))
+  const flexOut = Math.min(7, Math.max(0, Number(flexOutParam ?? flexParam) || 0))
+  const flex = Math.max(flexIn, flexOut)
   const apartments = await getApartments()
 
   const hasDates = !!(checkIn && checkOut && checkIn < checkOut)
@@ -54,7 +57,13 @@ export default async function ApartamentosPage({
           <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>
             Disponibilidad para{' '}
             <strong style={{ color: 'var(--primary)' }}>{fmtDate(checkIn!)} → {fmtDate(checkOut!)}</strong>
-            {flex > 0 && <span style={{ color: 'var(--on-surface-variant)' }}>{' '}(±{flex} día{flex > 1 ? 's' : ''} de flexibilidad)</span>}
+            {(flexIn > 0 || flexOut > 0) && (
+              <span style={{ color: 'var(--on-surface-variant)' }}>
+                {flexIn === flexOut
+                  ? ` (±${flex} días de flexibilidad)`
+                  : ` (llegada ±${flexIn}, salida ±${flexOut} días)`}
+              </span>
+            )}
           </p>
         ) : (
           <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>

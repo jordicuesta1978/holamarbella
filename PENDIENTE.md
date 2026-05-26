@@ -4,82 +4,56 @@
 
 ---
 
-## PRIORIDAD MÁXIMA — bugs críticos (batch 2026-05-25)
+## COMPLETADO — bugs críticos (batch 2026-05-26)
 
-- [x] **Formulario /reservar bloqueado** — sin try-catch en handleSubmit → al fallar cualquier Server Action el botón queda en "Enviando..." para siempre *(fix: 2026-05-25)*
-- [x] **crearReserva usa anon key** → puede fallar por RLS; cambiado a supabaseAdmin *(fix: 2026-05-25)*
-- [x] **Bloqueos no se guardan** — tabla bloqueos no existía; migración ejecutada *(fix: 2026-05-25)*
-
----
-
-## PRIORIDAD ALTA — bugs anteriores
-
-- [x] **Ver mi reserva** en /confirmacion → `/conversacion/[token]` con token correcto *(fix: 2026-05-24)*
-- [x] **Pagar ahora** en email de solicitud de pago → Stripe checkout directo vía `/api/pagar/[token]` *(fix: 2026-05-24)*
-- [x] **MAR_EMAIL** actualizado a `jordicuesta@gmail.com` en `.env.local` *(fix: 2026-05-24)* — **⚠️ Acción manual: actualizar también en Vercel Dashboard**
-- [x] **Hash #id eliminado** del detalle de reserva en admin *(fix: 2026-05-24)*
-- [x] **Booking ref consistente** — admin usa `reserva.booking_ref` (DB) *(fix: 2026-05-24)*
-- [x] **Botón "Ver mi reserva" eliminado** del email de solicitud recibida (guest) *(fix: 2026-05-25)*
-- [x] **Email admin nueva solicitud** — botón "Ver reserva en admin" + fila duración/precio *(fix: 2026-05-25)*
-- [x] **Fix ruta /api/pagar/[token]** — `dynamic = force-dynamic` *(fix: 2026-05-25)*
+- [x] **Botón "Pagar ahora" da 404** — `solicitarPago` ahora actualiza `total_price` en reservas
+- [x] **Checkbox "Apartamento activo" no funciona** — `getApartments()` filtra con `.neq('active', false)`
 
 ---
 
-## REDISEÑO GESTOR DE CONTENIDO (batch 2026-05-25)
+## COMPLETADO — Gestor de Contenido (batch 2026-05-26)
 
-- [x] **Apartamentos — CRUD completo** — todos los campos: título, subtítulo, descripción, capacidad, licencia, precio base, tarifa limpieza, activo/inactivo *(fix: 2026-05-25)*
-- [x] **Disponibilidad — calendario visual** — mes con días coloreados (bloqueado/libre), form para bloquear rango *(fix: 2026-05-25)*
-- [x] **Precios — calendario visual** — mes con precios por día marcados en color *(fix: 2026-05-25)*
-- [x] **Reseñas — ordenación** — botones ↑↓ para reordenar, sort_order en Supabase *(fix: 2026-05-25)*
-- [x] **Blog — imagen destacada** — campo imagen_url en formulario *(fix: 2026-05-25)*
-- [ ] **Apartamentos — galería de fotos** — subir fotos a Supabase Storage, reordenar, marcar principal *(pendiente: requiere bucket Storage)*
-- [ ] **Blog — editor enriquecido** — negrita, cursiva, listas *(pendiente: requiere biblioteca)*
-- [x] **Migraciones v2** — cleaning_fee + active en apartments, sort_order en resenas, imagen_url en articulos *(script: scripts/migrate_v2.mjs)*
+- [x] **Eliminar pestaña "Configuración"** — eliminada del menú lateral
+- [x] **Renombrar "Título" → "Nombre corto"** + textos de ayuda por campo
+- [x] **Gestión de fotos en apartamentos** — galería Supabase Storage, eliminar, marcar principal
+- [x] **Subida de imágenes en Blog** — ImageUploader en bucket blog
+- [x] **Calendario de disponibilidad** — precios/noche (verde claro), reservas (verde intenso + nombre), bloqueos (gris)
 
 ---
 
-## BUSCADOR — mejoras (batch 2026-05-25)
+## COMPLETADO — Página de Detalle y Buscador (batch 2026-05-26)
 
-- [x] **Flex pills en buscador home** — "Fecha exacta / ±1 / ±2 / ±3 / ±7 días" en lugar de select *(fix: 2026-05-25)*
-- [ ] **Flex pills Booking.com — calendario con overlay** — al hacer clic en fecha abre calendario con pills independientes por llegada/salida *(pendiente: requiere componente calendario custom)*
-- [x] **Fechas flexibles ±1, ±2, ±3 días** — ya implementado en buscador *(fix: 2026-05-25)*
-
----
-
-## EMAILS (batch 2026-05-25)
-
-- [x] **Email admin nueva solicitud** — botón "Ver reserva en admin" + precio estimado *(fix: 2026-05-25)*
-- [x] **Botón "Ver mi reserva" eliminado** del email al huésped *(fix: 2026-05-25)*
+- [x] **Eliminar "Anfitriona: Mar / Airbnb Superhost..."** — eliminado de ApartamentoDetail
+- [x] **Flexibilidad de fechas — rediseño Booking.com** — pills independientes por llegada (flexIn) y salida (flexOut)
 
 ---
 
-## VERIFICACIÓN AUTOMÁTICA (batch 2026-05-25)
+## COMPLETADO — Emails (batch 2026-05-26)
 
-- [x] **verificar.mjs — check /informacion** *(fix: 2026-05-25)*
-- [x] **verificar.mjs — check /apartamentos con fechas** *(fix: 2026-05-25)*
-- [x] **verificar.mjs — simular envío en /reservar/micu** *(fix: 2026-05-25)*
-- [x] **verificar.mjs — allowHttpErrors fix** *(fix: 2026-05-25)*
+- [x] **Email solicitud recibida (guest)**: sin botón "Ver mi reserva"
+- [x] **Email alerta al gestor**: fila precio estimado + botón "Ver reserva en admin →"
 
 ---
 
-## GESTOR DE CONTENIDO — inicial (ya completado)
+## COMPLETADO (batch 2026-05-25)
 
-- [x] **Configuración general** — tarifa de limpieza *(fix: 2026-05-25)*
-- [x] **Disponibilidad** — bloquear fechas *(fix: 2026-05-25)*
-- [x] **Precios** — tarifas por rango *(fix: 2026-05-25)*
-- [x] **Apartamentos** — editar título/subtítulo/descripción *(fix: 2026-05-25)*
-- [x] **Blog** — artículos *(fix: 2026-05-25)*
-- [x] **Reseñas** — CRUD *(fix: 2026-05-25)*
-- [x] **Enlace "Contenido"** en nav admin *(fix: 2026-05-25)*
+- [x] Formulario /reservar bloqueado — try-catch fix
+- [x] crearReserva usa supabaseAdmin
+- [x] Bloqueos guardados en Supabase
+- [x] Rediseño completo gestor de contenido (calendarios, CRUD)
+- [x] Flex pills buscador home
+- [x] Emails admin + guest mejorados
+- [x] Migraciones v2 (cleaning_fee, active, sort_order, imagen_url)
+- [x] /informacion page creada
+- [x] 500 en /apartamentos con fechas corregido
+- [x] .catch() chains eliminados
 
 ---
 
 ## NOTAS TÉCNICAS
 
-- Playwright instalado: `@playwright/test` + chromium
-- Verificación automática: `node scripts/verificar.mjs`
-- Screenshots en: `scripts/screenshots/`
-- Para verificar local: `node scripts/verificar.mjs --base http://localhost:3000`
-- Último informe: **31 OK · 0 fallos** *(2026-05-25)*
-- Migraciones v1: `scripts/migrate_contenido.mjs` — **ya ejecutado**
-- Migraciones v2: `scripts/migrate_v2.mjs` — ejecutar con `node scripts/migrate_v2.mjs TU_PAT`
+- Playwright: `node scripts/verificar.mjs`
+- Storage buckets necesarios: `apartamentos` (público), `blog` (público)
+- Migración v2 ejecutada 2026-05-25
+- API Upload: `POST /api/upload` (FormData: file, bucket, path) → `{ url, path }`
+- Flex dates: home pasa `flexIn` y `flexOut`; /apartamentos acepta ambos + legacy `flex`

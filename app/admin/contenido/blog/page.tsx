@@ -1,11 +1,17 @@
 import { getArticulos, saveArticulo, deleteArticulo } from '../actions'
+import ImageUploader from '@/components/ImageUploader'
 
 function slugify(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 export default async function BlogPage() {
-  const articulos = await getArticulos().catch(() => [])
+  let articulos: { id: number; titulo: string; slug: string; publicado: boolean; contenido: string; imagen_url?: string }[] = []
+  try {
+    articulos = await getArticulos()
+  } catch {
+    // render empty list on error
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -34,8 +40,8 @@ export default async function BlogPage() {
               <input type="text" name="titulo" required placeholder="Título del artículo" style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>URL imagen destacada</label>
-              <input type="url" name="imagen_url" placeholder="https://..." style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Imagen destacada</label>
+              <ImageUploader bucket="blog" path="articulos/nueva" name="imagen_url" placeholder="URL o sube una imagen" />
             </div>
           </div>
           <div>
@@ -61,7 +67,7 @@ export default async function BlogPage() {
         </div>
         {articulos.length === 0 ? (
           <p style={{ padding: '20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>No hay artículos</p>
-        ) : articulos.map((a: { id: number; titulo: string; slug: string; publicado: boolean; contenido: string; imagen_url?: string }, i: number) => (
+        ) : articulos.map((a, i) => (
           <div key={a.id} style={{ padding: '14px 20px', borderBottom: i < articulos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -97,7 +103,10 @@ export default async function BlogPage() {
             }} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <input type="text" name="titulo" defaultValue={a.titulo} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
-                <input type="url" name="imagen_url" defaultValue={a.imagen_url ?? ''} placeholder="URL imagen destacada" style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#aaa', marginBottom: 2 }}>Imagen destacada</label>
+                  <ImageUploader bucket="blog" path={`articulos/${a.id}`} name="imagen_url" defaultValue={a.imagen_url ?? ''} placeholder="URL o sube una imagen" />
+                </div>
               </div>
               <input type="text" name="slug" defaultValue={a.slug} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 12, outline: 'none', color: '#888', fontFamily: 'monospace' }} />
               <textarea name="contenido" defaultValue={a.contenido} rows={4} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit' }} />

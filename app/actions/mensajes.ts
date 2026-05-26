@@ -129,6 +129,9 @@ export async function solicitarPago(reservaId: number, amount: number, comment?:
     leido: false,
   })
 
+  // Sync total_price so /api/pagar/[token] can create the Stripe session
+  await db.from('reservas').update({ total_price: amount }).eq('id', reservaId)
+
   const pagarLink = `${BASE_URL}/api/pagar/${reserva.conversation_token}`
   const firstName = (reserva.guest_name as string).split(' ')[0]
 

@@ -1,7 +1,13 @@
-import { getApartamentos, saveApartamentoFull } from '../actions'
+import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto } from '../actions'
+import PhotoGallery from '@/components/PhotoGallery'
 
-function label(text: string) {
-  return <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#888', marginBottom: 4 }}>{text}</label>
+function label(text: string, hint?: string) {
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#888' }}>{text}</label>
+      {hint && <span style={{ fontSize: 11, color: '#aaa', fontStyle: 'italic' }}>{hint}</span>}
+    </div>
+  )
 }
 
 function field(name: string, value: unknown, type: string = 'text', extra: Record<string, unknown> = {}) {
@@ -18,30 +24,33 @@ function field(name: string, value: unknown, type: string = 'text', extra: Recor
 
 export default async function ApartamentosContentPage() {
   const apartments = await getApartamentos()
+  const photosPerApt = await Promise.all(
+    apartments.map(apt => getApartamentoPhotos(apt.slug).catch(() => []))
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <p style={{ margin: 0, fontSize: 12, color: '#888' }}>
         Edita los datos de cada apartamento. Los cambios se publican en la web automáticamente.
-        Los campos <em>Tarifa limpieza</em> y <em>Activo</em> requieren la migración v2.
       </p>
 
-      {apartments.map((apt) => {
+      {apartments.map((apt, idx) => {
         const topAmenitiesStr = Array.isArray(apt.top_amenities)
           ? apt.top_amenities.join(', ')
           : (apt.top_amenities ?? '')
+        const photos = photosPerApt[idx] ?? []
 
         return (
           <div key={apt.slug} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             {/* Header */}
             <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 16 }}>
               <img
-                src={`/images/${apt.slug}/${apt.slug}-1.jpg`}
+                src={photos[0]?.url || `/images/${apt.slug}/${apt.slug}-1.jpg`}
                 alt={apt.title}
                 style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#e2e8f0' }}
               />
               <div style={{ flex: 1 }}>
-                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{apt.title}</h2>
+                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Apartamento {apt.title}</h2>
                 <span style={{ fontSize: 11, color: '#888', fontFamily: 'monospace' }}>{apt.slug}</span>
               </div>
               <span style={{
@@ -51,6 +60,19 @@ export default async function ApartamentosContentPage() {
               }}>
                 {apt.active === false ? 'Inactivo' : 'Activo'}
               </span>
+            </div>
+
+            {/* Photos section */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+              {label('Galería de fotos', 'La foto marcada como "Principal" aparece en las cards y en la cabecera')}
+              <PhotoGallery
+                slug={apt.slug}
+                initialPhotos={photos}
+                onPrimaryChange={async (path: string) => {
+                  'use server'
+                  await setApartamentoPrimaryPhoto(apt.slug, path)
+                }}
+              />
             </div>
 
             {/* Form */}
@@ -81,21 +103,21 @@ export default async function ApartamentosContentPage() {
               }}
               style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}
             >
-              {/* Título y subtítulo */}
+              {/* Nombre corto y subtítulo */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  {label('Título')}
+                  {label('Nombre corto', 'Se mostrará como "Apartamento [nombre]" en la web')}
                   {field('title', apt.title)}
                 </div>
                 <div>
-                  {label('Subtítulo')}
+                  {label('Subtítulo', 'Aparece bajo el nombre en la ficha y en el buscador')}
                   {field('subtitle', apt.subtitle)}
                 </div>
               </div>
 
               {/* Descripción */}
               <div>
-                {label('Descripción')}
+                {label('Descripción', 'Texto largo que aparece en la ficha del apartamento')}
                 <textarea
                   name="description"
                   defaultValue={apt.description ?? ''}
@@ -134,26 +156,26 @@ export default async function ApartamentosContentPage() {
               {/* Licencia, precios y limpieza */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
                 <div>
-                  {label('Licencia VFT')}
+                  {label('Licencia VFT', 'Número de licencia turística oficial')}
                   {field('license', apt.license)}
                 </div>
                 <div>
-                  {label('Precio mín €/n')}
+                  {label('Precio mín €/n', 'Temporada baja')}
                   {field('price_min', apt.price_min, 'number', { min: 1 })}
                 </div>
                 <div>
-                  {label('Precio máx €/n')}
+                  {label('Precio máx €/n', 'Temporada alta')}
                   {field('price_max', apt.price_max, 'number', { min: 1 })}
                 </div>
                 <div>
-                  {label('Limpieza €')}
+                  {label('Limpieza €', 'Coste fijo de limpieza por estancia')}
                   {field('cleaning_fee', apt.cleaning_fee ?? 40, 'number', { min: 0 })}
                 </div>
               </div>
 
               {/* Top amenities */}
               <div>
-                {label('Top amenidades (separadas por coma)')}
+                {label('Top amenidades (separadas por coma)', 'Aparecen en la ficha del apartamento')}
                 {field('top_amenities', topAmenitiesStr)}
               </div>
 
@@ -166,7 +188,7 @@ export default async function ApartamentosContentPage() {
                     defaultChecked={apt.active !== false}
                     style={{ cursor: 'pointer', width: 16, height: 16 }}
                   />
-                  Apartamento activo (visible en la web)
+                  Apartamento activo (visible en la home y en /apartamentos)
                 </label>
               </div>
 

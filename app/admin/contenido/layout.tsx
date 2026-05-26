@@ -4,7 +4,6 @@ import AdminNavServer from '@/app/admin/AdminNavServer'
 export const dynamic = 'force-dynamic'
 
 const SECTIONS = [
-  { href: '/admin/contenido/configuracion', label: 'Configuración' },
   { href: '/admin/contenido/disponibilidad', label: 'Disponibilidad' },
   { href: '/admin/contenido/precios', label: 'Precios' },
   { href: '/admin/contenido/apartamentos', label: 'Apartamentos' },

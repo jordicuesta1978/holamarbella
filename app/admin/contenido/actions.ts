@@ -133,6 +133,29 @@ export async function deleteArticulo(id: number) {
   revalidatePath('/admin/contenido/blog')
 }
 
+// ── Fotos (Storage) ───────────────────────────────────────────────────────────
+
+export async function getApartamentoPhotos(slug: string): Promise<{ path: string; url: string; isPrimary: boolean }[]> {
+  const { data: files } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
+  if (!files || files.length === 0) return []
+  const { data: apt } = await db.from('apartments').select('primary_photo').eq('slug', slug).single()
+  const primaryPath = apt?.primary_photo ?? ''
+  return files
+    .filter(f => f.name !== '.emptyFolderPlaceholder')
+    .map(f => {
+      const path = `${slug}/${f.name}`
+      const { data: urlData } = supabaseAdmin.storage.from('apartamentos').getPublicUrl(path)
+      return { path, url: urlData.publicUrl, isPrimary: path === primaryPath || (!primaryPath && files.indexOf(f) === 0) }
+    })
+}
+
+export async function setApartamentoPrimaryPhoto(slug: string, photoPath: string) {
+  await db.from('apartments').update({ primary_photo: photoPath }).eq('slug', slug)
+  revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath(`/apartamentos/${slug}`)
+  revalidatePath('/apartamentos')
+}
+
 // ── Reseñas ───────────────────────────────────────────────────────────────────
 
 export async function getResenas() {

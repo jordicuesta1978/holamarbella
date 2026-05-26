@@ -31,6 +31,7 @@ export async function getApartments(): Promise<Apartment[]> {
   const { data, error } = await supabase
     .from('apartments')
     .select('*')
+    .neq('active', false)
     .order('id')
   if (error) throw new Error(error.message)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
