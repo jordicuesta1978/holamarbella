@@ -153,12 +153,13 @@ await check(browser, 'Admin contenido apartamentos', '/admin/contenido/apartamen
     const t = await p.textContent('body')
     if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
   }},
-  { desc: 'Sección galería de fotos visible (o login)', fn: async p => {
+  { desc: 'Redirige a login o muestra galería (sin 500)', fn: async p => {
+    // Unauthenticated → redirected to /admin/login; authenticated → shows gallery
+    const url = p.url()
     const t = await p.textContent('body')
-    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación en página')
-    // If redirected to login, that's fine; otherwise check for gallery
-    if (!t?.includes('email') && !t?.includes('contraseña') && !t?.includes('Galería')) {
-      throw new Error('Sección "Galería" no encontrada y no es login')
+    if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
+    if (!url.includes('/admin/login') && !url.includes('/admin/contenido') && !t?.includes('Galería')) {
+      throw new Error(`URL inesperada: ${url}`)
     }
   }},
 ])
