@@ -49,7 +49,8 @@ export function getPhotos(slug: string, count: number): string[] {
 }
 
 // Static seed kept for reference — source of truth is Supabase (lib/db.ts)
-const _apartments: Apartment[] = [
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _apartments = [
   {
     slug: 'paloma',
     title: 'Paloma · Centro/Playa · Vistas espectaculares',
