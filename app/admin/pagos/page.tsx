@@ -24,12 +24,12 @@ type PagoRow = {
 async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow[] }> {
   const [{ data: rPend }, { data: rPag }, { data: payReqs }] = await Promise.all([
     db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at, booking_ref')
       .eq('status', 'confirmed')
       .is('paid_at', null)
       .order('created_at', { ascending: false }),
     db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at, booking_ref')
       .eq('status', 'confirmed')
       .not('paid_at', 'is', null)
       .order('paid_at', { ascending: false })
@@ -51,7 +51,7 @@ async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow
       : 0
     return {
       id: r.id,
-      bookingRef: getBookingRef(r.id, r.apartment_slug, r.created_at),
+      bookingRef: r.booking_ref || getBookingRef(r.id, r.apartment_slug, r.check_in || r.created_at),
       guestName: r.guest_name,
       aptSlug: r.apartment_slug,
       checkIn: r.check_in,
