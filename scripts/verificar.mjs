@@ -195,7 +195,7 @@ await check(browser, '/apartamentos con fechas', '/apartamentos?checkIn=2026-07-
     const t = await p.textContent('body')
     if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
   }},
-  { desc: 'Muestra apartamentos', fn: p => p.locator('h2').first().waitFor({ timeout: 8000 }) },
+  { desc: 'Muestra apartamentos', fn: p => p.locator('h3').first().waitFor({ timeout: 8000 }) },
 ])
 
 await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
