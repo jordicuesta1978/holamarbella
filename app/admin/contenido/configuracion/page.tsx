@@ -21,7 +21,7 @@ export default async function ConfiguracionPage() {
             await saveCleaningFee(slug, Number(fd.get('fee')))
           }} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', borderBottom: i < APTS.length - 1 ? '1px solid #f5f5f5' : undefined }}>
             <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>
-              Apartamento {apt?.title.split(' · ')[0] ?? slug}
+              {apt?.title ?? slug}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input

@@ -1,0 +1,92 @@
+════════════════════════════════════════════════════════════════
+  INFORME DE VERIFICACIÓN — HolaMarbella
+  26/5/2026, 14:34:38
+  Base URL: https://holamarbella.vercel.app
+════════════════════════════════════════════════════════════════
+
+✅  Home  (/)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" visible
+   ✓ "Apartamento Micu" visible
+   ✓ Buscador con fechas
+   ✓ Sin "por Mar"
+   ✓ Flex pills per-date (±1, ±2)
+   📸 scripts/screenshots/2026-05-26T12-33-40_Home.png
+
+✅  Apartamentos  (/apartamentos)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" en tarjeta
+   ✓ "Apartamento Micu" en tarjeta
+   ✓ Subtítulo descriptivo visible
+   ✓ Sin badges TOP AIRBNB
+   📸 scripts/screenshots/2026-05-26T12-33-40_Apartamentos.png
+
+✅  Detalle Paloma  (/apartamentos/paloma)
+   ✓ Carga sin error
+   ✓ H1 "Apartamento Paloma"
+   ✓ Subtítulo descriptivo
+   ✓ Sección Ubicación con mapa
+   ✓ Botón "Solicitar reserva"
+   ✓ Sin "Anfitriona: Mar"
+   📸 scripts/screenshots/2026-05-26T12-33-40_Detalle_Paloma.png
+
+✅  Reservar Paloma  (/reservar/paloma)
+   ✓ Carga sin error
+   ✓ Formulario visible
+   ✓ "Apartamento Paloma" en resumen
+   ✓ Campo nombre
+   ✓ Campo email
+   📸 scripts/screenshots/2026-05-26T12-33-40_Reservar_Paloma.png
+
+✅  Confirmacion (vacía)  (/confirmacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   ✓ "Solicitud enviada" visible
+   📸 scripts/screenshots/2026-05-26T12-33-40_Confirmacion__vac_a_.png
+
+✅  Admin login  (/admin/login)
+   ✓ Carga sin error
+   ✓ Campo email
+   ✓ Campo contraseña
+   📸 scripts/screenshots/2026-05-26T12-33-40_Admin_login.png
+
+✅  Reservar Micu (detalle)  (/apartamentos/micu)
+   ✓ H1 "Apartamento Micu"
+   📸 scripts/screenshots/2026-05-26T12-33-40_Reservar_Micu__detalle_.png
+
+✅  API Pagar (ruta existe)  (/api/pagar/token-inexistente)
+   ✓ Ruta redirige a /conversacion (no se queda en /api/pagar)
+   📸 scripts/screenshots/2026-05-26T12-33-40_API_Pagar__ruta_existe_.png
+
+✅  Admin contenido  (/admin/contenido)
+   ✓ Carga sin error (redirige a login o contenido)
+   📸 scripts/screenshots/2026-05-26T12-33-40_Admin_contenido.png
+
+⚠️  Admin contenido apartamentos  (/admin/contenido/apartamentos)
+   ✓ Carga sin error de aplicación
+   ✗ Sección galería de fotos visible (o login) → Sección "Galería" no encontrada y no es login
+   📸 scripts/screenshots/2026-05-26T12-33-40_Admin_contenido_apartamentos.png
+
+✅  Detalle con fechas  (/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07)
+   ✓ Carga con fechas en URL
+   ✓ Fecha llegada pre-rellenada
+   📸 scripts/screenshots/2026-05-26T12-33-40_Detalle_con_fechas.png
+
+✅  /informacion (blog)  (/informacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   📸 scripts/screenshots/2026-05-26T12-33-40__informacion__blog_.png
+
+✅  /apartamentos con fechas  (/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07)
+   ✓ Carga sin error de servidor
+   ✓ Muestra apartamentos
+   📸 scripts/screenshots/2026-05-26T12-33-40__apartamentos_con_fechas.png
+
+✅  Reservar Micu (envío form)  (/reservar/micu)
+   ✓ Formulario carga
+   ✓ Botón enviar visible y sin error previo
+   📸 scripts/screenshots/2026-05-26T12-33-40_Reservar_Micu__env_o_form_.png
+
+════════════════════════════════════════════════════════════════
+  Resultado: 40 OK  ·  1 fallos
+════════════════════════════════════════════════════════════════

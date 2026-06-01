@@ -1,0 +1,115 @@
+════════════════════════════════════════════════════════════════
+  INFORME DE VERIFICACIÓN PROFUNDA — HolaMarbella
+  27/5/2026, 9:50:46
+  Base URL: https://holamarbella.vercel.app
+════════════════════════════════════════════════════════════════
+
+✅  Home  (/)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" visible
+   ✓ "Apartamento Micu" visible
+   ✓ Buscador con fechas
+   ✓ Sin "por Mar"
+   ✓ Flex pills per-date (±1, ±2)
+   📸 scripts/screenshots/2026-05-27T07-48-50_Home.png
+
+✅  Apartamentos  (/apartamentos)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" en tarjeta H3
+   ✓ "Apartamento Micu" en tarjeta H3
+   ✓ Nombre en H3 con color verde (--primary)
+   ✓ Subtítulo descriptivo visible
+   ✓ Sin badges TOP AIRBNB
+   📸 scripts/screenshots/2026-05-27T07-48-50_Apartamentos.png
+
+✅  Detalle Paloma  (/apartamentos/paloma)
+   ✓ Carga sin error
+   ✓ H1 "Apartamento Paloma"
+   ✓ Subtítulo descriptivo
+   ✓ Sección Ubicación con mapa
+   ✓ Botón "Solicitar reserva"
+   ✓ Sin "Anfitriona: Mar"
+   📸 scripts/screenshots/2026-05-27T07-48-50_Detalle_Paloma.png
+
+✅  Reservar Paloma  (/reservar/paloma)
+   ✓ Carga sin error
+   ✓ Formulario visible
+   ✓ "Apartamento Paloma" en resumen
+   ✓ Campo nombre
+   ✓ Campo email
+   📸 scripts/screenshots/2026-05-27T07-48-50_Reservar_Paloma.png
+
+✅  Confirmacion (vacía)  (/confirmacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   ✓ "Solicitud enviada" visible
+   📸 scripts/screenshots/2026-05-27T07-48-50_Confirmacion__vac_a_.png
+
+✅  Admin login  (/admin/login)
+   ✓ Carga sin error
+   ✓ Campo email
+   ✓ Campo contraseña
+   📸 scripts/screenshots/2026-05-27T07-48-50_Admin_login.png
+
+✅  Reservar Micu (detalle)  (/apartamentos/micu)
+   ✓ H1 "Apartamento Micu"
+   📸 scripts/screenshots/2026-05-27T07-48-50_Reservar_Micu__detalle_.png
+
+✅  API Pagar (ruta existe)  (/api/pagar/token-inexistente)
+   ✓ Ruta redirige (no se queda en /api/pagar)
+   📸 scripts/screenshots/2026-05-27T07-48-50_API_Pagar__ruta_existe_.png
+
+✅  Admin contenido  (/admin/contenido)
+   ✓ Carga sin error de aplicación
+   📸 scripts/screenshots/2026-05-27T07-48-50_Admin_contenido.png
+
+✅  Admin contenido apartamentos  (/admin/contenido/apartamentos)
+   ✓ Carga sin error de aplicación
+   ✓ Redirige a login o muestra contenido (sin 500)
+   📸 scripts/screenshots/2026-05-27T07-48-50_Admin_contenido_apartamentos.png
+
+✅  Detalle con fechas  (/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07)
+   ✓ Carga con fechas en URL
+   ✓ Fecha llegada pre-rellenada
+   📸 scripts/screenshots/2026-05-27T07-48-50_Detalle_con_fechas.png
+
+✅  /informacion (blog)  (/informacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   📸 scripts/screenshots/2026-05-27T07-48-50__informacion__blog_.png
+
+✅  /apartamentos con fechas  (/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07)
+   ✓ Carga sin error de servidor
+   ✓ Muestra apartamentos
+   📸 scripts/screenshots/2026-05-27T07-48-50__apartamentos_con_fechas.png
+
+✅  Reservar Micu (envío form)  (/reservar/micu)
+   ✓ Formulario carga
+   ✓ Botón enviar visible y sin error
+   📸 scripts/screenshots/2026-05-27T07-48-50_Reservar_Micu__env_o_form_.png
+
+✅  FLOW 1: Reserva completa  (/reservar/paloma → /confirmacion)
+   ✓ Página /reservar/paloma carga correctamente
+   ✓ Fechas cargadas: 2027-03-10 → 2027-03-15
+   ✓ Formulario rellenado: nombre, email, teléfono, mensaje
+   ✓ Redirección a /confirmacion exitosa
+   ✓ "Solicitud enviada" visible en /confirmacion
+   ✓ booking_ref válida: "20270310PAL01"
+   ✓ booking_ref visible en el cuerpo de la página
+   📸 scripts/screenshots/2026-05-27T07-48-50_FLOW_1__Reserva_completa_confirmacion.png
+
+✅  FLOW 2: API Pagar (reserva real)  (/api/pagar/[token])
+   ✓ Sin reservas confirmadas con token — skip (no hay datos de prueba)
+
+❌  FLOW 3: Admin checkbox activo  (/admin/contenido/apartamentos → /apartamentos)
+   ✗ Error: page.waitForURL: Timeout 15000ms exceeded.
+
+❌  FLOW 4: Admin booking_ref  (/admin/reservas)
+   ✗ Error: page.waitForURL: Timeout 15000ms exceeded.
+
+❌  FLOW 5: Admin Inbox / Mensajería  (/admin/inbox)
+   ✗ Error: page.waitForURL: Timeout 15000ms exceeded.
+
+════════════════════════════════════════════════════════════════
+  Resultado: 50 OK  ·  3 fallos
+════════════════════════════════════════════════════════════════

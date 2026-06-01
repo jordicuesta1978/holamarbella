@@ -8,6 +8,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPhotos } from '@/lib/apartments';
+import CalendarPicker from '@/components/CalendarPicker';
 import type { Apartment } from '@/lib/apartments';
 import {
   X, ChevronLeft, ChevronRight, Grid3X3, Check, Wifi, Wind,
@@ -62,26 +63,20 @@ function calcNights(checkIn: string, checkOut: string): number {
 export default function ApartamentoDetail({
   apartment,
   slug,
-  initialCheckIn = '',
-  initialCheckOut = '',
+  blockedRanges = [],
+  cleaningFee = 40,
 }: {
   apartment: Apartment;
   slug: string;
-  initialCheckIn?: string;
-  initialCheckOut?: string;
+  blockedRanges?: Array<{ start: string; end: string }>;
+  cleaningFee?: number;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [checkIn, setCheckIn] = useState(initialCheckIn);
-  const [checkOut, setCheckOut] = useState(initialCheckOut);
-  const [persons, setPersons] = useState(1);
 
   const photos = getPhotos(slug, apartment.photoCount);
-  const nights = calcNights(checkIn, checkOut);
-  const midPrice = Math.round((apartment.priceRange[0] + apartment.priceRange[1]) / 2);
-  const total = nights > 0 ? nights * midPrice : 0;
 
   const openLightbox = (idx: number) => { setLightboxIndex(idx); setLightboxOpen(true); };
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
@@ -271,6 +266,18 @@ export default function ApartamentoDetail({
             </div>
           </div>
 
+          {/* ── CALENDAR — visible on mobile only ── */}
+          <div id="calendario" className="py-8 border-b lg:hidden" style={{ borderColor: 'var(--outline-variant)' }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>Reservar</h2>
+            <CalendarPicker
+              slug={slug}
+              blockedRanges={blockedRanges}
+              priceMin={apartment.priceRange[0]}
+              priceMax={apartment.priceRange[1]}
+              cleaningFee={cleaningFee}
+            />
+          </div>
+
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--on-surface)' }}>Normas de la casa</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -315,66 +322,27 @@ export default function ApartamentoDetail({
           </div>
         </div>
 
-        {/* RIGHT COLUMN — Sticky booking panel */}
+        {/* RIGHT COLUMN — Sticky calendar */}
         <div className="hidden lg:block">
-          <div className="sticky top-24 rounded-2xl border shadow-xl p-6" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}>
-            <div className="mb-4 pb-3 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-              <p className="font-bold text-sm" style={{ color: 'var(--on-surface)' }}>{apartment.title}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--on-surface-variant)' }}>{apartment.subtitle}</p>
-            </div>
-            <div className="mb-5">
-              {nights > 0 ? (
-                <>
-                  <p className="text-2xl font-bold" style={{ color: 'var(--on-surface)' }}>
-                    {midPrice}€ <span className="text-base font-normal text-stone-400">/ noche</span>
-                  </p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--on-surface-variant)' }}>
-                    {midPrice}€ × {nights} noche{nights > 1 ? 's' : ''} ={' '}
-                    <strong style={{ color: 'var(--primary)' }}>{total}€</strong>
-                  </p>
-                </>
-              ) : (
-                <p className="text-2xl font-bold" style={{ color: 'var(--on-surface)' }}>
-                  {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€{' '}
-                  <span className="text-base font-normal text-stone-400">/ noche</span>
-                </p>
-              )}
+          <div className="sticky top-24">
+            <div className="mb-3 pb-3 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
+              <p className="text-2xl font-bold" style={{ color: 'var(--on-surface)' }}>
+                {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€{' '}
+                <span className="text-base font-normal text-stone-400">/ noche</span>
+              </p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-yellow-400 text-sm">★</span>
                 <span className="text-sm font-semibold">{apartment.rating.toFixed(2)}</span>
                 <span className="text-sm text-stone-400">· {apartment.reviewCount} reseñas</span>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 border rounded-xl overflow-hidden mb-3" style={{ borderColor: 'var(--outline-variant)' }}>
-              <div className="p-3 border-r" style={{ borderColor: 'var(--outline-variant)' }}>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-                <input type="date" value={checkIn} min={new Date().toISOString().split('T')[0]} onChange={e => setCheckIn(e.target.value)} className="w-full text-sm focus:outline-none bg-transparent" style={{ color: 'var(--on-surface)' }} />
-              </div>
-              <div className="p-3">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-                <input type="date" value={checkOut} min={checkIn || new Date().toISOString().split('T')[0]} onChange={e => setCheckOut(e.target.value)} className="w-full text-sm focus:outline-none bg-transparent" style={{ color: 'var(--on-surface)' }} />
-              </div>
-            </div>
-
-            <div className="border rounded-xl p-3 mb-4" style={{ borderColor: 'var(--outline-variant)' }}>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select value={persons} onChange={e => setPersons(Number(e.target.value))} className="w-full text-sm focus:outline-none bg-transparent cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value={1}>1 persona</option>
-                <option value={2}>2 personas</option>
-              </select>
-            </div>
-
-            <Link
-              href={`/reservar/${apartment.slug}${checkIn && checkOut ? `?checkin=${checkIn}&checkout=${checkOut}&persons=${persons}` : ''}`}
-              className="block w-full text-center text-white font-bold text-sm py-4 rounded-xl uppercase tracking-widest transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'var(--primary)' }}
-            >
-              Solicitar reserva
-            </Link>
-            <p className="text-xs text-center mt-3" style={{ color: 'var(--on-surface-variant)' }}>
-              Revisaremos tu solicitud lo antes posible.
-            </p>
+            <CalendarPicker
+              slug={slug}
+              blockedRanges={blockedRanges}
+              priceMin={apartment.priceRange[0]}
+              priceMax={apartment.priceRange[1]}
+              cleaningFee={cleaningFee}
+            />
           </div>
         </div>
       </div>
@@ -386,15 +354,10 @@ export default function ApartamentoDetail({
             {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€
           </span>
           <span className="text-sm text-stone-400"> / noche</span>
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-400 text-xs">★</span>
-            <span className="text-xs font-semibold">{apartment.rating.toFixed(2)}</span>
-            <span className="text-xs text-stone-400">({apartment.reviewCount})</span>
-          </div>
         </div>
-        <Link href={`/reservar/${apartment.slug}`} className="text-white font-bold text-sm px-6 py-3 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
-          Solicitar reserva
-        </Link>
+        <a href="#calendario" className="text-white font-bold text-sm px-6 py-3 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
+          Ver fechas
+        </a>
       </div>
 
       {/* ── LIGHTBOX ──────────────────────────────────────────────── */}

@@ -47,7 +47,13 @@
       "Bash(not exist *)",
       "Bash(git reset *)",
       "Bash(git restore *)",
-      "Bash(Start-Sleep -Seconds 60)"
+      "Bash(Start-Sleep -Seconds 60)",
+      "Bash(Start-Sleep -Seconds 90)",
+      "Bash(npm config *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\j.cuesta_liux\\\\Documents\\\\holamarbella\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(Start-Sleep -Seconds 120)",
+      "Bash(Write-Host \"Listo para verificar\")"
     ]
   }
 }

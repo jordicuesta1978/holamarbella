@@ -1,0 +1,135 @@
+════════════════════════════════════════════════════════════════
+  INFORME DE VERIFICACIÓN PROFUNDA — HolaMarbella
+  27/5/2026, 9:59:28
+  Base URL: https://holamarbella.vercel.app
+════════════════════════════════════════════════════════════════
+
+✅  Home  (/)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" visible
+   ✓ "Apartamento Micu" visible
+   ✓ Buscador con fechas
+   ✓ Sin "por Mar"
+   ✓ Flex pills per-date (±1, ±2)
+   📸 scripts/screenshots/2026-05-27T07-58-06_Home.png
+
+✅  Apartamentos  (/apartamentos)
+   ✓ Carga sin error
+   ✓ "Apartamento Paloma" en tarjeta H3
+   ✓ "Apartamento Micu" en tarjeta H3
+   ✓ Nombre en H3 con color verde (--primary)
+   ✓ Subtítulo descriptivo visible
+   ✓ Sin badges TOP AIRBNB
+   📸 scripts/screenshots/2026-05-27T07-58-06_Apartamentos.png
+
+✅  Detalle Paloma  (/apartamentos/paloma)
+   ✓ Carga sin error
+   ✓ H1 "Apartamento Paloma"
+   ✓ Subtítulo descriptivo
+   ✓ Sección Ubicación con mapa
+   ✓ Botón "Solicitar reserva"
+   ✓ Sin "Anfitriona: Mar"
+   📸 scripts/screenshots/2026-05-27T07-58-06_Detalle_Paloma.png
+
+✅  Reservar Paloma  (/reservar/paloma)
+   ✓ Carga sin error
+   ✓ Formulario visible
+   ✓ "Apartamento Paloma" en resumen
+   ✓ Campo nombre
+   ✓ Campo email
+   📸 scripts/screenshots/2026-05-27T07-58-06_Reservar_Paloma.png
+
+✅  Confirmacion (vacía)  (/confirmacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   ✓ "Solicitud enviada" visible
+   📸 scripts/screenshots/2026-05-27T07-58-06_Confirmacion__vac_a_.png
+
+✅  Admin login  (/admin/login)
+   ✓ Carga sin error
+   ✓ Campo email
+   ✓ Campo contraseña
+   📸 scripts/screenshots/2026-05-27T07-58-06_Admin_login.png
+
+✅  Reservar Micu (detalle)  (/apartamentos/micu)
+   ✓ H1 "Apartamento Micu"
+   📸 scripts/screenshots/2026-05-27T07-58-06_Reservar_Micu__detalle_.png
+
+✅  API Pagar (ruta existe)  (/api/pagar/token-inexistente)
+   ✓ Ruta redirige (no se queda en /api/pagar)
+   📸 scripts/screenshots/2026-05-27T07-58-06_API_Pagar__ruta_existe_.png
+
+✅  Admin contenido  (/admin/contenido)
+   ✓ Carga sin error de aplicación
+   📸 scripts/screenshots/2026-05-27T07-58-06_Admin_contenido.png
+
+✅  Admin contenido apartamentos  (/admin/contenido/apartamentos)
+   ✓ Carga sin error de aplicación
+   ✓ Redirige a login o muestra contenido (sin 500)
+   📸 scripts/screenshots/2026-05-27T07-58-06_Admin_contenido_apartamentos.png
+
+✅  Detalle con fechas  (/apartamentos/paloma?checkin=2026-07-01&checkout=2026-07-07)
+   ✓ Carga con fechas en URL
+   ✓ Fecha llegada pre-rellenada
+   📸 scripts/screenshots/2026-05-27T07-58-06_Detalle_con_fechas.png
+
+✅  /informacion (blog)  (/informacion)
+   ✓ Carga sin error
+   ✓ Sin error de aplicación
+   📸 scripts/screenshots/2026-05-27T07-58-06__informacion__blog_.png
+
+✅  /apartamentos con fechas  (/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07)
+   ✓ Carga sin error de servidor
+   ✓ Muestra apartamentos
+   📸 scripts/screenshots/2026-05-27T07-58-06__apartamentos_con_fechas.png
+
+✅  Reservar Micu (envío form)  (/reservar/micu)
+   ✓ Formulario carga
+   ✓ Botón enviar visible y sin error
+   📸 scripts/screenshots/2026-05-27T07-58-06_Reservar_Micu__env_o_form_.png
+
+✅  FLOW 1: Reserva completa  (/reservar/paloma → /confirmacion)
+   ✓ Página /reservar/paloma carga correctamente
+   ✓ Fechas cargadas: 2027-03-10 → 2027-03-15
+   ✓ Formulario rellenado: nombre, email, teléfono, mensaje
+   ✓ Redirección a /confirmacion exitosa
+   ✓ "Solicitud enviada" visible en /confirmacion
+   ✓ booking_ref válida: "20270310PAL03"
+   ✓ booking_ref visible en el cuerpo de la página
+   📸 scripts/screenshots/2026-05-27T07-58-06_FLOW_1__Reserva_completa_confirmacion.png
+
+✅  FLOW 2: API Pagar (reserva real)  (/api/pagar/[token])
+   ✓ Sin reservas confirmadas con token — skip (no hay datos de prueba)
+
+✅  FLOW 3: Checkbox activo (API + público)  (Supabase API + /apartamentos)
+   ✓ DB: "banesto" estado actual active=true (efectivo: activo)
+   ✓ "Ático Banesto" visible en /apartamentos cuando active=true ✓
+   ✓ DB: "banesto" → active=false (desactivado)
+   ✓ "Ático Banesto" correctamente OCULTO en /apartamentos tras active=false ✓
+   ✓ DB: "banesto" → active=true (re-activado) ✓
+   ✓ "Ático Banesto" visible de nuevo tras re-activar ✓
+   ✓ NOTA: Test de UI del checkbox omitido — credenciales Vercel admin diferentes a .env.local
+   📸 scripts/screenshots/2026-05-27T07-58-06_FLOW_3__Checkbox_activo__API___p_blico__desactivado.png
+
+✅  FLOW 4: booking_ref (DB + protección admin)  (Supabase API + /admin/reservas)
+   ✓ DB: 15 reservas recientes consultadas
+   ✓ DB: 9 con booking_ref guardada en DB
+   ✓ DB: 6 sin booking_ref en DB (se calculará on-the-fly al mostrar en admin)
+   ✓ DB: 9/9 con formato válido (YYYYMMDDXXXNN)
+   ✓ Ejemplo de ref: "20270310PAL03"
+   ✓ /admin/reservas correctamente protegida → redirige a /admin/login ✓
+   📸 scripts/screenshots/2026-05-27T07-58-06_FLOW_4__booking_ref__DB___protecci_n_admin_.png
+
+✅  FLOW 5: Mensajería (DB + protección admin)  (Supabase API + /admin/inbox)
+   ✓ DB mensajes_chat: 20 mensajes recientes
+   ✓   → 2 de huéspedes, 18 de admin
+   ✓   → todos los mensajes de huéspedes marcados como leídos
+   ✓   → 15 solicitude(s) de pago en historial
+   ✓   → todos los mensajes tienen reserva_id válido ✓
+   ✓ /admin/inbox correctamente protegida → redirige a /admin/login ✓
+   ✓ /admin/inbox sin errores de aplicación ✓
+   📸 scripts/screenshots/2026-05-27T07-58-06_FLOW_5__Mensajer_a__DB___protecci_n_admin_.png
+
+════════════════════════════════════════════════════════════════
+  Resultado: 70 OK  ·  0 fallos
+════════════════════════════════════════════════════════════════

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Users, MapPin, House } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CalendarSearch from '@/components/CalendarSearch';
 import type { Apartment } from '@/lib/apartments';
 
 const reviews = [
@@ -42,19 +43,9 @@ const FEATURES = [
   },
 ];
 
-const FLEX_OPTIONS = [
-  { value: '0', label: 'Exacta' },
-  { value: '1', label: '±1' },
-  { value: '2', label: '±2' },
-  { value: '3', label: '±3' },
-  { value: '7', label: '±7' },
-]
-
-export default function HomeClient({ apartments }: { apartments: Apartment[] }) {
+export default function HomeClient({ apartments, globalBlockedDates }: { apartments: Apartment[]; globalBlockedDates: string[] }) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [flexIn, setFlexIn] = useState('0');
-  const [flexOut, setFlexOut] = useState('0');
 
   const heroSlides = apartments.map(a => ({
     src: `/images/${a.slug}/${a.slug}-1.jpg`,
@@ -118,132 +109,15 @@ export default function HomeClient({ apartments }: { apartments: Apartment[] }) 
           </div>
         </section>
 
-        {/* SEARCH BAR — desktop: pill overlapping next section */}
-        <form action="/apartamentos" method="get" className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
-          <input type="hidden" name="flexIn" value={flexIn} />
-          <input type="hidden" name="flexOut" value={flexOut} />
-          <div className="bg-white shadow-2xl rounded-3xl p-4 pl-8 flex flex-row gap-4 items-start w-full max-w-5xl">
-            <div className="flex-1 min-w-0 pt-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
-              <select name="apt" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value="">Cualquier apartamento</option>
-                {apartments.map(a => <option key={a.slug} value={a.slug}>{a.title}</option>)}
-              </select>
-            </div>
-            <div className="w-px self-stretch bg-stone-200 shrink-0 mx-1" />
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-              <input type="date" name="checkIn" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {FLEX_OPTIONS.map(opt => (
-                  <button key={opt.value} type="button" onClick={() => setFlexIn(opt.value)}
-                    className="text-[10px] px-2 py-0.5 rounded-full border transition-all"
-                    style={{
-                      borderColor: flexIn === opt.value ? 'var(--primary)' : '#e2e8f0',
-                      background: flexIn === opt.value ? 'var(--primary)' : 'transparent',
-                      color: flexIn === opt.value ? '#fff' : 'var(--on-surface-variant)',
-                      fontWeight: flexIn === opt.value ? 700 : 400,
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="w-px self-stretch bg-stone-200 shrink-0 mx-1" />
-            <div className="flex-1 min-w-0">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-              <input type="date" name="checkOut" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {FLEX_OPTIONS.map(opt => (
-                  <button key={opt.value} type="button" onClick={() => setFlexOut(opt.value)}
-                    className="text-[10px] px-2 py-0.5 rounded-full border transition-all"
-                    style={{
-                      borderColor: flexOut === opt.value ? 'var(--primary)' : '#e2e8f0',
-                      background: flexOut === opt.value ? 'var(--primary)' : 'transparent',
-                      color: flexOut === opt.value ? '#fff' : 'var(--on-surface-variant)',
-                      fontWeight: flexOut === opt.value ? 700 : 400,
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="w-px self-stretch bg-stone-200 shrink-0 mx-1" />
-            <div className="w-28 shrink-0 pt-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select name="personas" className="w-full border-none bg-transparent py-1 text-sm focus:outline-none cursor-pointer" style={{ color: 'var(--on-surface)' }}>
-                <option value="1">1 persona</option>
-                <option value="2">2 personas</option>
-              </select>
-            </div>
-            <button type="submit" className="text-white font-bold text-xs px-8 h-10 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90 shrink-0 self-center mt-1" style={{ backgroundColor: 'var(--primary)' }}>
-              Buscar
-            </button>
-          </div>
-        </form>
+        {/* CALENDAR SEARCH — desktop: overlapping next section */}
+        <div className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
+          <CalendarSearch globalBlockedDates={globalBlockedDates} />
+        </div>
 
-        {/* Mobile search */}
-        <form action="/apartamentos" method="get" className="md:hidden px-4 py-4" style={{ backgroundColor: 'var(--arena)' }}>
-          <input type="hidden" name="flexIn" value={flexIn} />
-          <input type="hidden" name="flexOut" value={flexOut} />
-          <div className="bg-white shadow-lg rounded-2xl p-5 flex flex-col gap-4">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Apartamento</label>
-              <select name="apt" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
-                <option value="">Cualquier apartamento</option>
-                {apartments.map(a => <option key={a.slug} value={a.slug}>{a.title}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Llegada</label>
-                <input type="date" name="checkIn" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
-                <div className="flex gap-1 mt-1.5 flex-wrap">
-                  {FLEX_OPTIONS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setFlexIn(opt.value)}
-                      className="text-[10px] px-2 py-0.5 rounded-full border transition-all"
-                      style={{
-                        borderColor: flexIn === opt.value ? 'var(--primary)' : '#e2e8f0',
-                        background: flexIn === opt.value ? 'var(--primary)' : 'transparent',
-                        color: flexIn === opt.value ? '#fff' : 'var(--on-surface-variant)',
-                        fontWeight: flexIn === opt.value ? 700 : 400,
-                      }}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Salida</label>
-                <input type="date" name="checkOut" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }} />
-                <div className="flex gap-1 mt-1.5 flex-wrap">
-                  {FLEX_OPTIONS.map(opt => (
-                    <button key={opt.value} type="button" onClick={() => setFlexOut(opt.value)}
-                      className="text-[10px] px-2 py-0.5 rounded-full border transition-all"
-                      style={{
-                        borderColor: flexOut === opt.value ? 'var(--primary)' : '#e2e8f0',
-                        background: flexOut === opt.value ? 'var(--primary)' : 'transparent',
-                        color: flexOut === opt.value ? '#fff' : 'var(--on-surface-variant)',
-                        fontWeight: flexOut === opt.value ? 700 : 400,
-                      }}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-1">Personas</label>
-              <select name="personas" className="w-full border border-stone-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none" style={{ color: 'var(--on-surface)' }}>
-                <option value="1">1 persona</option>
-                <option value="2">2 personas</option>
-              </select>
-            </div>
-            <button type="submit" className="text-white font-bold text-sm py-3 rounded-full uppercase tracking-widest w-full transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
-              Buscar
-            </button>
-          </div>
-        </form>
+        {/* Mobile calendar */}
+        <div className="md:hidden px-4 py-6" style={{ backgroundColor: 'var(--arena)' }}>
+          <CalendarSearch globalBlockedDates={globalBlockedDates} />
+        </div>
       </div>
 
       {/* APARTMENTS */}

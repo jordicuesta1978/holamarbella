@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getConversacionByToken } from '@/app/actions/mensajes'
-import { CreditCard, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { CreditCard, CheckCircle, Clock, XCircle, CalendarDays } from 'lucide-react'
 import PagoButton from './PagoButton'
 
 const APT_NAMES: Record<string, string> = {
@@ -63,7 +63,7 @@ export default async function ConversacionPage({
             Tu reserva · {APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug}
           </h1>
           <div style={{ display: 'flex', gap: 20, paddingBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>
-            <span>📅 {fmtDate(reserva.check_in)}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarDays size={13} style={{ opacity: 0.8 }} /> {fmtDate(reserva.check_in)}</span>
             <span>→ {fmtDate(reserva.check_out)}</span>
             {nights && <span>· {nights} noche{nights > 1 ? 's' : ''}</span>}
           </div>
@@ -80,7 +80,7 @@ export default async function ConversacionPage({
           }}>
             <CheckCircle size={36} color="#4B766B" style={{ display: 'block', margin: '0 auto 10px' }} />
             <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#4B766B' }}>¡Pago recibido!</p>
-            <p style={{ margin: 0, fontSize: 13, color: '#666' }}>Tu reserva está confirmada. Te hemos enviado un email de confirmación.</p>
+            <p style={{ margin: 0, fontSize: 13, color: '#666' }}>Hemos recibido tu pago. El gestor revisará y confirmará tu reserva en breve.</p>
           </div>
         )}
 
