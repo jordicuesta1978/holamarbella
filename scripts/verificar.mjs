@@ -158,7 +158,11 @@ await check(browser, 'Detalle Paloma', '/apartamentos/paloma', [
   { desc: 'H1 "Apartamento Paloma"', fn: p => p.locator('h1:has-text("Apartamento Paloma")').waitFor({ timeout: 8000 }) },
   { desc: 'Subtítulo descriptivo', fn: p => p.locator('text=Centro · Playa').first().waitFor({ timeout: 5000 }) },
   { desc: 'Sección Ubicación con mapa', fn: p => p.locator('text=Ubicación').first().waitFor({ timeout: 5000 }) },
-  { desc: 'Botón "Solicitar reserva"', fn: p => p.locator('text=Solicitar reserva').first().waitFor({ timeout: 5000 }) },
+  { desc: 'CalendarPicker presente', fn: async p => {
+    await p.waitForTimeout(1500)
+    const t = await p.textContent('body')
+    if (!t?.includes('Selecciona') && !t?.includes('fecha')) throw new Error('CalendarPicker no encontrado')
+  }},
   { desc: 'Sin "Anfitriona: Mar"', fn: async p => {
     const t = await p.textContent('body')
     if (t?.includes('Anfitriona: Mar') || t?.includes('Airbnb Superhost')) throw new Error('"Anfitriona: Mar" aún aparece')
