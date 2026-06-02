@@ -22,11 +22,13 @@ function ConfirmacionContent() {
   const checkin = searchParams.get('checkin') || '';
   const checkout = searchParams.get('checkout') || '';
   const personas = searchParams.get('personas') || '';
-  const rate = searchParams.get('rate') || '';
   const nights = searchParams.get('nights') || '';
-  const subtotal = searchParams.get('subtotal') || '';
   const cleaning = searchParams.get('cleaning') || '';
   const total = searchParams.get('total') || '';
+  const breakdownRaw = searchParams.get('breakdown') || '';
+  const breakdown: Array<{ price: number; count: number }> = (() => {
+    try { return breakdownRaw ? JSON.parse(breakdownRaw) : [] } catch { return [] }
+  })();
 
   const [aptInfo, setAptInfo] = useState<{ title: string; subtitle: string } | null>(null);
 
@@ -48,7 +50,10 @@ function ConfirmacionContent() {
     ...(checkin ? [['Llegada', fmtDate(checkin)] as [string, string]] : []),
     ...(checkout ? [['Salida', fmtDate(checkout)] as [string, string]] : []),
     ...(personas ? [['Personas', `${personas} persona${Number(personas) > 1 ? 's' : ''}`] as [string, string]] : []),
-    ...(subtotal ? [['Alojamiento', `${rate}€/noche × ${nights} noches = ${subtotal}€`] as [string, string]] : []),
+    ...(breakdown.length > 0
+      ? breakdown.map(g => [`Alojamiento (${g.count} noche${g.count > 1 ? 's' : ''})`, `${g.price}€ × ${g.count} = ${g.price * g.count}€`] as [string, string])
+      : nights ? [['Duración', `${nights} noche${Number(nights) > 1 ? 's' : ''}`] as [string, string]] : []
+    ),
     ...(cleaning ? [['Gastos de limpieza', `${cleaning}€`] as [string, string]] : []),
     ...(total ? [['Total estimado', `${total}€`] as [string, string]] : []),
   ];
@@ -87,7 +92,7 @@ function ConfirmacionContent() {
         </div>
       )}
 
-      {(total || subtotal) && (
+      {(total || breakdown.length > 0) && (
         <p className="text-xs mb-6 text-center" style={{ color: 'var(--on-surface-variant)' }}>
           * El precio exacto será confirmado al revisar tu solicitud.
         </p>

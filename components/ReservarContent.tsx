@@ -34,9 +34,48 @@ type FormState = {
 
 type FormErrors = Partial<Record<keyof FormState | 'global', string>>;
 
+type PriceRange = { start: string; end: string; price: number }
+
+// Replicate CalendarPicker's range logic exactly — same function, no simplification
+function calcNightlyPrices(
+  checkIn: string,
+  checkOut: string,
+  priceRanges: PriceRange[],
+  midPrice: number,
+): Array<{ date: string; price: number }> {
+  const nights: Array<{ date: string; price: number }> = []
+  const s = new Date(checkIn + 'T00:00:00')
+  const e = new Date(checkOut + 'T00:00:00')
+  for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
+    const key = d.toISOString().split('T')[0]
+    const range = priceRanges.find(p => key >= p.start && key < p.end)
+    nights.push({ date: key, price: range?.price ?? midPrice })
+  }
+  return nights
+}
+
+function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{ price: number; count: number }> {
+  const groups: Array<{ price: number; count: number }> = []
+  for (const n of nights) {
+    const last = groups[groups.length - 1]
+    if (last && last.price === n.price) last.count++
+    else groups.push({ price: n.price, count: 1 })
+  }
+  return groups
+}
+
 const DEFAULT_CLEANING_FEE = 40
 
-export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT_CLEANING_FEE }: { apartment: Apartment; slug: string; cleaningFee?: number }) {
+export default function ReservarContent({
+  apartment, slug,
+  priceRanges = [],
+  cleaningFee = DEFAULT_CLEANING_FEE,
+}: {
+  apartment: Apartment
+  slug: string
+  priceRanges?: PriceRange[]
+  cleaningFee?: number
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -54,8 +93,14 @@ export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT
 
   const nights = calcNights(form.checkIn, form.checkOut);
   const midPrice = Math.round((apartment.priceRange[0] + apartment.priceRange[1]) / 2);
-  const subtotal = nights > 0 ? nights * midPrice : 0;
-  const total = subtotal > 0 ? subtotal + cleaningFee : 0;
+
+  // Use exact same range logic as CalendarPicker
+  const nightlyPrices = (nights > 0 && form.checkIn && form.checkOut)
+    ? calcNightlyPrices(form.checkIn, form.checkOut, priceRanges, midPrice)
+    : []
+  const subtotal = nightlyPrices.reduce((s, n) => s + n.price, 0)
+  const total = subtotal > 0 ? subtotal + cleaningFee : 0
+  const breakdown = groupBreakdown(nightlyPrices)
 
   const set = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -117,7 +162,13 @@ export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT
         checkin: form.checkIn,
         checkout: form.checkOut,
         personas: String(form.personas),
-        ...(nights > 0 ? { rate: String(midPrice), nights: String(nights), subtotal: String(subtotal), cleaning: String(cleaningFee), total: String(total) } : {}),
+        ...(nights > 0 ? {
+          nights: String(nights),
+          cleaning: String(cleaningFee),
+          total: String(total),
+          // pass breakdown so confirmation can show per-range desglose
+          breakdown: JSON.stringify(breakdown),
+        } : {}),
       });
       router.push(`/confirmacion?${qs.toString()}`);
     } catch {
@@ -292,10 +343,14 @@ export default function ReservarContent({ apartment, slug, cleaningFee = DEFAULT
               <div className="border-t pt-3 space-y-2" style={{ borderColor: 'var(--outline-variant)' }}>
                 {nights > 0 ? (
                   <>
-                    <div className="flex justify-between text-sm">
-                      <span style={{ color: 'var(--on-surface-variant)' }}>{midPrice}€ × {nights} noche{nights > 1 ? 's' : ''}</span>
-                      <span style={{ color: 'var(--on-surface)' }}>{subtotal}€</span>
-                    </div>
+                    {breakdown.map((g, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--on-surface-variant)' }}>
+                          {g.price}€ × {g.count} noche{g.count > 1 ? 's' : ''}
+                        </span>
+                        <span style={{ color: 'var(--on-surface)' }}>{g.price * g.count}€</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between text-sm">
                       <span style={{ color: 'var(--on-surface-variant)' }}>Gastos de limpieza</span>
                       <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>
