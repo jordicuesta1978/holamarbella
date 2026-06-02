@@ -10,23 +10,25 @@ type Props = {
   initialMonth: number
   legend?: Array<{ bg: string; label: string }>
   onDayClick?: (dateKey: string, mark: DayMark | undefined) => void
+  /** Font size for the label below the day number. Default 11. */
   labelFontSize?: number
 }
 
 const DAYS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
-const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
 function daysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate()
 }
 
 function firstWeekday(year: number, month: number) {
-  // 0=Sun → remap to Mon-based (0=Mon)
   const d = new Date(year, month, 1).getDay()
   return (d + 6) % 7
 }
 
-export default function CalendarGrid({ markedDates, initialYear, initialMonth, legend, onDayClick, labelFontSize = 8 }: Props) {
+export default function CalendarGrid({
+  markedDates, initialYear, initialMonth, legend, onDayClick, labelFontSize = 11,
+}: Props) {
   const today = new Date()
   const [year, setYear] = useState(initialYear)
   const [month, setMonth] = useState(initialMonth)
@@ -40,12 +42,10 @@ export default function CalendarGrid({ markedDates, initialYear, initialMonth, l
 
   const numDays = daysInMonth(year, month)
   const startOffset = firstWeekday(year, month)
-
   const cells: (number | null)[] = [
     ...Array(startOffset).fill(null),
     ...Array.from({ length: numDays }, (_, i) => i + 1),
   ]
-  // Pad to full rows
   while (cells.length % 7 !== 0) cells.push(null)
 
   return (
@@ -67,39 +67,46 @@ export default function CalendarGrid({ markedDates, initialYear, initialMonth, l
       {/* Day cells */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
         {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} />
+          if (!day) return <div key={`e-${idx}`} style={{ minHeight: 48 }} />
           const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
           const mark = markedDates[key]
           const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day
+          const hasLabel = !!mark?.label
+
           return (
             <div
               key={key}
               title={mark?.label}
               onClick={() => onDayClick?.(key, mark)}
               style={{
-                aspectRatio: '1',
+                minHeight: hasLabel ? 52 : 40,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: hasLabel ? 'flex-start' : 'center',
+                paddingTop: hasLabel ? 6 : 0,
+                paddingBottom: hasLabel ? 6 : 0,
                 borderRadius: 6,
-                fontSize: 11,
-                fontWeight: isToday ? 800 : 400,
                 background: mark?.bg ?? (isToday ? '#e8f4f0' : '#f8fafc'),
                 color: mark?.color ?? (isToday ? '#4B766B' : '#555'),
                 border: isToday ? '2px solid #4B766B' : '1px solid transparent',
                 cursor: onDayClick ? 'pointer' : 'default',
-                position: 'relative',
-                overflow: 'hidden',
+                gap: 2,
               }}
             >
-              {day}
+              <span style={{ fontSize: 13, fontWeight: isToday ? 800 : 500, lineHeight: 1 }}>{day}</span>
               {mark?.label && (
                 <span style={{
-                  position: 'absolute', bottom: 1, left: 0, right: 0,
-                  fontSize: labelFontSize, textAlign: 'center', overflow: 'hidden',
-                  whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                  color: mark.color ?? '#444', opacity: 0.85,
-                  paddingInline: 1, lineHeight: 1,
+                  fontSize: labelFontSize,
+                  fontWeight: 700,
+                  color: mark.color ?? '#1a1a2e',
+                  lineHeight: 1.2,
+                  textAlign: 'center',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  paddingInline: 2,
                 }}>
                   {mark.label}
                 </span>

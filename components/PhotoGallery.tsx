@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Upload, Trash2, Star, Loader2 } from 'lucide-react'
+import { Upload, Trash2, Star, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Photo = { path: string; url: string; isPrimary: boolean }
 
@@ -9,13 +9,25 @@ type Props = {
   slug: string
   initialPhotos: Photo[]
   onPrimaryChange: (path: string) => Promise<void>
+  /** Called with the full ordered array of paths whenever order or primary changes */
+  onOrderChange?: (orderedPaths: string[]) => Promise<void>
 }
 
-export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: Props) {
+export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange, onOrderChange }: Props) {
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  async function saveOrder(ordered: Photo[]) {
+    const paths = ordered.map(p => p.path)
+    const primaryPath = ordered[0]?.path
+    if (onOrderChange) {
+      await onOrderChange(paths).catch(() => {})
+    } else if (primaryPath) {
+      await onPrimaryChange(primaryPath).catch(() => {})
+    }
+  }
 
   async function handleUpload(files: FileList) {
     setUploading(true)
@@ -41,9 +53,12 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
 
     if (uploaded.length > 0) {
       setPhotos(prev => {
-        // If no photos existed, mark first upload as primary
         const noneIsPrimary = prev.every(p => !p.isPrimary)
-        return [...prev, ...uploaded.map((p, i) => ({ ...p, isPrimary: noneIsPrimary && i === 0 && prev.length === 0 }))]
+        const updated = [...prev, ...uploaded.map((p, i) => ({
+          ...p, isPrimary: noneIsPrimary && i === 0 && prev.length === 0,
+        }))]
+        saveOrder(updated)
+        return updated
       })
     }
     setUploading(false)
@@ -56,19 +71,36 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
       body: JSON.stringify({ bucket: 'apartamentos', path }),
     })
     setPhotos(prev => {
+      const wasFirst = prev[0]?.path === path
       const next = prev.filter(p => p.path !== path)
-      // If we deleted the primary, assign first remaining
-      if (prev.find(p => p.path === path)?.isPrimary && next.length > 0) {
-        next[0].isPrimary = true
-        onPrimaryChange(next[0].path).catch(() => {})
-      }
+      if (wasFirst && next.length > 0) next[0].isPrimary = true
+      saveOrder(next)
       return next
     })
   }
 
   async function handleSetPrimary(path: string) {
-    setPhotos(prev => prev.map(p => ({ ...p, isPrimary: p.path === path })))
-    await onPrimaryChange(path)
+    setPhotos(prev => {
+      // Move to front, mark as primary
+      const target = prev.find(p => p.path === path)!
+      const rest = prev.filter(p => p.path !== path)
+      const updated = [{ ...target, isPrimary: true }, ...rest.map(p => ({ ...p, isPrimary: false }))]
+      saveOrder(updated)
+      return updated
+    })
+  }
+
+  function handleMove(idx: number, dir: -1 | 1) {
+    setPhotos(prev => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev;
+      [next[idx], next[target]] = [next[target], next[idx]]
+      // Primary is always index 0
+      const updated = next.map((p, i) => ({ ...p, isPrimary: i === 0 }))
+      saveOrder(updated)
+      return updated
+    })
   }
 
   const btnStyle = (active?: boolean): React.CSSProperties => ({
@@ -85,12 +117,23 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
     gap: 4,
   })
 
+  const iconBtn: React.CSSProperties = {
+    background: 'white',
+    color: '#6b7280',
+    border: '1px solid #e2e8f0',
+    borderRadius: 6,
+    padding: '4px 6px',
+    fontSize: 11,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+  }
+
   return (
     <div>
-      {/* Grid */}
       {photos.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, marginBottom: 12 }}>
-          {photos.map(p => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, marginBottom: 12 }}>
+          {photos.map((p, idx) => (
             <div key={p.path} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: p.isPrimary ? '2px solid #4B766B' : '1px solid #e2e8f0', background: '#f8fafc' }}>
               <img src={p.url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
               {p.isPrimary && (
@@ -98,12 +141,22 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
                   PRINCIPAL
                 </span>
               )}
-              <div style={{ display: 'flex', gap: 4, padding: 6, background: 'rgba(255,255,255,0.95)' }}>
+              <div style={{ display: 'flex', gap: 3, padding: '5px 5px', background: 'rgba(255,255,255,0.96)', flexWrap: 'wrap' }}>
+                {/* Move left */}
+                <button onClick={() => handleMove(idx, -1)} disabled={idx === 0} style={{ ...iconBtn, opacity: idx === 0 ? 0.3 : 1 }} title="Mover izquierda">
+                  <ChevronLeft size={11} />
+                </button>
+                {/* Move right */}
+                <button onClick={() => handleMove(idx, 1)} disabled={idx === photos.length - 1} style={{ ...iconBtn, opacity: idx === photos.length - 1 ? 0.3 : 1 }} title="Mover derecha">
+                  <ChevronRight size={11} />
+                </button>
+                {/* Set primary (only if not already) */}
                 {!p.isPrimary && (
                   <button onClick={() => handleSetPrimary(p.path)} style={btnStyle()} title="Marcar como principal">
                     <Star size={10} />
                   </button>
                 )}
+                {/* Delete */}
                 <button onClick={() => handleDelete(p.path)} style={{ ...btnStyle(), color: '#e53e3e', borderColor: '#fecaca' }} title="Eliminar">
                   <Trash2 size={10} />
                 </button>
@@ -113,7 +166,6 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
         </div>
       )}
 
-      {/* Upload button */}
       <input
         ref={inputRef}
         type="file"
@@ -128,7 +180,7 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
         disabled={uploading}
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          background: uploading ? '#f8fafc' : '#f8fafc',
+          background: '#f8fafc',
           border: '1.5px dashed #d1d5db',
           borderRadius: 8, padding: '10px 16px',
           fontSize: 13, color: '#6b7280', cursor: uploading ? 'not-allowed' : 'pointer',
@@ -138,7 +190,9 @@ export default function PhotoGallery({ slug, initialPhotos, onPrimaryChange }: P
         {uploading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo…</> : <><Upload size={14} /> Subir fotos</>}
       </button>
       {error && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#e53e3e' }}>{error}</p>}
-      <p style={{ margin: '4px 0 0', fontSize: 11, color: '#aaa' }}>Formatos: JPG, PNG, WebP. La foto marcada como "Principal" aparece en las cards.</p>
+      <p style={{ margin: '4px 0 0', fontSize: 11, color: '#aaa' }}>
+        La foto en posición 1 es la Principal. Usa ←→ para reordenar.
+      </p>
     </div>
   )
 }

@@ -184,6 +184,16 @@ export async function setApartamentoPrimaryPhoto(slug: string, photoPath: string
   revalidatePath('/apartamentos')
 }
 
+export async function savePhotoOrder(slug: string, orderedPaths: string[]) {
+  // Store ordered paths as JSON; first element is the primary photo
+  const value = JSON.stringify(orderedPaths)
+  await db.from('apartments').update({ primary_photo: value }).eq('slug', slug)
+  revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath(`/apartamentos/${slug}`)
+  revalidatePath('/apartamentos')
+  revalidatePath('/')
+}
+
 // ── Reseñas ───────────────────────────────────────────────────────────────────
 
 export async function getResenas() {

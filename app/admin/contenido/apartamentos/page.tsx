@@ -1,4 +1,4 @@
-import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto } from '../actions'
+import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder } from '../actions'
 import PhotoGallery from '@/components/PhotoGallery'
 
 function label(text: string, hint?: string) {
@@ -71,6 +71,10 @@ export default async function ApartamentosContentPage() {
                 onPrimaryChange={async (path: string) => {
                   'use server'
                   await setApartamentoPrimaryPhoto(apt.slug, path)
+                }}
+                onOrderChange={async (orderedPaths: string[]) => {
+                  'use server'
+                  await savePhotoOrder(apt.slug, orderedPaths)
                 }}
               />
             </div>

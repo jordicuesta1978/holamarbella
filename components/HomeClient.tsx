@@ -128,7 +128,7 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
             {apartments.map((apt) => (
               <Link key={apt.slug} href={`/apartamentos/${apt.slug}`} className="group block rounded-2xl overflow-hidden border hover:shadow-xl transition-all duration-300" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}>
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={`/images/${apt.slug}/${apt.slug}-1.jpg`} alt={apt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={apt.primaryPhotoUrl ?? `/images/${apt.slug}/${apt.slug}-1.jpg`} alt={apt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5">
                   <h3 className="text-base font-bold mb-1" style={{ color: 'var(--primary)' }}>{apt.title}</h3>

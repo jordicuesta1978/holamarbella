@@ -68,6 +68,7 @@ export default function ApartamentoDetail({
   priceRanges = [],
   minNightsDefault = 1,
   minNightsRanges = [],
+  storagePhotos = [],
 }: {
   apartment: Apartment;
   slug: string;
@@ -76,13 +77,15 @@ export default function ApartamentoDetail({
   priceRanges?: Array<{ start: string; end: string; price: number }>;
   minNightsDefault?: number;
   minNightsRanges?: Array<{ start: string; end: string; min_nights: number }>;
+  storagePhotos?: string[];
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const photos = getPhotos(slug, apartment.photoCount);
+  // Use Storage photos when available, fall back to static local files
+  const photos = storagePhotos.length > 0 ? storagePhotos : getPhotos(slug, apartment.photoCount);
 
   const openLightbox = (idx: number) => { setLightboxIndex(idx); setLightboxOpen(true); };
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);

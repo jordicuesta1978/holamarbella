@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getApartmentBySlug, getBlockedRanges, getPriceRanges, getMinNightsRanges } from '@/lib/db';
+import { getApartmentBySlug, getBlockedRanges, getPriceRanges, getMinNightsRanges, getStoragePhotos } from '@/lib/db';
 import ApartamentoDetail from '@/components/ApartamentoDetail';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -22,11 +22,12 @@ export default async function ApartamentoPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params;
-  const [apartment, blockedRanges, priceRanges, minNightsRanges] = await Promise.all([
+  const [apartment, blockedRanges, priceRanges, minNightsRanges, storagePhotos] = await Promise.all([
     getApartmentBySlug(slug),
     getBlockedRanges(slug).catch(() => []),
     getPriceRanges(slug).catch(() => []),
     getMinNightsRanges(slug).catch(() => []),
+    getStoragePhotos(slug).catch(() => []),
   ]);
   if (!apartment) notFound();
 
@@ -50,6 +51,7 @@ export default async function ApartamentoPage({
       priceRanges={priceRanges}
       minNightsDefault={defaultMinNights}
       minNightsRanges={datedMinNights}
+      storagePhotos={storagePhotos}
     />
   );
 }

@@ -4,6 +4,25 @@ import type { Apartment, ApartmentReview, AmenityCategory } from './apartments'
 import { computeKeyFeatures } from './apartments'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SUPABASE_STORAGE_BASE = (() => {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    return url ? `${url}/storage/v1/object/public/apartamentos/` : ''
+  } catch { return '' }
+})()
+
+function parsePrimaryPhoto(raw: string | null): { primaryUrl: string | undefined; orderedPaths: string[] } {
+  if (!raw) return { primaryUrl: undefined, orderedPaths: [] }
+  if (raw.startsWith('[')) {
+    try {
+      const paths = JSON.parse(raw) as string[]
+      const primaryUrl = paths[0] ? SUPABASE_STORAGE_BASE + paths[0] : undefined
+      return { primaryUrl, orderedPaths: paths }
+    } catch { /* fall through */ }
+  }
+  return { primaryUrl: SUPABASE_STORAGE_BASE + raw, orderedPaths: [raw] }
+}
+
 function mapRow(row: any): Apartment {
   const capacity = {
     persons: row.persons,
@@ -12,6 +31,7 @@ function mapRow(row: any): Apartment {
     bathrooms: row.bathrooms,
     extras: row.bed_extras ?? undefined,
   }
+  const { primaryUrl } = parsePrimaryPhoto(row.primary_photo ?? null)
   return {
     slug: row.slug,
     title: row.title,
@@ -24,6 +44,7 @@ function mapRow(row: any): Apartment {
     description: row.description,
     license: row.license,
     photoCount: row.photo_count,
+    primaryPhotoUrl: primaryUrl,
     priceRange: [row.price_min, row.price_max],
     topAmenities: row.top_amenities as string[],
     amenityCategories: row.amenity_categories as AmenityCategory[],
@@ -40,6 +61,34 @@ export async function getApartments(): Promise<Apartment[]> {
   if (error) throw new Error(error.message)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data as any[]).map(mapRow)
+}
+
+export async function getStoragePhotos(slug: string): Promise<string[]> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabaseAdmin as any
+    const { data: apt } = await db.from('apartments').select('primary_photo').eq('slug', slug).single()
+    const { orderedPaths } = parsePrimaryPhoto(apt?.primary_photo ?? null)
+
+    // Fetch all files from Storage
+    const { data: files } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
+    const validFiles = (files ?? []).filter(f => !f.name.startsWith('.'))
+    if (validFiles.length === 0) return []
+
+    const allPaths = validFiles.map(f => `${slug}/${f.name}`)
+    const base = SUPABASE_STORAGE_BASE
+
+    if (orderedPaths.length > 0) {
+      // Build ordered list: stored order first, then any new uploads not yet in order
+      const ordered = [...orderedPaths.filter(p => allPaths.includes(p))]
+      for (const p of allPaths) if (!ordered.includes(p)) ordered.push(p)
+      return ordered.map(p => base + p)
+    }
+
+    return allPaths.map(p => base + p)
+  } catch {
+    return []
+  }
 }
 
 export async function getPriceRanges(slug: string): Promise<Array<{ start: string; end: string; price: number }>> {

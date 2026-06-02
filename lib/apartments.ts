@@ -31,6 +31,7 @@ export type Apartment = {
   topAmenities: string[];
   amenityCategories: AmenityCategory[];
   photoCount: number;
+  primaryPhotoUrl?: string;
   priceRange: [number, number];
   reviews: ApartmentReview[];
 };
