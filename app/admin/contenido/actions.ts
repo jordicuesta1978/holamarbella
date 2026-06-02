@@ -158,36 +158,77 @@ export async function deleteArticulo(id: number) {
 
 // ── Fotos (Storage) ───────────────────────────────────────────────────────────
 
+const ORDER_FILE = '_order.json'
+
+async function ensureBucket() {
+  const { error } = await supabaseAdmin.storage.getBucket('apartamentos')
+  if (error) await supabaseAdmin.storage.createBucket('apartamentos', { public: true }).catch(() => {})
+}
+
+async function readPhotoOrder(slug: string): Promise<string[] | null> {
+  const { data, error } = await supabaseAdmin.storage.from('apartamentos').download(`${slug}/${ORDER_FILE}`)
+  if (error || !data) return null
+  try {
+    const text = await data.text()
+    const parsed = JSON.parse(text)
+    return Array.isArray(parsed) ? parsed : (parsed.order ?? null)
+  } catch { return null }
+}
+
+async function writePhotoOrder(slug: string, orderedPaths: string[]) {
+  const bytes = Buffer.from(JSON.stringify(orderedPaths))
+  await supabaseAdmin.storage.from('apartamentos').upload(`${slug}/${ORDER_FILE}`, bytes, {
+    contentType: 'text/plain', upsert: true,
+  })
+}
+
 export async function getApartamentoPhotos(slug: string): Promise<{ path: string; url: string; isPrimary: boolean }[]> {
-  // Ensure bucket exists
-  const { error: bucketErr } = await supabaseAdmin.storage.getBucket('apartamentos')
-  if (bucketErr) {
-    await supabaseAdmin.storage.createBucket('apartamentos', { public: true }).catch(() => {})
+  await ensureBucket()
+
+  const { data: files, error } = await supabaseAdmin.storage
+    .from('apartamentos')
+    .list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
+  if (error || !files) return []
+
+  const photoFiles = files.filter(f =>
+    f.name !== ORDER_FILE && f.name !== '.emptyFolderPlaceholder' && !f.name.startsWith('.')
+  )
+  if (photoFiles.length === 0) return []
+
+  const allPaths = photoFiles.map(f => `${slug}/${f.name}`)
+  const storedOrder = await readPhotoOrder(slug)
+
+  // Build ordered list: stored order first, then any new files not yet in order
+  let ordered: string[]
+  if (storedOrder && storedOrder.length > 0) {
+    ordered = [...storedOrder.filter(p => allPaths.includes(p))]
+    for (const p of allPaths) if (!ordered.includes(p)) ordered.push(p)
+  } else {
+    ordered = allPaths
   }
 
-  const { data: files, error } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
-  if (error || !files || files.length === 0) return []
-  const { data: apt } = await db.from('apartments').select('primary_photo').eq('slug', slug).single()
-  const primaryPath = apt?.primary_photo ?? ''
-  const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder' && !f.name.startsWith('.'))
-  return filtered.map((f, idx) => {
-    const path = `${slug}/${f.name}`
+  const primaryPath = ordered[0] ?? ''
+  return ordered.map(path => {
     const { data: urlData } = supabaseAdmin.storage.from('apartamentos').getPublicUrl(path)
-    return { path, url: urlData.publicUrl, isPrimary: path === primaryPath || (!primaryPath && idx === 0) }
+    return { path, url: urlData.publicUrl, isPrimary: path === primaryPath }
   })
 }
 
 export async function setApartamentoPrimaryPhoto(slug: string, photoPath: string) {
-  await db.from('apartments').update({ primary_photo: photoPath }).eq('slug', slug)
+  // Read current order, move photoPath to front
+  const current = await readPhotoOrder(slug)
+  const { data: files } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
+  const allPaths = (files ?? []).filter(f => f.name !== ORDER_FILE && !f.name.startsWith('.')).map(f => `${slug}/${f.name}`)
+  const base = (current ?? allPaths).filter(p => p !== photoPath)
+  await writePhotoOrder(slug, [photoPath, ...base])
   revalidatePath('/admin/contenido/apartamentos')
   revalidatePath(`/apartamentos/${slug}`)
   revalidatePath('/apartamentos')
+  revalidatePath('/')
 }
 
 export async function savePhotoOrder(slug: string, orderedPaths: string[]) {
-  // Store ordered paths as JSON; first element is the primary photo
-  const value = JSON.stringify(orderedPaths)
-  await db.from('apartments').update({ primary_photo: value }).eq('slug', slug)
+  await writePhotoOrder(slug, orderedPaths)
   revalidatePath('/admin/contenido/apartamentos')
   revalidatePath(`/apartamentos/${slug}`)
   revalidatePath('/apartamentos')

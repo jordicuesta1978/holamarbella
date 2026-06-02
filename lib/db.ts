@@ -11,19 +11,17 @@ const SUPABASE_STORAGE_BASE = (() => {
   } catch { return '' }
 })()
 
-function parsePrimaryPhoto(raw: string | null): { primaryUrl: string | undefined; orderedPaths: string[] } {
-  if (!raw) return { primaryUrl: undefined, orderedPaths: [] }
-  if (raw.startsWith('[')) {
-    try {
-      const paths = JSON.parse(raw) as string[]
-      const primaryUrl = paths[0] ? SUPABASE_STORAGE_BASE + paths[0] : undefined
-      return { primaryUrl, orderedPaths: paths }
-    } catch { /* fall through */ }
-  }
-  return { primaryUrl: SUPABASE_STORAGE_BASE + raw, orderedPaths: [raw] }
+async function readOrderJson(slug: string): Promise<string[] | null> {
+  try {
+    const { data, error } = await supabaseAdmin.storage.from('apartamentos').download(`${slug}/_order.json`)
+    if (error || !data) return null
+    const text = await data.text()
+    const parsed = JSON.parse(text)
+    return Array.isArray(parsed) ? parsed : (parsed.order ?? null)
+  } catch { return null }
 }
 
-function mapRow(row: any): Apartment {
+function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
   const capacity = {
     persons: row.persons,
     bedrooms: row.bedrooms,
@@ -31,7 +29,6 @@ function mapRow(row: any): Apartment {
     bathrooms: row.bathrooms,
     extras: row.bed_extras ?? undefined,
   }
-  const { primaryUrl } = parsePrimaryPhoto(row.primary_photo ?? null)
   return {
     slug: row.slug,
     title: row.title,
@@ -44,7 +41,7 @@ function mapRow(row: any): Apartment {
     description: row.description,
     license: row.license,
     photoCount: row.photo_count,
-    primaryPhotoUrl: primaryUrl,
+    primaryPhotoUrl,
     priceRange: [row.price_min, row.price_max],
     topAmenities: row.top_amenities as string[],
     amenityCategories: row.amenity_categories as AmenityCategory[],
@@ -59,28 +56,33 @@ export async function getApartments(): Promise<Apartment[]> {
     .neq('active', false)
     .order('id')
   if (error) throw new Error(error.message)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data as any[]).map(mapRow)
+  // Fetch primary photos from _order.json in parallel
+  const rows = data as any[]
+  const orders = await Promise.all(
+    rows.map(r => readOrderJson(r.slug).catch(() => null))
+  )
+  return rows.map((row, i) => {
+    const order = orders[i]
+    const primaryPath = order?.[0]
+    const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
+    return mapRow(row, primaryPhotoUrl)
+  })
 }
 
 export async function getStoragePhotos(slug: string): Promise<string[]> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = supabaseAdmin as any
-    const { data: apt } = await db.from('apartments').select('primary_photo').eq('slug', slug).single()
-    const { orderedPaths } = parsePrimaryPhoto(apt?.primary_photo ?? null)
-
-    // Fetch all files from Storage
-    const { data: files } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
-    const validFiles = (files ?? []).filter(f => !f.name.startsWith('.'))
+    const [files, storedOrder] = await Promise.all([
+      supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } }),
+      readOrderJson(slug),
+    ])
+    const validFiles = (files.data ?? []).filter(f => f.name !== '_order.json' && !f.name.startsWith('.'))
     if (validFiles.length === 0) return []
 
     const allPaths = validFiles.map(f => `${slug}/${f.name}`)
     const base = SUPABASE_STORAGE_BASE
 
-    if (orderedPaths.length > 0) {
-      // Build ordered list: stored order first, then any new uploads not yet in order
-      const ordered = [...orderedPaths.filter(p => allPaths.includes(p))]
+    if (storedOrder && storedOrder.length > 0) {
+      const ordered = [...storedOrder.filter(p => allPaths.includes(p))]
       for (const p of allPaths) if (!ordered.includes(p)) ordered.push(p)
       return ordered.map(p => base + p)
     }
@@ -160,20 +162,16 @@ export async function getGlobalBlockedDates(): Promise<string[]> {
 }
 
 export async function getApartmentBySlug(slug: string): Promise<Apartment | null> {
-  const { data: apt, error } = await supabase
-    .from('apartments')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+  const [{ data: apt, error }, { data: resenas }, order] = await Promise.all([
+    supabase.from('apartments').select('*').eq('slug', slug).single(),
+    supabase.from('resenas').select('*').eq('apartment_slug', slug).order('id'),
+    readOrderJson(slug).catch(() => null),
+  ])
   if (error || !apt) return null
 
-  const { data: resenas } = await supabase
-    .from('resenas')
-    .select('*')
-    .eq('apartment_slug', slug)
-    .order('id')
-
-  const apartment = mapRow(apt)
+  const primaryPath = order?.[0]
+  const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
+  const apartment = mapRow(apt, primaryPhotoUrl)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apartment.reviews = ((resenas ?? []) as any[]).map((r): ApartmentReview => ({
     author: r.author,
