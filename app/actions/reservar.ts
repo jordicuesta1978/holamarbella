@@ -85,25 +85,31 @@ export async function crearReserva(
   const inputWithToken: ReservaInputWithToken = { ...input, conversationToken, bookingRef }
   const displayTitle = input.apartmentTitle || aptDisplay(input.apartmentSlug)
 
+  // Fetch apartment prices once — used in both emails
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: aptData } = await (supabaseAdmin as any).from('apartments').select('price_min, price_max, cleaning_fee').eq('slug', input.apartmentSlug).single()
+  const priceCalc = aptData ? {
+    priceMin: aptData.price_min as number,
+    priceMax: aptData.price_max as number,
+    cleaningFee: (aptData.cleaning_fee ?? 40) as number,
+  } : undefined
+
   const emailTasks: Promise<unknown>[] = [
     resend.emails.send({
       from: FROM,
       to: input.email,
       subject: '¡Solicitud recibida!',
-      html: emailHuesped(inputWithToken, displayTitle),
+      html: emailHuesped(inputWithToken, displayTitle, priceCalc),
     }),
   ]
 
   if (MAR) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: aptData } = await (supabaseAdmin as any).from('apartments').select('price_min, price_max').eq('slug', input.apartmentSlug).single()
-    const priceRange: [number, number] | undefined = aptData ? [aptData.price_min, aptData.price_max] : undefined
     emailTasks.push(
       resend.emails.send({
         from: FROM,
         to: MAR,
         subject: `🔔 Nueva solicitud — ${input.nombre} · ${displayTitle}`,
-        html: emailMar(input, bookingRef, displayTitle, inserted?.id ?? 0, priceRange),
+        html: emailMar(input, bookingRef, displayTitle, inserted?.id ?? 0, priceCalc),
       })
     )
   }
@@ -171,8 +177,28 @@ function row(label: string, value: string, border = true): string {
   </tr>`
 }
 
-function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
+function emailHuesped(d: ReservaInputWithToken, displayTitle: string, priceCalc?: { priceMin: number; priceMax: number; cleaningFee: number }): string {
   const firstName = d.nombre.split(' ')[0]
+  const nights = d.checkIn && d.checkOut
+    ? Math.round((new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000)
+    : 0
+  const midPrice = priceCalc ? Math.round((priceCalc.priceMin + priceCalc.priceMax) / 2) : 0
+  const subtotal = midPrice * nights
+  const cleaningFee = priceCalc?.cleaningFee ?? 40
+  const total = subtotal + cleaningFee
+
+  const priceSection = priceCalc && nights > 0 ? `
+    <div style="background:#f0f9f6;border:1.5px solid #4B766B;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4B766B;">Precio estimado</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr><td style="padding:4px 0;font-size:14px;color:#555;">${midPrice}€/noche × ${nights} noche${nights > 1 ? 's' : ''}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>
+        <tr><td style="padding:4px 0;font-size:14px;color:#555;">Gastos de limpieza</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${cleaningFee}€</td></tr>
+        <tr><td colspan="2" style="border-top:1px solid #b2d4cc;padding-top:8px;margin-top:8px;"></td></tr>
+        <tr><td style="padding-top:4px;font-size:16px;font-weight:700;color:#1A1A1A;">Total estimado</td><td align="right" style="font-size:16px;font-weight:800;color:#4B766B;">${total}€</td></tr>
+      </table>
+      <p style="margin:10px 0 0;font-size:11px;color:#888;">* El precio exacto será confirmado al revisar tu solicitud.</p>
+    </div>` : ''
+
   return shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud recibida!</h1>
     <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
@@ -181,7 +207,7 @@ function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
       Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.
     </p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:28px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
       ${row('Apartamento', `<strong>${displayTitle}</strong>`, false)}
       ${d.bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${d.bookingRef}</strong>`) : ''}
       ${row('Llegada', fmt(d.checkIn))}
@@ -190,23 +216,30 @@ function emailHuesped(d: ReservaInputWithToken, displayTitle: string): string {
       ${row('Tu mensaje', d.mensaje.replace(/\n/g, '<br>'))}
     </table>
 
+    ${priceSection}
+
     <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
       ¿Tienes dudas? Responde directamente a este email.
     </p>
   `)
 }
 
-function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number, priceRange?: [number, number]): string {
+function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number, priceCalc?: { priceMin: number; priceMax: number; cleaningFee: number }): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
   const adminLink = `${BASE_URL}/admin/reservas/${reservaId}`
-  const nightsStr = nightsLabel(d.checkIn, d.checkOut).replace(' · ', '') // "X noches"
+  const nightsStr = nightsLabel(d.checkIn, d.checkOut).replace(' · ', '')
   const nights = d.checkIn && d.checkOut
     ? Math.round((new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000)
     : 0
-  const estimatedPrice = priceRange && nights > 0
-    ? `${priceRange[0] * nights}€ – ${priceRange[1] * nights}€ <span style="font-size:11px;color:#aaa;">(${priceRange[0]}–${priceRange[1]}€/noche × ${nights} noches, sin tasas)</span>`
+
+  const midPrice = priceCalc ? Math.round((priceCalc.priceMin + priceCalc.priceMax) / 2) : 0
+  const subtotal = midPrice * nights
+  const cleaningFee = priceCalc?.cleaningFee ?? 40
+  const total = subtotal + cleaningFee
+  const estimatedPrice = priceCalc && nights > 0
+    ? `<strong style="font-size:16px;">${total}€</strong> <span style="font-size:12px;color:#888;">(${midPrice}€/n × ${nights} noches + ${cleaningFee}€ limpieza)</span>`
     : ''
 
   return shell(`

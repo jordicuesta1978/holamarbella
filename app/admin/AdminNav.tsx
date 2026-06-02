@@ -3,11 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/admin'
-import { LayoutDashboard, MessageSquare, BookOpen, CalendarDays, Layers } from 'lucide-react'
+import { LayoutDashboard, BookOpen, CalendarDays, Layers } from 'lucide-react'
 
-type Props = { unreadCount?: number }
-
-export default function AdminNav({ unreadCount = 0 }: Props) {
+export default function AdminNav() {
   const pathname = usePathname()
 
   const isActive = (href: string, exact?: boolean) => {
@@ -17,7 +15,6 @@ export default function AdminNav({ unreadCount = 0 }: Props) {
 
   const links = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare, badge: unreadCount },
     { href: '/admin/reservas', label: 'Reservas', icon: BookOpen },
     { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
     { href: '/admin/contenido', label: 'Contenido', icon: Layers },
@@ -34,7 +31,7 @@ export default function AdminNav({ unreadCount = 0 }: Props) {
         <span style={{ fontWeight: 800, fontSize: 15, color: '#4B766B', marginRight: 12, letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>
           HolaMarBella!
         </span>
-        {links.map(({ href, label, icon: Icon, badge, exact }) => {
+        {links.map(({ href, label, icon: Icon, exact }) => {
           const active = isActive(href, exact)
           return (
             <Link key={href} href={href} style={{
@@ -47,15 +44,6 @@ export default function AdminNav({ unreadCount = 0 }: Props) {
             }}>
               <Icon size={14} />
               {label}
-              {badge != null && badge > 0 && (
-                <span style={{
-                  background: '#e53e3e', color: '#fff',
-                  borderRadius: 20, fontSize: 10, fontWeight: 800,
-                  padding: '1px 6px', lineHeight: '16px', minWidth: 18, textAlign: 'center',
-                }}>
-                  {badge}
-                </span>
-              )}
             </Link>
           )
         })}

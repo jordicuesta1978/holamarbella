@@ -3,9 +3,7 @@ import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import ReservaActions from './ReservaActions'
 import PricingPanel from './PricingPanel'
-import ChatPanel from './ChatPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
-import { getMensajesReserva, marcarMensajesLeidos } from '@/app/actions/mensajes'
 import { getBookingRef } from '@/lib/booking-ref'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,17 +47,42 @@ export default async function ReservaDetailPage({
   const reserva = await getReserva(Number(id))
   if (!reserva) notFound()
 
-  const [aptPrices, mensajes] = await Promise.all([
-    getApartmentPrices(reserva.apartment_slug),
-    getMensajesReserva(Number(id)),
-  ])
-  // Mark guest messages as read when admin opens the chat
-  await marcarMensajesLeidos(Number(id), 'guest')
+  const aptPrices = await getApartmentPrices(reserva.apartment_slug)
 
   const nights =
     reserva.check_in && reserva.check_out
       ? Math.round((new Date(reserva.check_out).getTime() - new Date(reserva.check_in).getTime()) / 86400000)
       : null
+
+  // Build mailto URL for "Contactar cliente"
+  const APT_NAMES: Record<string, string> = {
+    paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
+    ami: 'Ático AMI', banesto: 'Ático Banesto',
+  }
+  const aptName = APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
+  const bookingRef = reserva.booking_ref || getBookingRef(reserva.id, reserva.apartment_slug, reserva.check_in ?? reserva.created_at)
+  const firstName = (reserva.guest_name as string).split(' ')[0]
+  const midPrice = Math.round((aptPrices.price_min + aptPrices.price_max) / 2)
+  const estimatedTotal = nights ? nights * midPrice + (reserva.cleaning_fee ?? 40) : null
+
+  const mailSubject = `Reserva ${bookingRef} - ${aptName} · ${fmt(reserva.check_in)} → ${fmt(reserva.check_out)}`
+  const mailBody = [
+    `Hola ${firstName},`,
+    '',
+    'Te escribimos en relación a tu solicitud de reserva:',
+    '',
+    `Apartamento: ${aptName}`,
+    `Referencia: ${bookingRef}`,
+    `Llegada: ${fmt(reserva.check_in)}`,
+    `Salida: ${fmt(reserva.check_out)}`,
+    nights ? `Duración: ${nights} noche${nights > 1 ? 's' : ''}` : '',
+    estimatedTotal ? `Precio estimado: ${estimatedTotal}€` : '',
+    '',
+    '',
+    'Un saludo,',
+    'Mar Diez',
+  ].filter(l => l !== undefined).join('\n')
+  const mailtoHref = `mailto:${reserva.guest_email}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
@@ -70,11 +93,24 @@ export default async function ReservaDetailPage({
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>
-            {reserva.booking_ref || getBookingRef(reserva.id, reserva.apartment_slug, reserva.check_in ?? reserva.created_at)}
+            {bookingRef}
           </h1>
-          <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: STATUS_BG[reserva.status], color: STATUS_COLOR[reserva.status] }}>
-            {STATUS_LABEL[reserva.status]}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: STATUS_BG[reserva.status], color: STATUS_COLOR[reserva.status] }}>
+              {STATUS_LABEL[reserva.status]}
+            </span>
+            <a
+              href={mailtoHref}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: '#4B766B', color: '#fff', textDecoration: 'none',
+                borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ✉ Contactar cliente
+            </a>
+          </div>
         </div>
 
         {/* Datos del huésped */}
@@ -160,14 +196,6 @@ export default async function ReservaDetailPage({
           initialCleaningFee={reserva.cleaning_fee ?? 40}
           initialExtras={reserva.extras ?? []}
           initialTotal={reserva.total_price}
-        />
-
-        {/* Chat */}
-        <ChatPanel
-          reservaId={reserva.id}
-          initialMensajes={mensajes}
-          totalPrice={reserva.total_price ?? null}
-          guestName={reserva.guest_name}
         />
 
         {/* Actions */}

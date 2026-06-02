@@ -45,15 +45,9 @@ export async function getConversacionByToken(token: string) {
   return { reserva, mensajes }
 }
 
+// enviarMensajeAdmin conservado por compatibilidad con el flow de pago,
+// pero sin envío de email de "nuevo mensaje" (chat eliminado del admin).
 export async function enviarMensajeAdmin(reservaId: number, texto: string) {
-  const { data: reserva } = await db
-    .from('reservas')
-    .select('guest_name, guest_email, conversation_token, apartment_slug')
-    .eq('id', reservaId)
-    .single()
-
-  if (!reserva) throw new Error('Reserva no encontrada')
-
   await db.from('mensajes_chat').insert({
     reserva_id: reservaId,
     sender: 'admin',
@@ -61,19 +55,7 @@ export async function enviarMensajeAdmin(reservaId: number, texto: string) {
     tipo: 'text',
     leido: false,
   })
-
-  const link = `${BASE_URL}/conversacion/${reserva.conversation_token}`
-  const firstName = (reserva.guest_name as string).split(' ')[0]
-
-  await resend.emails.send({
-    from: FROM,
-    to: reserva.guest_email,
-    subject: 'Nuevo mensaje sobre tu reserva — HolaMarbella',
-    html: emailToGuest(firstName, texto, link),
-  }).catch(() => {})
-
   revalidatePath(`/admin/reservas/${reservaId}`)
-  revalidatePath('/admin/inbox')
 }
 
 export async function enviarMensajeHuesped(token: string, texto: string) {
@@ -93,12 +75,7 @@ export async function enviarMensajeHuesped(token: string, texto: string) {
     leido: false,
   })
 
-  await resend.emails.send({
-    from: FROM,
-    to: MAR,
-    subject: `Mensaje de ${reserva.guest_name} — Reserva #${reserva.id}`,
-    html: emailToAdmin(reserva.guest_name, texto, reserva.id, reserva.apartment_slug),
-  }).catch(() => {})
+  // Email de notificación al gestor eliminado — comunicación via email directo
 
   revalidatePath(`/conversacion/${token}`)
   revalidatePath('/admin')
