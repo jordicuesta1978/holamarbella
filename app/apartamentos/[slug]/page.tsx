@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getApartmentBySlug, getApartments, getBlockedRanges } from '@/lib/db';
+import { getApartmentBySlug, getBlockedRanges, getPriceRanges, getMinNightsRanges } from '@/lib/db';
 import ApartamentoDetail from '@/components/ApartamentoDetail';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
@@ -22,17 +22,24 @@ export default async function ApartamentoPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params;
-  const [apartment, blockedRanges] = await Promise.all([
+  const [apartment, blockedRanges, priceRanges, minNightsRanges] = await Promise.all([
     getApartmentBySlug(slug),
     getBlockedRanges(slug).catch(() => []),
+    getPriceRanges(slug).catch(() => []),
+    getMinNightsRanges(slug).catch(() => []),
   ]);
   if (!apartment) notFound();
 
-  // Fetch cleaning fee for this apartment
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any;
   const { data: aptRow } = await db.from('apartments').select('cleaning_fee').eq('slug', slug).single();
   const cleaningFee: number = aptRow?.cleaning_fee ?? 40;
+
+  // Find global min_nights (rows with no date range = always applies)
+  const defaultMinNights = minNightsRanges.find(r => !r.start && !r.end)?.min_nights ?? 1;
+  const datedMinNights = minNightsRanges
+    .filter(r => r.start && r.end)
+    .map(r => ({ start: r.start!, end: r.end!, min_nights: r.min_nights }));
 
   return (
     <ApartamentoDetail
@@ -40,6 +47,9 @@ export default async function ApartamentoPage({
       slug={slug}
       blockedRanges={blockedRanges}
       cleaningFee={cleaningFee}
+      priceRanges={priceRanges}
+      minNightsDefault={defaultMinNights}
+      minNightsRanges={datedMinNights}
     />
   );
 }

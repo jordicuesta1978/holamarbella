@@ -42,6 +42,28 @@ export async function getApartments(): Promise<Apartment[]> {
   return (data as any[]).map(mapRow)
 }
 
+export async function getPriceRanges(slug: string): Promise<Array<{ start: string; end: string; price: number }>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabaseAdmin as any
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', slug).gte('fecha_fin', today)
+  return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; precio_noche: number }) => ({
+    start: r.fecha_inicio, end: r.fecha_fin, price: r.precio_noche,
+  }))
+}
+
+export async function getMinNightsRanges(slug: string): Promise<Array<{ start: string | null; end: string | null; min_nights: number }>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabaseAdmin as any
+  try {
+    const { data, error } = await db.from('minimum_nights').select('start_date, end_date, min_nights').eq('apartment_slug', slug)
+    if (error) return []
+    return (data ?? []).map((r: { start_date: string | null; end_date: string | null; min_nights: number }) => ({
+      start: r.start_date, end: r.end_date, min_nights: r.min_nights,
+    }))
+  } catch { return [] }
+}
+
 export async function getBlockedRanges(slug: string): Promise<Array<{ start: string; end: string }>> {
   const today = new Date().toISOString().split('T')[0]
   const oneYear = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]

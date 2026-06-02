@@ -6,6 +6,29 @@ import { revalidatePath } from 'next/cache'
 
 const db = supabaseAdmin as any
 
+// ── Noches mínimas ───────────────────────────────────────────────────────────
+
+export async function getMinNights(slug?: string): Promise<Array<{ id: number; apartment_slug: string; start_date: string | null; end_date: string | null; min_nights: number }>> {
+  try {
+    let q = db.from('minimum_nights').select('*').order('apartment_slug').order('start_date', { ascending: true, nullsFirst: true })
+    if (slug) q = q.eq('apartment_slug', slug)
+    const { data, error } = await q
+    if (error) return []
+    return data ?? []
+  } catch { return [] }
+}
+
+export async function addMinNights(slug: string, startDate: string | null, endDate: string | null, minNights: number) {
+  const { error } = await db.from('minimum_nights').insert({ apartment_slug: slug, start_date: startDate || null, end_date: endDate || null, min_nights: minNights })
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+}
+
+export async function deleteMinNights(id: number) {
+  await db.from('minimum_nights').delete().eq('id', id)
+  revalidatePath('/admin/contenido/precios')
+}
+
 // ── Configuracion ─────────────────────────────────────────────────────────────
 
 export async function saveCleaningFee(slug: string, fee: number) {

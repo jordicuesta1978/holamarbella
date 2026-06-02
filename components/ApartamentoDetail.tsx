@@ -65,11 +65,17 @@ export default function ApartamentoDetail({
   slug,
   blockedRanges = [],
   cleaningFee = 40,
+  priceRanges = [],
+  minNightsDefault = 1,
+  minNightsRanges = [],
 }: {
   apartment: Apartment;
   slug: string;
   blockedRanges?: Array<{ start: string; end: string }>;
   cleaningFee?: number;
+  priceRanges?: Array<{ start: string; end: string; price: number }>;
+  minNightsDefault?: number;
+  minNightsRanges?: Array<{ start: string; end: string; min_nights: number }>;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -275,6 +281,9 @@ export default function ApartamentoDetail({
               priceMin={apartment.priceRange[0]}
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
+              priceRanges={priceRanges}
+              minNightsDefault={minNightsDefault}
+              minNightsRanges={minNightsRanges}
             />
           </div>
 
@@ -342,6 +351,9 @@ export default function ApartamentoDetail({
               priceMin={apartment.priceRange[0]}
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
+              priceRanges={priceRanges}
+              minNightsDefault={minNightsDefault}
+              minNightsRanges={minNightsRanges}
             />
           </div>
         </div>

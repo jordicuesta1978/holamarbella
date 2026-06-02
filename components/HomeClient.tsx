@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Users, MapPin, House } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CalendarSearch from '@/components/CalendarSearch';
+import HeroSearch from '@/components/HeroSearch';
 import type { Apartment } from '@/lib/apartments';
 
 const reviews = [
@@ -109,19 +109,14 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
           </div>
         </section>
 
-        {/* CALENDAR SEARCH — desktop: overlapping next section */}
-        <div className="hidden md:flex absolute bottom-0 left-0 right-0 z-30 translate-y-1/2 justify-center px-8">
-          <CalendarSearch globalBlockedDates={globalBlockedDates} />
-        </div>
-
-        {/* Mobile calendar */}
-        <div className="md:hidden px-4 py-6" style={{ backgroundColor: 'var(--arena)' }}>
-          <CalendarSearch globalBlockedDates={globalBlockedDates} />
+        {/* HERO SEARCH — pill compacto, integrado en hero */}
+        <div className="absolute bottom-8 left-0 right-0 z-30 px-4 md:px-8 flex justify-center">
+          <HeroSearch globalBlockedDates={globalBlockedDates} />
         </div>
       </div>
 
       {/* APARTMENTS */}
-      <section className="pt-10 md:pt-24 pb-20" style={{ backgroundColor: 'var(--surface)' }}>
+      <section className="pt-10 pb-20" style={{ backgroundColor: 'var(--surface)' }}>
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex justify-between items-end mb-12">
             <h2 className="text-4xl font-bold" style={{ color: 'var(--primary)' }}>
