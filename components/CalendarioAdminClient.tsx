@@ -157,6 +157,7 @@ export default function CalendarioAdminClient({ bloqueos, reservas, precios }: P
             markedDates={marks}
             initialYear={now.getFullYear()}
             initialMonth={now.getMonth()}
+            labelFontSize={10}
             onDayClick={(k, m) => handleDayClick(k, m as DayMark & { bloqueoId?: number })}
             legend={[
               { bg: '#d1fae5', label: 'Reserva confirmada' },

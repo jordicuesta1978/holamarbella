@@ -10,6 +10,7 @@ type Props = {
   initialMonth: number
   legend?: Array<{ bg: string; label: string }>
   onDayClick?: (dateKey: string, mark: DayMark | undefined) => void
+  labelFontSize?: number
 }
 
 const DAYS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
@@ -25,7 +26,7 @@ function firstWeekday(year: number, month: number) {
   return (d + 6) % 7
 }
 
-export default function CalendarGrid({ markedDates, initialYear, initialMonth, legend, onDayClick }: Props) {
+export default function CalendarGrid({ markedDates, initialYear, initialMonth, legend, onDayClick, labelFontSize = 8 }: Props) {
   const today = new Date()
   const [year, setYear] = useState(initialYear)
   const [month, setMonth] = useState(initialMonth)
@@ -94,11 +95,11 @@ export default function CalendarGrid({ markedDates, initialYear, initialMonth, l
               {day}
               {mark?.label && (
                 <span style={{
-                  position: 'absolute', bottom: 2, left: 0, right: 0,
-                  fontSize: 7, textAlign: 'center', overflow: 'hidden',
+                  position: 'absolute', bottom: 1, left: 0, right: 0,
+                  fontSize: labelFontSize, textAlign: 'center', overflow: 'hidden',
                   whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                  color: mark.color ?? '#444', opacity: 0.8,
-                  paddingInline: 1,
+                  color: mark.color ?? '#444', opacity: 0.85,
+                  paddingInline: 1, lineHeight: 1,
                 }}>
                   {mark.label}
                 </span>

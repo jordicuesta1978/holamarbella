@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/admin'
-import { LayoutDashboard, MessageSquare, BookOpen, CreditCard, CalendarDays, Layers } from 'lucide-react'
+import { LayoutDashboard, MessageSquare, BookOpen, CalendarDays, Layers } from 'lucide-react'
 
 type Props = { unreadCount?: number }
 
@@ -20,7 +20,6 @@ export default function AdminNav({ unreadCount = 0 }: Props) {
     { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare, badge: unreadCount },
     { href: '/admin/reservas', label: 'Reservas', icon: BookOpen },
     { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
-    { href: '/admin/pagos', label: 'Pagos', icon: CreditCard },
     { href: '/admin/contenido', label: 'Contenido', icon: Layers },
   ]
 

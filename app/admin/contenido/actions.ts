@@ -159,17 +159,22 @@ export async function deleteArticulo(id: number) {
 // ── Fotos (Storage) ───────────────────────────────────────────────────────────
 
 export async function getApartamentoPhotos(slug: string): Promise<{ path: string; url: string; isPrimary: boolean }[]> {
-  const { data: files } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
-  if (!files || files.length === 0) return []
+  // Ensure bucket exists
+  const { error: bucketErr } = await supabaseAdmin.storage.getBucket('apartamentos')
+  if (bucketErr) {
+    await supabaseAdmin.storage.createBucket('apartamentos', { public: true }).catch(() => {})
+  }
+
+  const { data: files, error } = await supabaseAdmin.storage.from('apartamentos').list(slug, { sortBy: { column: 'created_at', order: 'asc' } })
+  if (error || !files || files.length === 0) return []
   const { data: apt } = await db.from('apartments').select('primary_photo').eq('slug', slug).single()
   const primaryPath = apt?.primary_photo ?? ''
-  return files
-    .filter(f => f.name !== '.emptyFolderPlaceholder')
-    .map(f => {
-      const path = `${slug}/${f.name}`
-      const { data: urlData } = supabaseAdmin.storage.from('apartamentos').getPublicUrl(path)
-      return { path, url: urlData.publicUrl, isPrimary: path === primaryPath || (!primaryPath && files.indexOf(f) === 0) }
-    })
+  const filtered = files.filter(f => f.name !== '.emptyFolderPlaceholder' && !f.name.startsWith('.'))
+  return filtered.map((f, idx) => {
+    const path = `${slug}/${f.name}`
+    const { data: urlData } = supabaseAdmin.storage.from('apartamentos').getPublicUrl(path)
+    return { path, url: urlData.publicUrl, isPrimary: path === primaryPath || (!primaryPath && idx === 0) }
+  })
 }
 
 export async function setApartamentoPrimaryPhoto(slug: string, photoPath: string) {
