@@ -5,6 +5,7 @@ import ReservaActions from './ReservaActions'
 import PricingPanel from './PricingPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
+import { getPriceRanges } from '@/lib/db'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReserva(id: number): Promise<any | null> {
@@ -47,7 +48,10 @@ export default async function ReservaDetailPage({
   const reserva = await getReserva(Number(id))
   if (!reserva) notFound()
 
-  const aptPrices = await getApartmentPrices(reserva.apartment_slug)
+  const [aptPrices, priceRanges] = await Promise.all([
+    getApartmentPrices(reserva.apartment_slug),
+    getPriceRanges(reserva.apartment_slug).catch(() => []),
+  ])
 
   const nights =
     reserva.check_in && reserva.check_out
@@ -196,6 +200,9 @@ export default async function ReservaDetailPage({
           initialCleaningFee={reserva.cleaning_fee ?? 40}
           initialExtras={reserva.extras ?? []}
           initialTotal={reserva.total_price}
+          priceRanges={priceRanges}
+          checkIn={reserva.check_in ?? undefined}
+          checkOut={reserva.check_out ?? undefined}
         />
 
         {/* Actions */}

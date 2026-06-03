@@ -5,6 +5,36 @@ import { useRouter } from 'next/navigation'
 import { savePricing, type Extra } from '@/app/actions/admin'
 import { Plus, X, Loader2 } from 'lucide-react'
 
+type PriceRange = { start: string; end: string; price: number }
+
+// Same logic as CalendarPicker / ReservarContent — not modified
+function calcNightlyPrices(
+  checkIn: string,
+  checkOut: string,
+  priceRanges: PriceRange[],
+  midPrice: number,
+): Array<{ date: string; price: number }> {
+  const nights: Array<{ date: string; price: number }> = []
+  const s = new Date(checkIn + 'T00:00:00')
+  const e = new Date(checkOut + 'T00:00:00')
+  for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
+    const key = d.toISOString().split('T')[0]
+    const range = priceRanges.find(p => key >= p.start && key < p.end)
+    nights.push({ date: key, price: range?.price ?? midPrice })
+  }
+  return nights
+}
+
+function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{ price: number; count: number }> {
+  const groups: Array<{ price: number; count: number }> = []
+  for (const n of nights) {
+    const last = groups[groups.length - 1]
+    if (last && last.price === n.price) last.count++
+    else groups.push({ price: n.price, count: 1 })
+  }
+  return groups
+}
+
 type Props = {
   id: number
   nights: number
@@ -13,6 +43,9 @@ type Props = {
   initialCleaningFee: number
   initialExtras: Extra[]
   initialTotal: number | null
+  priceRanges?: PriceRange[]
+  checkIn?: string
+  checkOut?: string
 }
 
 export default function PricingPanel({
@@ -23,15 +56,27 @@ export default function PricingPanel({
   initialCleaningFee,
   initialExtras,
   initialTotal,
+  priceRanges = [],
+  checkIn,
+  checkOut,
 }: Props) {
   const router = useRouter()
-  const defaultRate = Math.round((priceMin + priceMax) / 2)
+  const midPrice = Math.round((priceMin + priceMax) / 2)
 
-  const [rate, setRate] = useState(
-    initialTotal && nights > 0
+  // Compute per-range breakdown (same logic as CalendarPicker)
+  const rangeNights = (priceRanges.length > 0 && checkIn && checkOut)
+    ? calcNightlyPrices(checkIn, checkOut, priceRanges, midPrice)
+    : []
+  const rangeBreakdown = groupBreakdown(rangeNights)
+  const rangeBase = rangeNights.reduce((s, n) => s + n.price, 0)
+  // Use range base if available; fall back to initialTotal back-calculation or midPrice
+  const defaultRate = rangeBase > 0
+    ? Math.round(rangeBase / Math.max(nights, 1))
+    : (initialTotal && nights > 0
       ? Math.round((initialTotal - initialCleaningFee - initialExtras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)) / nights)
-      : defaultRate
-  )
+      : midPrice)
+
+  const [rate, setRate] = useState(defaultRate)
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
 
@@ -44,7 +89,8 @@ export default function PricingPanel({
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const base = rate * nights
+  // base: use range breakdown total when available; otherwise manual rate × nights
+  const base = rangeBase > 0 ? rangeBase : rate * nights
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
 
@@ -88,16 +134,32 @@ export default function PricingPanel({
       </div>
       <div style={{ padding: '20px' }}>
 
-        {/* Rate × nights */}
+        {/* Rate / breakdown */}
         <div style={{ marginBottom: 16 }}>
-          <label style={lbl}>Precio por noche (€)</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} min={0}
-              style={{ ...inp(), width: 90 }} />
-            {nights > 0 && (
-              <span style={{ fontSize: 13, color: '#888' }}>× {nights} noche{nights > 1 ? 's' : ''} = <strong style={{ color: '#1a1a2e' }}>{base}€</strong></span>
-            )}
-          </div>
+          {rangeBreakdown.length > 1 ? (
+            <>
+              <label style={lbl}>Precio por tramos (€)</label>
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0' }}>
+                {rangeBreakdown.map((g, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', padding: '3px 0' }}>
+                    <span>{g.price}€/n × {g.count} noche{g.count > 1 ? 's' : ''}</span>
+                    <strong style={{ color: '#1a1a2e' }}>{g.price * g.count}€</strong>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <label style={lbl}>Precio por noche (€)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} min={0}
+                  style={{ ...inp(), width: 90 }} />
+                {nights > 0 && (
+                  <span style={{ fontSize: 13, color: '#888' }}>× {nights} noche{nights > 1 ? 's' : ''} = <strong style={{ color: '#1a1a2e' }}>{base}€</strong></span>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Cleaning fee */}
@@ -153,7 +215,14 @@ export default function PricingPanel({
 
         {/* Total */}
         <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: 12, marginBottom: 16 }}>
-          {nights > 0 && (
+          {rangeBreakdown.length > 1 ? (
+            rangeBreakdown.map((g, i) => (
+              <div key={i} style={rowStyle}>
+                <span style={{ color: '#888' }}>{g.price}€/n × {g.count} noche{g.count > 1 ? 's' : ''}</span>
+                <span>{g.price * g.count}€</span>
+              </div>
+            ))
+          ) : nights > 0 && (
             <div style={rowStyle}><span style={{ color: '#888' }}>Precio base ({nights} noches)</span><span>{base}€</span></div>
           )}
           {cleaningFee > 0 && (
