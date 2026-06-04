@@ -20,6 +20,17 @@ function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// Local-date helpers — avoid toISOString() to prevent UTC+2 shift
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function addDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + 1); return localDateStr(d)
+}
+function subDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() - 1); return localDateStr(d)
+}
+
 function priceColor(price: number): string {
   if (price <= 80) return '#dbeafe'
   if (price <= 120) return '#d1fae5'
@@ -53,9 +64,10 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
 
   function handleAddPrecio(fd: FormData) {
     const desde = fd.get('desde') as string
-    const hasta = fd.get('hasta') as string
+    const hastaIncl = fd.get('hasta') as string
     const precio = Number(fd.get('precio'))
-    if (!desde || !hasta || precio <= 0 || desde >= hasta) return
+    if (!desde || !hastaIncl || precio <= 0 || desde > hastaIncl) return
+    const hasta = addDay(hastaIncl)  // convert inclusive → exclusive for DB
     startTransition(async () => {
       await addPrecio(slug, desde, hasta, precio)
       router.refresh()
@@ -131,7 +143,7 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
         </div>
         <form action={handleAddPrecio} style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
           <div><label style={lbl}>Desde</label><input type="date" name="desde" required style={inp} /></div>
-          <div><label style={lbl}>Hasta (excl.)</label><input type="date" name="hasta" required style={inp} /></div>
+          <div><label style={lbl}>Hasta (inclusive)</label><input type="date" name="hasta" required style={inp} /></div>
           <div><label style={lbl}>€ / noche</label><input type="number" name="precio" min={1} required placeholder={String(aptInfo.priceBase)} style={{ ...inp, width: 90 }} /></div>
           <button type="submit" disabled={isPending} style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1 }}>
             {isPending ? 'Guardando…' : 'Añadir tarifa'}
@@ -148,7 +160,7 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
           ? <p style={{ padding: '20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>Sin tarifas para {aptInfo.label}</p>
           : filteredPrecios.map((p, i) => (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredPrecios.length - 1 ? '1px solid #f5f5f5' : undefined }}>
-              <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>{fmt(p.fecha_inicio)} → {fmt(p.fecha_fin)}</span>
+              <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>{fmt(p.fecha_inicio)} → {fmt(subDay(p.fecha_fin))}</span>
               <span style={{ fontSize: 15, fontWeight: 800, color: '#4B766B', background: priceColor(p.precio_noche), borderRadius: 6, padding: '2px 10px' }}>{p.precio_noche}€/n</span>
               <button onClick={() => handleDelPrecio(p.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Eliminar
