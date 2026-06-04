@@ -39,7 +39,7 @@ function buildMarks(
     const start = new Date(p.fecha_inicio + 'T00:00:00')
     const end = new Date(p.fecha_fin + 'T00:00:00')
     for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split('T')[0]
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       if (!marks[key]) marks[key] = { bg: '#f0f9f6', color: '#4B766B', label: `${p.precio_noche}€/n` }
     }
   }
@@ -48,7 +48,7 @@ function buildMarks(
     const start = new Date(b.fecha_inicio + 'T00:00:00')
     const end = new Date(b.fecha_fin + 'T00:00:00')
     for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split('T')[0]
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       marks[key] = { bg: '#e5e7eb', color: '#6b7280', label: b.motivo || 'Bloqueado', bloqueoId: b.id }
     }
   }
@@ -57,7 +57,7 @@ function buildMarks(
     const start = new Date(r.check_in + 'T00:00:00')
     const end = new Date(r.check_out + 'T00:00:00')
     for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split('T')[0]
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       marks[key] = { bg: '#d1fae5', color: '#065f46', label: r.guest_name }
     }
   }
