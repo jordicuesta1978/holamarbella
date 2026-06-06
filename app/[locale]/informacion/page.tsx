@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations, getLocale } from 'next-intl/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -27,8 +28,8 @@ async function getPublishedArticulos(): Promise<Articulo[]> {
   return (data ?? []) as Articulo[]
 }
 
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+function fmtDate(d: string, locale: string) {
+  return new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 function excerpt(text: string, maxLen = 180) {
@@ -37,7 +38,11 @@ function excerpt(text: string, maxLen = 180) {
 }
 
 export default async function InformacionPage() {
-  const articulos = await getPublishedArticulos()
+  const [articulos, t, locale] = await Promise.all([
+    getPublishedArticulos(),
+    getTranslations('informacion'),
+    getLocale(),
+  ])
 
   return (
     <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
@@ -45,21 +50,21 @@ export default async function InformacionPage() {
 
       <div className="py-16 text-center" style={{ backgroundColor: 'var(--arena)' }}>
         <p className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: 'var(--on-surface-variant)' }}>
-          Marbella · Guías y consejos
+          {t('eyebrow')}
         </p>
         <h1 className="text-4xl md:text-5xl font-bold" style={{ color: 'var(--primary)' }}>
-          Todo sobre{' '}
-          <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>Marbella</span>
+          {t('heroTitle')}{' '}
+          <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>{t('heroTitleItalic')}</span>
         </h1>
         <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>
-          Guías, restaurantes, playas y todo lo que necesitas para disfrutar al máximo tu estancia.
+          {t('heroSubtitle')}
         </p>
       </div>
 
       <main className="max-w-5xl mx-auto px-8 py-16">
         {articulos.length === 0 ? (
           <div className="text-center py-24" style={{ color: 'var(--on-surface-variant)' }}>
-            <p className="text-lg">Próximamente — artículos y guías sobre Marbella.</p>
+            <p className="text-lg">{t('empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -80,7 +85,7 @@ export default async function InformacionPage() {
                 )}
                 <div className="p-6">
                   <time className="text-xs uppercase tracking-widest font-medium" style={{ color: 'var(--on-surface-variant)' }}>
-                    {fmtDate(a.created_at)}
+                    {fmtDate(a.created_at, locale)}
                   </time>
                   <h2 className="text-xl font-bold mt-2 mb-3 leading-snug" style={{ color: 'var(--primary)' }}>
                     {a.titulo}

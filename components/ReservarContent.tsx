@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { ChevronLeft, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import type { Apartment } from '@/lib/apartments';
 import { crearReserva } from '@/app/actions/reservar';
@@ -13,9 +14,9 @@ function calcNights(a: string, b: string): number {
   return Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000));
 }
 
-function formatDate(d: string): string {
+function formatDate(d: string, locale: string): string {
   if (!d) return '';
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function todayStr(): string {
@@ -76,6 +77,8 @@ export default function ReservarContent({
   priceRanges?: PriceRange[]
   cleaningFee?: number
 }) {
+  const t = useTranslations('reservar');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -111,14 +114,14 @@ export default function ReservarContent({
 
   const validate = (): boolean => {
     const e: FormErrors = {};
-    if (!form.nombre.trim()) e.nombre = 'Por favor, introduce tu nombre completo.';
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Introduce un email válido.';
-    if (!form.checkIn) e.checkIn = 'Selecciona la fecha de llegada.';
-    if (!form.checkOut) e.checkOut = 'Selecciona la fecha de salida.';
+    if (!form.nombre.trim()) e.nombre = t('nameError');
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('emailError');
+    if (!form.checkIn) e.checkIn = t('checkInError');
+    if (!form.checkOut) e.checkOut = t('checkOutError');
     if (form.checkIn && form.checkOut && form.checkOut <= form.checkIn) {
-      e.checkOut = 'La salida debe ser posterior a la llegada.';
+      e.checkOut = t('checkOutAfterError');
     }
-    if (!form.mensaje.trim() || form.mensaje.trim().length < 10) e.mensaje = 'El mensaje debe tener al menos 10 caracteres.';
+    if (!form.mensaje.trim() || form.mensaje.trim().length < 10) e.mensaje = t('messageError');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -131,7 +134,7 @@ export default function ReservarContent({
     try {
       const avail = await getAvailability(form.checkIn, form.checkOut);
       if (avail[slug] === false) {
-        setErrors({ global: 'Este apartamento no está disponible para las fechas seleccionadas. Por favor, elige otras fechas.' });
+        setErrors({ global: t('notAvailableError') });
         setSubmitting(false);
         return;
       }
@@ -149,7 +152,7 @@ export default function ReservarContent({
       });
 
       if (!result.ok) {
-        setErrors({ global: `No se pudo enviar la solicitud: ${result.error}` });
+        setErrors({ global: t('submitError', { error: result.error }) });
         setSubmitting(false);
         return;
       }
@@ -172,7 +175,7 @@ export default function ReservarContent({
       });
       router.push(`/confirmacion?${qs.toString()}`);
     } catch {
-      setErrors({ global: 'Error al conectar con el servidor. Por favor, inténtalo de nuevo.' });
+      setErrors({ global: t('serverError') });
       setSubmitting(false);
     }
   };
@@ -183,16 +186,16 @@ export default function ReservarContent({
     <div className="max-w-6xl mx-auto px-6 md:px-8 py-10">
       <Link href={`/apartamentos/${slug}`} className="inline-flex items-center gap-1.5 text-sm mb-8 hover:opacity-70 transition-opacity" style={{ color: 'var(--primary)' }}>
         <ChevronLeft size={16} />
-        Volver al apartamento
+        {t('back')}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 items-start">
 
         {/* ── FORM ─────────────────────────────────────────────────── */}
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: 'var(--primary)' }}>Solicitar reserva</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: 'var(--primary)' }}>{t('title')}</h1>
           <p className="text-sm mb-8" style={{ color: 'var(--on-surface-variant)' }}>
-            Rellena el formulario y revisaremos tu solicitud.
+            {t('subtitle')}
           </p>
 
           {errors.global && (
@@ -207,9 +210,9 @@ export default function ReservarContent({
             {/* Nombre */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                Nombre completo <span className="text-red-500">*</span>
+                {t('name')} <span className="text-red-500">*</span>
               </label>
-              <input type="text" value={form.nombre} onChange={set('nombre')} placeholder="Tu nombre y apellido"
+              <input type="text" value={form.nombre} onChange={set('nombre')} placeholder={t('namePlaceholder')}
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
                 style={{ borderColor: errors.nombre ? '#ef4444' : 'var(--outline-variant)', color: 'var(--on-surface)' }} />
               {errors.nombre && <p className="flex items-center gap-1.5 mt-1.5 text-xs text-red-500"><AlertCircle size={12} />{errors.nombre}</p>}
@@ -218,9 +221,9 @@ export default function ReservarContent({
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                Email <span className="text-red-500">*</span>
+                {t('email')} <span className="text-red-500">*</span>
               </label>
-              <input type="email" value={form.email} onChange={set('email')} placeholder="tu@email.com"
+              <input type="email" value={form.email} onChange={set('email')} placeholder={t('emailPlaceholder')}
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
                 style={{ borderColor: errors.email ? '#ef4444' : 'var(--outline-variant)', color: 'var(--on-surface)' }} />
               {errors.email && <p className="flex items-center gap-1.5 mt-1.5 text-xs text-red-500"><AlertCircle size={12} />{errors.email}</p>}
@@ -229,7 +232,7 @@ export default function ReservarContent({
             {/* Teléfono */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                Teléfono <span className="text-xs font-normal" style={{ color: 'var(--on-surface-variant)' }}>(opcional)</span>
+                {t('phone')} <span className="text-xs font-normal" style={{ color: 'var(--on-surface-variant)' }}>{t('phoneOptional')}</span>
               </label>
               <input type="tel" value={form.telefono} onChange={set('telefono')} placeholder="+34 600 000 000"
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
@@ -239,18 +242,18 @@ export default function ReservarContent({
             {/* Fechas */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                <span className="inline-flex items-center gap-1.5"><Calendar size={14} />Fechas <span className="text-red-500">*</span></span>
+                <span className="inline-flex items-center gap-1.5"><Calendar size={14} />{t('dates')} <span className="text-red-500">*</span></span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs mb-1" style={{ color: 'var(--on-surface-variant)' }}>Llegada</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--on-surface-variant)' }}>{t('checkIn')}</p>
                   <input type="date" value={form.checkIn} onChange={set('checkIn')} min={todayStr()}
                     className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
                     style={{ borderColor: errors.checkIn ? '#ef4444' : 'var(--outline-variant)', color: 'var(--on-surface)' }} />
                   {errors.checkIn && <p className="flex items-center gap-1.5 mt-1 text-xs text-red-500"><AlertCircle size={12} />{errors.checkIn}</p>}
                 </div>
                 <div>
-                  <p className="text-xs mb-1" style={{ color: 'var(--on-surface-variant)' }}>Salida</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--on-surface-variant)' }}>{t('checkOut')}</p>
                   <input type="date" value={form.checkOut} onChange={set('checkOut')} min={form.checkIn || todayStr()}
                     className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2"
                     style={{ borderColor: errors.checkOut ? '#ef4444' : 'var(--outline-variant)', color: 'var(--on-surface)' }} />
@@ -262,13 +265,13 @@ export default function ReservarContent({
             {/* Personas */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                Número de personas <span className="text-red-500">*</span>
+                {t('guests')} <span className="text-red-500">*</span>
               </label>
               <select value={form.personas} onChange={set('personas')}
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 cursor-pointer"
                 style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}>
                 {Array.from({ length: maxPersonas }, (_, i) => i + 1).map(n => (
-                  <option key={n} value={n}>{n} persona{n > 1 ? 's' : ''}</option>
+                  <option key={n} value={n}>{n} {n === 1 ? t('guest') : t('guestsPlural')}</option>
                 ))}
               </select>
             </div>
@@ -276,10 +279,10 @@ export default function ReservarContent({
             {/* Mensaje */}
             <div>
               <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--on-surface)' }}>
-                Mensaje <span className="text-red-500">*</span>
+                {t('message')} <span className="text-red-500">*</span>
               </label>
               <textarea value={form.mensaje} onChange={set('mensaje')} rows={5}
-                placeholder="Cuéntanos el motivo de tu viaje o cualquier pregunta que tengas..."
+                placeholder={t('messagePlaceholder')}
                 className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 resize-none"
                 style={{ borderColor: errors.mensaje ? '#ef4444' : 'var(--outline-variant)', color: 'var(--on-surface)' }} />
               {errors.mensaje && <p className="flex items-center gap-1.5 mt-1.5 text-xs text-red-500"><AlertCircle size={12} />{errors.mensaje}</p>}
@@ -289,15 +292,15 @@ export default function ReservarContent({
               className="w-full flex items-center justify-center gap-2 text-white font-bold py-4 rounded-xl uppercase tracking-widest text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: 'var(--primary)' }}>
               {submitting
-                ? <><Loader2 size={16} className="animate-spin" /> Enviando solicitud...</>
-                : 'Enviar solicitud'}
+                ? <><Loader2 size={16} className="animate-spin" /> {t('submitting')}</>
+                : t('submit')}
             </button>
 
             <p className="text-xs text-center pt-1" style={{ color: 'var(--on-surface-variant)' }}>
-              Al enviar aceptas nuestras{' '}
-              <Link href="/normas" className="underline underline-offset-2" style={{ color: 'var(--primary)' }}>normas de la casa</Link>{' '}
-              y la{' '}
-              <Link href="#" className="underline underline-offset-2" style={{ color: 'var(--primary)' }}>política de cancelación</Link>.
+              {t('termsPrefix')}{' '}
+              <Link href="/normas" className="underline underline-offset-2" style={{ color: 'var(--primary)' }}>{t('termsLink')}</Link>{' '}
+              {t('termsMiddle')}{' '}
+              <Link href="#" className="underline underline-offset-2" style={{ color: 'var(--primary)' }}>{t('termsCancellation')}</Link>.
             </p>
           </form>
         </div>
@@ -321,23 +324,23 @@ export default function ReservarContent({
             <div className="p-5 space-y-3">
               {(form.checkIn || form.checkOut) && (
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: 'var(--on-surface-variant)' }}>Fechas</p>
+                  <p className="text-xs uppercase tracking-widest font-semibold mb-2" style={{ color: 'var(--on-surface-variant)' }}>{t('summaryDates')}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded-lg p-3 text-center" style={{ backgroundColor: 'var(--arena)' }}>
-                      <p className="text-xs mb-0.5" style={{ color: 'var(--on-surface-variant)' }}>Llegada</p>
-                      <p className="font-semibold text-xs" style={{ color: 'var(--on-surface)' }}>{form.checkIn ? formatDate(form.checkIn) : '—'}</p>
+                      <p className="text-xs mb-0.5" style={{ color: 'var(--on-surface-variant)' }}>{t('checkIn')}</p>
+                      <p className="font-semibold text-xs" style={{ color: 'var(--on-surface)' }}>{form.checkIn ? formatDate(form.checkIn, locale) : '—'}</p>
                     </div>
                     <div className="rounded-lg p-3 text-center" style={{ backgroundColor: 'var(--arena)' }}>
-                      <p className="text-xs mb-0.5" style={{ color: 'var(--on-surface-variant)' }}>Salida</p>
-                      <p className="font-semibold text-xs" style={{ color: 'var(--on-surface)' }}>{form.checkOut ? formatDate(form.checkOut) : '—'}</p>
+                      <p className="text-xs mb-0.5" style={{ color: 'var(--on-surface-variant)' }}>{t('checkOut')}</p>
+                      <p className="font-semibold text-xs" style={{ color: 'var(--on-surface)' }}>{form.checkOut ? formatDate(form.checkOut, locale) : '—'}</p>
                     </div>
                   </div>
                 </div>
               )}
 
               <div className="flex justify-between items-center text-sm py-1">
-                <span style={{ color: 'var(--on-surface-variant)' }}>Personas</span>
-                <span className="font-semibold" style={{ color: 'var(--on-surface)' }}>{form.personas} {form.personas === 1 ? 'persona' : 'personas'}</span>
+                <span style={{ color: 'var(--on-surface-variant)' }}>{t('summaryGuests')}</span>
+                <span className="font-semibold" style={{ color: 'var(--on-surface)' }}>{form.personas} {form.personas === 1 ? t('guest') : t('guestsPlural')}</span>
               </div>
 
               <div className="border-t pt-3 space-y-2" style={{ borderColor: 'var(--outline-variant)' }}>
@@ -346,30 +349,30 @@ export default function ReservarContent({
                     {breakdown.map((g, i) => (
                       <div key={i} className="flex justify-between text-sm">
                         <span style={{ color: 'var(--on-surface-variant)' }}>
-                          {g.price}€ × {g.count} noche{g.count > 1 ? 's' : ''}
+                          {g.price}€ × {t('nights', { count: g.count })}
                         </span>
                         <span style={{ color: 'var(--on-surface)' }}>{g.price * g.count}€</span>
                       </div>
                     ))}
                     <div className="flex justify-between text-sm">
-                      <span style={{ color: 'var(--on-surface-variant)' }}>Gastos de limpieza</span>
+                      <span style={{ color: 'var(--on-surface-variant)' }}>{t('cleaning')}</span>
                       <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>
                     </div>
                     <div className="flex justify-between font-bold border-t pt-2" style={{ borderColor: 'var(--outline-variant)', color: 'var(--primary)' }}>
-                      <span>Total estimado</span>
+                      <span>{t('totalEstimate')}</span>
                       <span>{total}€</span>
                     </div>
                   </>
                 ) : (
                   <div className="flex justify-between text-sm">
-                    <span style={{ color: 'var(--on-surface-variant)' }}>Precio / noche</span>
+                    <span style={{ color: 'var(--on-surface-variant)' }}>{t('perNight')}</span>
                     <span className="font-bold" style={{ color: 'var(--primary)' }}>{apartment.priceRange[0]}€ – {apartment.priceRange[1]}€</span>
                   </div>
                 )}
               </div>
 
               <p className="text-xs pt-1" style={{ color: 'var(--on-surface-variant)' }}>
-                El precio exacto será confirmado al revisar tu solicitud.
+                {t('priceNote')}
               </p>
             </div>
           </div>

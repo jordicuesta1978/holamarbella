@@ -112,7 +112,7 @@ async function supabase(path, opts = {}) {
 
 const browser = await chromium.launch({ headless: true })
 
-await check(browser, 'Home', '/', [
+await check(browser, 'Home', '/es', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: '"Apartamento Paloma" visible', fn: async p => {
     await p.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {})
@@ -123,10 +123,10 @@ await check(browser, 'Home', '/', [
     const t = await p.textContent('body')
     if (!t?.includes('Apartamento Micu')) throw new Error('"Apartamento Micu" no encontrado')
   }},
-  { desc: 'Calendario de búsqueda visible', fn: async p => {
+  { desc: 'Buscador de fechas visible', fn: async p => {
     await p.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {})
     const t = await p.textContent('body')
-    if (!t?.includes('Selecciona fecha') && !t?.includes('Buscar apartamentos')) throw new Error('Calendario de búsqueda no encontrado')
+    if (!t?.includes('Llegada') && !t?.includes('llegada') && !t?.includes('Salida')) throw new Error('Buscador de fechas no encontrado')
   }},
   { desc: 'Sin "por Mar"', fn: async p => {
     const t = await p.textContent('body')
@@ -134,7 +134,7 @@ await check(browser, 'Home', '/', [
   }},
 ])
 
-await check(browser, 'Apartamentos', '/apartamentos', [
+await check(browser, 'Apartamentos', '/es/apartamentos', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: '"Apartamento Paloma" en tarjeta H3', fn: p => p.locator('h3:has-text("Apartamento Paloma")').waitFor({ timeout: 8000 }) },
   { desc: '"Apartamento Micu" en tarjeta H3', fn: p => p.locator('h3:has-text("Apartamento Micu")').waitFor({ timeout: 5000 }) },
@@ -153,7 +153,7 @@ await check(browser, 'Apartamentos', '/apartamentos', [
   }},
 ])
 
-await check(browser, 'Detalle Paloma', '/apartamentos/paloma', [
+await check(browser, 'Detalle Paloma', '/es/apartamentos/paloma', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: 'H1 "Apartamento Paloma"', fn: p => p.locator('h1:has-text("Apartamento Paloma")').waitFor({ timeout: 8000 }) },
   { desc: 'Subtítulo descriptivo', fn: p => p.locator('text=Centro · Playa').first().waitFor({ timeout: 5000 }) },
@@ -169,7 +169,7 @@ await check(browser, 'Detalle Paloma', '/apartamentos/paloma', [
   }},
 ])
 
-await check(browser, 'Reservar Paloma', '/reservar/paloma', [
+await check(browser, 'Reservar Paloma', '/es/reservar/paloma', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: 'Formulario visible', fn: p => p.locator('h1:has-text("Solicitar reserva")').waitFor({ timeout: 8000 }) },
   { desc: '"Apartamento Paloma" en resumen', fn: p => p.locator('text=Apartamento Paloma').first().waitFor({ timeout: 5000 }) },
@@ -177,7 +177,7 @@ await check(browser, 'Reservar Paloma', '/reservar/paloma', [
   { desc: 'Campo email', fn: p => p.locator('input[type="email"]').waitFor({ timeout: 5000 }) },
 ])
 
-await check(browser, 'Confirmacion (vacía)', '/confirmacion', [
+await check(browser, 'Confirmacion (vacía)', '/es/confirmacion', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: 'Sin error de aplicación', fn: async p => {
     const t = await p.textContent('body')
@@ -192,7 +192,7 @@ await check(browser, 'Admin login', '/admin/login', [
   { desc: 'Campo contraseña', fn: p => p.locator('input[type="password"]').waitFor({ timeout: 5000 }) },
 ])
 
-await check(browser, 'Reservar Micu (detalle)', '/apartamentos/micu', [
+await check(browser, 'Reservar Micu (detalle)', '/es/apartamentos/micu', [
   { desc: 'H1 "Apartamento Micu"', fn: p => p.locator('h1:has-text("Apartamento Micu")').waitFor({ timeout: 8000 }) },
 ])
 
@@ -225,7 +225,7 @@ await check(browser, 'Admin contenido apartamentos', '/admin/contenido/apartamen
   }},
 ])
 
-await check(browser, 'Detalle con calendario', '/apartamentos/paloma', [
+await check(browser, 'Detalle con calendario', '/es/apartamentos/paloma', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: 'Calendario de selección visible', fn: async p => {
     await p.waitForLoadState('networkidle', { timeout: 12000 }).catch(() => {})
@@ -234,7 +234,7 @@ await check(browser, 'Detalle con calendario', '/apartamentos/paloma', [
   }},
 ])
 
-await check(browser, '/informacion (blog)', '/informacion', [
+await check(browser, '/informacion (blog)', '/es/informacion', [
   { desc: 'Carga sin error', fn: p => p.waitForSelector('body') },
   { desc: 'Sin error de aplicación', fn: async p => {
     const t = await p.textContent('body')
@@ -242,7 +242,7 @@ await check(browser, '/informacion (blog)', '/informacion', [
   }},
 ])
 
-await check(browser, '/apartamentos con fechas', '/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07', [
+await check(browser, '/apartamentos con fechas', '/es/apartamentos?checkIn=2026-07-01&checkOut=2026-07-07', [
   { desc: 'Carga sin error de servidor', fn: async p => {
     const t = await p.textContent('body')
     if (t?.includes('Application error') || t?.includes('Internal Server Error')) throw new Error('Error de aplicación')
@@ -250,7 +250,7 @@ await check(browser, '/apartamentos con fechas', '/apartamentos?checkIn=2026-07-
   { desc: 'Muestra apartamentos', fn: p => p.locator('h3').first().waitFor({ timeout: 8000 }) },
 ])
 
-await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
+await check(browser, 'Reservar Micu (envío form)', '/es/reservar/micu', [
   { desc: 'Formulario carga', fn: p => p.locator('h1:has-text("Solicitar reserva")').waitFor({ timeout: 8000 }) },
   { desc: 'Botón enviar visible y sin error', fn: async p => {
     await p.waitForTimeout(500)
@@ -277,7 +277,7 @@ await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
     const CHECKOUT = '2027-03-15'
 
     // 1. Ir a /reservar/paloma con fechas pre-rellenadas
-    await page.goto(`${BASE}/reservar/paloma?checkin=${CHECKIN}&checkout=${CHECKOUT}`, {
+    await page.goto(`${BASE}/es/reservar/paloma?checkin=${CHECKIN}&checkout=${CHECKOUT}`, {
       waitUntil: 'domcontentloaded', timeout: 30000,
     })
     await page.waitForTimeout(2000)
@@ -367,7 +367,7 @@ await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
     await page.close()
   }
 
-  results.push({ name, url: '/reservar/paloma → /confirmacion', passed, failed, screenshot: screenshotFile })
+  results.push({ name, url: '/es/reservar/paloma → /es/confirmacion', passed, failed, screenshot: screenshotFile })
 }
 
 // FLOW 2: API Pagar — reserva confirmada real
@@ -448,7 +448,7 @@ await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
     // 2. Verificar que la página pública /apartamentos refleja el estado de DB
     const publicPageBefore = await browser.newPage()
     await publicPageBefore.setViewportSize({ width: 1280, height: 900 })
-    await publicPageBefore.goto(`${BASE}/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await publicPageBefore.goto(`${BASE}/es/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await publicPageBefore.waitForTimeout(2000)
     const textBefore = await publicPageBefore.textContent('body')
     screenshotFile = await snap(publicPageBefore, name + '_estado_inicial')
@@ -476,7 +476,7 @@ await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
     // 4. Verificar en página pública (sin caché: parámetro único)
     const publicPageOff = await browser.newPage()
     await publicPageOff.setViewportSize({ width: 1280, height: 900 })
-    await publicPageOff.goto(`${BASE}/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await publicPageOff.goto(`${BASE}/es/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await publicPageOff.waitForTimeout(2500)
     const textOff = await publicPageOff.textContent('body')
     screenshotFile = await snap(publicPageOff, name + '_desactivado')
@@ -499,7 +499,7 @@ await check(browser, 'Reservar Micu (envío form)', '/reservar/micu', [
     // 6. Confirmar restauración
     const publicPageOn = await browser.newPage()
     await publicPageOn.setViewportSize({ width: 1280, height: 900 })
-    await publicPageOn.goto(`${BASE}/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await publicPageOn.goto(`${BASE}/es/apartamentos?_t=${Date.now()}`, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await publicPageOn.waitForTimeout(2500)
     const textOn = await publicPageOn.textContent('body')
     await publicPageOn.close()

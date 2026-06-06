@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 type BlockedRange = { start: string; end: string }
 type PriceRange = { start: string; end: string; price: number }
@@ -18,8 +19,7 @@ type Props = {
   priceRanges?: PriceRange[]
 }
 
-const DAYS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
-const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
 
 function toKey(d: Date) { return d.toISOString().split('T')[0] }
 function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate() }
@@ -33,6 +33,21 @@ export default function CalendarPicker({
   slug, blockedRanges, priceMin, priceMax, cleaningFee,
   minNightsDefault = 1, minNightsRanges = [], priceRanges = [],
 }: Props) {
+  const t = useTranslations('calendar')
+  const locale = useLocale()
+
+  // Locale-aware month titles + weekday headers (Monday-first)
+  const monthNames = useMemo(
+    () => Array.from({ length: 12 }, (_, m) =>
+      cap(new Date(2024, m, 1).toLocaleDateString(locale, { month: 'long' }))),
+    [locale],
+  )
+  const weekdayNames = useMemo(
+    () => Array.from({ length: 7 }, (_, i) =>
+      cap(new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' })).slice(0, 2)),
+    [locale],
+  )
+
   const today = toKey(new Date())
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth())
@@ -95,7 +110,7 @@ export default function CalendarPicker({
     // Checkout must be after checkIn (guaranteed above)
     // Check if range [checkIn, key) has blocked days
     if (rangeHasBlock(checkIn, key)) {
-      setRangeError('Hay días no disponibles en ese rango. Elige otra fecha de salida.')
+      setRangeError(t('rangeBlocked'))
       setCheckOut(null)
       return
     }
@@ -157,10 +172,10 @@ export default function CalendarPicker({
     return (
       <div>
         <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 10 }}>
-          {MONTHS_ES[m]} {y}
+          {monthNames[m]} {y}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 2 }}>
-          {DAYS_ES.map(d => (
+          {weekdayNames.map(d => (
             <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: '#aaa', padding: '4px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>{d}</div>
           ))}
         </div>
@@ -227,7 +242,7 @@ export default function CalendarPicker({
   const [nextY, nextM] = addMonths(year, month, 1)
 
   function fmtDate(d: string) {
-    return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    return new Date(d + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short' })
   }
 
   // Detect if priceRanges have variation (to show breakdown)
@@ -235,7 +250,7 @@ export default function CalendarPicker({
 
   return (
     <div style={{ background: 'white', borderRadius: 16, border: '1px solid var(--outline-variant, #e2e8f0)', padding: '20px' }}>
-      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>Selecciona fechas</h3>
+      <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>{t('selectDates')}</h3>
 
       {/* Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -252,13 +267,13 @@ export default function CalendarPicker({
       {/* Legend */}
       <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
-          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#4B766B' }} /> Seleccionado
+          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#4B766B' }} /> {t('selected')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
-          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#d1fae5', border: '1px solid #a7f3d0' }} /> Tu estancia
+          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#d1fae5', border: '1px solid #a7f3d0' }} /> {t('yourStay')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#666' }}>
-          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#f3f4f6' }} /> No disponible
+          <div style={{ width: 12, height: 12, borderRadius: 3, background: '#f3f4f6' }} /> {t('notAvailable')}
         </div>
       </div>
 
@@ -272,7 +287,7 @@ export default function CalendarPicker({
       {/* Min nights warning */}
       {minNightsWarning && (
         <div style={{ marginTop: 12, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#92400e', fontWeight: 600 }}>
-          Estancia mínima: {requiredMinNights} noche{requiredMinNights > 1 ? 's' : ''}
+          {t('minNights', { count: requiredMinNights })}
         </div>
       )}
 
@@ -281,11 +296,11 @@ export default function CalendarPicker({
         <div style={{ marginTop: 16, background: '#f0f9f6', border: '1.5px solid #4B766B', borderRadius: 12, padding: '16px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 6 }}>
             <span>{fmtDate(checkIn)} → {fmtDate(checkOut)}</span>
-            <span>{nights} noche{nights > 1 ? 's' : ''}</span>
+            <span>{t('nights', { count: nights })}</span>
           </div>
           {allSamePrice ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 6 }}>
-              <span>{nightlyBreakdown[0]?.price ?? midPrice}€ × {nights} noches</span>
+              <span>{nightlyBreakdown[0]?.price ?? midPrice}€ × {t('nights', { count: nights })}</span>
               <span>{(nightlyBreakdown[0]?.price ?? midPrice) * nights}€</span>
             </div>
           ) : (
@@ -295,33 +310,33 @@ export default function CalendarPicker({
               return [...acc, { price: n.price, count: 1 }]
             }, []).map((g, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 4 }}>
-                <span>{g.price}€/n × {g.count} noche{g.count > 1 ? 's' : ''}</span>
+                <span>{g.price}€ × {t('nights', { count: g.count })}</span>
                 <span>{g.price * g.count}€</span>
               </div>
             ))
           )}
           {cleaningFee > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 10 }}>
-              <span>Limpieza</span><span>{cleaningFee}€</span>
+              <span>{t('cleaning')}</span><span>{cleaningFee}€</span>
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, color: '#1a1a2e', borderTop: '1px solid #b2d4cc', paddingTop: 10 }}>
-            <span>Total estimado</span>
+            <span>{t('totalEstimate')}</span>
             <span style={{ color: '#4B766B' }}>{total}€</span>
           </div>
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#888' }}>* El precio exacto se confirma al revisar tu solicitud.</p>
+          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#888' }}>{t('priceNote')}</p>
         </div>
       )}
 
       {/* CTA */}
       {checkIn && !checkOut && (
         <p style={{ margin: '12px 0 0', fontSize: 13, color: '#888', textAlign: 'center' }}>
-          Selecciona la fecha de salida
+          {t('selectCheckOut')}
         </p>
       )}
       {!checkIn && (
         <p style={{ margin: '12px 0 0', fontSize: 13, color: '#888', textAlign: 'center' }}>
-          Selecciona fecha de llegada
+          {t('selectCheckIn')}
         </p>
       )}
 
@@ -334,7 +349,7 @@ export default function CalendarPicker({
             fontSize: 14, textDecoration: 'none', letterSpacing: 0.5,
           }}
         >
-          Solicitar reserva
+          {t('reservar')}
         </Link>
       )}
     </div>

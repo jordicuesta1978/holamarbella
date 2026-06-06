@@ -1,19 +1,20 @@
-"use client";
+'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { CheckCircle2, Home, ArrowRight } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { supabase } from '@/lib/supabase';
 
-function fmtDate(d: string) {
+function fmtDate(d: string, locale: string) {
   if (!d) return '—';
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(d + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function ConfirmacionContent() {
+export default function ConfirmacionContent() {
+  const t = useTranslations('confirmacion');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const name = searchParams.get('name') || '';
   const slug = searchParams.get('apartment') || '';
@@ -45,17 +46,17 @@ function ConfirmacionContent() {
   const aptName = aptInfo?.title || '';
 
   const details: [string, string][] = [
-    ...(aptName ? [['Apartamento', aptName] as [string, string]] : []),
-    ...(ref ? [['Referencia', ref] as [string, string]] : []),
-    ...(checkin ? [['Llegada', fmtDate(checkin)] as [string, string]] : []),
-    ...(checkout ? [['Salida', fmtDate(checkout)] as [string, string]] : []),
-    ...(personas ? [['Personas', `${personas} persona${Number(personas) > 1 ? 's' : ''}`] as [string, string]] : []),
+    ...(aptName ? [[t('apartment'), aptName] as [string, string]] : []),
+    ...(ref ? [[t('reference'), ref] as [string, string]] : []),
+    ...(checkin ? [[t('checkIn'), fmtDate(checkin, locale)] as [string, string]] : []),
+    ...(checkout ? [[t('checkOut'), fmtDate(checkout, locale)] as [string, string]] : []),
+    ...(personas ? [[t('guests'), t('guestsCount', { count: Number(personas) })] as [string, string]] : []),
     ...(breakdown.length > 0
-      ? breakdown.map(g => [`Alojamiento (${g.count} noche${g.count > 1 ? 's' : ''})`, `${g.price}€ × ${g.count} = ${g.price * g.count}€`] as [string, string])
-      : nights ? [['Duración', `${nights} noche${Number(nights) > 1 ? 's' : ''}`] as [string, string]] : []
+      ? breakdown.map(g => [t('lodging', { count: g.count }), `${g.price}€ × ${g.count} = ${g.price * g.count}€`] as [string, string])
+      : nights ? [[t('duration'), t('nights', { count: Number(nights) })] as [string, string]] : []
     ),
-    ...(cleaning ? [['Gastos de limpieza', `${cleaning}€`] as [string, string]] : []),
-    ...(total ? [['Total estimado', `${total}€`] as [string, string]] : []),
+    ...(cleaning ? [[t('cleaning'), `${cleaning}€`] as [string, string]] : []),
+    ...(total ? [[t('totalEstimate'), `${total}€`] as [string, string]] : []),
   ];
 
   return (
@@ -67,11 +68,11 @@ function ConfirmacionContent() {
       </div>
 
       <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--primary)' }}>
-        ¡Solicitud enviada{name ? `, ${name}` : ''}!
+        {t('sent', { name: name ? `, ${name}` : '' })}
       </h1>
 
       <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface-variant)' }}>
-        Tu solicitud ha sido enviada correctamente.
+        {t('sentSimple')}
       </p>
 
       {details.length > 0 && (
@@ -94,55 +95,39 @@ function ConfirmacionContent() {
 
       {(total || breakdown.length > 0) && (
         <p className="text-xs mb-6 text-center" style={{ color: 'var(--on-surface-variant)' }}>
-          * El precio exacto será confirmado al revisar tu solicitud.
+          {t('priceNote')}
         </p>
       )}
 
       <p className="text-base leading-relaxed mb-10" style={{ color: 'var(--on-surface)' }}>
-        Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.
+        {t('willContact')}
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         {token && (
-          <Link
+          <a
             href={`/conversacion/${token}`}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-widest text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: 'var(--primary)' }}
           >
-            Ver mi reserva <ArrowRight size={16} />
-          </Link>
+            {t('viewReservation')} <ArrowRight size={16} />
+          </a>
         )}
         <Link
           href="/"
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border font-bold text-sm uppercase tracking-widest transition-opacity hover:opacity-70"
           style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
         >
-          <Home size={16} /> Volver al inicio
+          <Home size={16} /> {t('backHome')}
         </Link>
         <Link
           href="/apartamentos"
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border font-bold text-sm uppercase tracking-widest transition-opacity hover:opacity-70"
           style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }}
         >
-          Ver otros apartamentos
+          {t('otherApartments')}
         </Link>
       </div>
     </main>
-  );
-}
-
-export default function ConfirmacionPage() {
-  return (
-    <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
-      <Header />
-      <Suspense fallback={
-        <div className="max-w-2xl mx-auto px-8 py-32 text-center" style={{ color: 'var(--on-surface-variant)' }}>
-          Cargando...
-        </div>
-      }>
-        <ConfirmacionContent />
-      </Suspense>
-      <Footer />
-    </div>
   );
 }

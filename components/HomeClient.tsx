@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { Users, MapPin, House } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,30 +23,16 @@ const reviews = [
   },
 ];
 
-const FEATURES = [
-  {
-    Icon: Users,
-    title: 'Trato',
-    italic: 'Personal',
-    desc: 'Atención directa y personalizada. Recepción a la llegada en persona y disponibilidad durante toda la estancia.',
-  },
-  {
-    Icon: MapPin,
-    title: 'Excelentes',
-    italic: 'Localizaciones',
-    desc: 'Apartamentos en las zonas más estratégicas de Marbella para que puedas ir a pie a todas partes.',
-  },
-  {
-    Icon: House,
-    title: 'Siéntete',
-    italic: 'en Casa',
-    desc: 'Espacios cuidados y equipados con mimo para ofrecer el máximo confort y calidez hogareña.',
-  },
-];
-
 export default function HomeClient({ apartments, globalBlockedDates }: { apartments: Apartment[]; globalBlockedDates: string[] }) {
+  const t = useTranslations('home');
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+
+  const FEATURES = [
+    { Icon: Users, title: t('feature1Title'), italic: t('feature1Italic'), desc: t('feature1Desc') },
+    { Icon: MapPin, title: t('feature2Title'), italic: t('feature2Italic'), desc: t('feature2Desc') },
+    { Icon: House, title: t('feature3Title'), italic: t('feature3Italic'), desc: t('feature3Desc') },
+  ];
 
   const heroSlides = apartments.map(a => ({
     src: `/images/${a.slug}/${a.slug}-1.jpg`,
@@ -84,15 +71,15 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
           {/* Hero copy */}
           <div className="relative z-10 max-w-7xl mx-auto px-8 w-full">
             <div className="max-w-2xl">
-              <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium">Marbella · España</p>
+              <p className="text-white/70 text-sm uppercase tracking-widest mb-4 font-medium">{t('heroEyebrow')}</p>
               <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-4">
-                Bienvenidos a vuestra<br />
-                estancia perfecta,{' '}
+                {t('heroTitle1')}<br />
+                {t('heroTitle2')}{' '}
                 <span className="font-serif-italic text-[#E5D5C0]" style={{ fontWeight: 'normal' }}>
-                  gestionada con mimo.
+                  {t('heroTitleItalic')}
                 </span>
               </h1>
-              <p className="text-white/80 text-lg mt-4">Apartamentos de corta estancia para vacaciones o teletrabajo</p>
+              <p className="text-white/80 text-lg mt-4">{t('heroSubtitle')}</p>
             </div>
           </div>
 
@@ -102,7 +89,7 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
               <button
                 key={idx}
                 onClick={() => setHeroIndex(idx)}
-                aria-label={`Ver ${heroSlides[idx].label}`}
+                aria-label={heroSlides[idx].label}
                 className={`rounded-full transition-all duration-300 ${idx === heroIndex ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50 hover:bg-white/80'}`}
               />
             ))}
@@ -120,9 +107,9 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex justify-between items-end mb-12">
             <h2 className="text-4xl font-bold" style={{ color: 'var(--primary)' }}>
-              Nuestros <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>Apartamentos</span>
+              {t('apartmentsTitle')} <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>{t('apartmentsTitleItalic')}</span>
             </h2>
-            <Link href="/apartamentos" className="text-sm font-medium underline underline-offset-4" style={{ color: 'var(--primary)' }}>Ver todos →</Link>
+            <Link href="/apartamentos" className="text-sm font-medium underline underline-offset-4" style={{ color: 'var(--primary)' }}>{t('seeAll')}</Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {apartments.map((apt) => (
@@ -137,7 +124,7 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                     className="mt-4 inline-block text-xs font-bold uppercase tracking-widest px-5 py-2 rounded-full border"
                     style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                   >
-                    Ver apartamento
+                    {t('seeApartment')}
                   </span>
                 </div>
               </Link>
@@ -170,10 +157,10 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
         <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div>
             <h2 className="text-4xl font-bold mb-6" style={{ color: 'var(--primary)' }}>
-              Hola, <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>soy Mar</span>
+              {t('marTitle')} <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>{t('marTitleItalic')}</span>
             </h2>
             <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface-variant)' }}>
-              Me encanta cuidar cada detalle para que tu estancia en Marbella sea especial. Mi objetivo es que no solo alquiles un apartamento, sino que descubras el alma de la ciudad con la tranquilidad de sentirte en casa.
+              {t('marBio')}
             </p>
             <div className="flex items-center gap-6 mb-8">
               <div>
@@ -181,8 +168,8 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                 <div className="text-yellow-400 text-2xl mt-1">★★★★★</div>
               </div>
               <div>
-                <div className="text-lg font-bold" style={{ color: 'var(--primary)' }}>Superhost</div>
-                <div className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>+250 reseñas verificadas</div>
+                <div className="text-lg font-bold" style={{ color: 'var(--primary)' }}>{t('superhost')}</div>
+                <div className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>{t('reviewsCount')}</div>
               </div>
             </div>
 
@@ -246,10 +233,10 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                   <span className="text-5xl font-bold select-none" style={{ color: 'var(--primary)' }}>M</span>
                 </div>
                 <p className="text-2xl font-bold tracking-wide mb-1" style={{ color: 'var(--primary)' }}>Mar</p>
-                <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>Anfitriona · Marbella</p>
+                <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>{t('marRole')}</p>
                 <div className="text-yellow-400 text-xl tracking-widest mb-5">★★★★★</div>
                 <p className="font-serif-italic text-sm leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
-                  &ldquo;Mi objetivo es que te sientas en casa desde el primer momento.&rdquo;
+                  &ldquo;{t('marQuote')}&rdquo;
                 </p>
               </div>
             </div>

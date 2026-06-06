@@ -1,24 +1,36 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, CalendarDays, X } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRouter } from '@/i18n/navigation'
+import { Search, X } from 'lucide-react'
 
 type Props = { globalBlockedDates: string[] }
 
-const DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do']
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const DAYS_BY_LOCALE: Record<string, string[]> = {
+  es: ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'],
+  en: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+}
+
+function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
 
 function toKey(d: Date) { return d.toISOString().split('T')[0] }
 function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate() }
 function firstWeekday(y: number, m: number) { return (new Date(y, m, 1).getDay() + 6) % 7 }
-function fmtShort(d: string) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-}
 
 type Panel = 'in' | 'out' | null
 
 export default function HeroSearch({ globalBlockedDates }: Props) {
+  const t = useTranslations('search')
+  const locale = useLocale()
+  const localeTag = locale === 'en' ? 'en-US' : 'es-ES'
+  const DAYS = DAYS_BY_LOCALE[locale] ?? DAYS_BY_LOCALE.es
+  const MONTHS = Array.from({ length: 12 }, (_, m) =>
+    cap(new Intl.DateTimeFormat(localeTag, { month: 'long' }).format(new Date(2021, m, 1)))
+  )
+  const fmtShort = (d: string) =>
+    new Date(d + 'T00:00:00').toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })
+
   const router = useRouter()
   const today = toKey(new Date())
   const ref = useRef<HTMLDivElement>(null)
@@ -105,8 +117,8 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
     ? Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
     : 0
 
-  const inLabel = checkIn ? fmtShort(checkIn) : 'Añade tu llegada'
-  const outLabel = checkOut ? fmtShort(checkOut) : 'Añade tu salida'
+  const inLabel = checkIn ? fmtShort(checkIn) : t('addCheckIn')
+  const outLabel = checkOut ? fmtShort(checkOut) : t('addCheckOut')
   const hasSelection = !!(checkIn || checkOut)
 
   return (
@@ -130,7 +142,7 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
             borderRadius: '60px 0 0 60px', transition: 'background 0.15s',
           }}
         >
-          <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: '#555', marginBottom: 1 }}>Llegada</span>
+          <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: '#555', marginBottom: 1 }}>{t('checkIn')}</span>
           <span style={{ fontSize: 13, fontWeight: checkIn ? 700 : 400, color: checkIn ? '#1a1a2e' : '#9ca3af' }}>
             {inLabel}
           </span>
@@ -147,7 +159,7 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
             transition: 'background 0.15s',
           }}
         >
-          <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: '#555', marginBottom: 1 }}>Salida</span>
+          <span style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: '#555', marginBottom: 1 }}>{t('checkOut')}</span>
           <span style={{ fontSize: 13, fontWeight: checkOut ? 700 : 400, color: checkOut ? '#1a1a2e' : '#9ca3af' }}>
             {outLabel}
           </span>
@@ -156,7 +168,7 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
         {/* CTA */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px 0 12px' }}>
           {hasSelection && (
-            <button onClick={clearDates} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', padding: 4, borderRadius: '50%' }} title="Limpiar">
+            <button onClick={clearDates} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', padding: 4, borderRadius: '50%' }} aria-label="clear">
               <X size={14} />
             </button>
           )}
@@ -177,7 +189,7 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
       {/* Nights badge */}
       {nights > 0 && !open && (
         <div style={{ position: 'absolute', top: -28, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '3px 12px', fontSize: 11, fontWeight: 700, color: '#4B766B', whiteSpace: 'nowrap', backdropFilter: 'blur(4px)' }}>
-          {nights} noche{nights > 1 ? 's' : ''}
+          {t('nights', { count: nights })}
         </div>
       )}
 
@@ -193,7 +205,7 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
           border: '1px solid #e2e8f0',
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-            {open === 'in' ? 'Fecha de llegada' : 'Fecha de salida'}
+            {open === 'in' ? t('checkInDate') : t('checkOutDate')}
           </div>
 
           {/* Month navigation */}
@@ -263,12 +275,12 @@ export default function HeroSearch({ globalBlockedDates }: Props) {
           {/* Footer */}
           {open === 'in' && checkIn && (
             <p style={{ margin: '10px 0 0', fontSize: 11, color: '#4B766B', textAlign: 'center', fontWeight: 600 }}>
-              Llegada: {fmtShort(checkIn)} — Ahora elige la salida
+              {t('checkInChosen', { date: fmtShort(checkIn) })}
             </p>
           )}
           {open === 'out' && !checkIn && (
             <p style={{ margin: '10px 0 0', fontSize: 11, color: '#888', textAlign: 'center' }}>
-              Elige primero la fecha de llegada
+              {t('chooseCheckInFirst')}
             </p>
           )}
         </div>

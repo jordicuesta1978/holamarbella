@@ -21,7 +21,9 @@ async function readOrderJson(slug: string): Promise<string[] | null> {
   } catch { return null }
 }
 
-function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
+type Locale = 'es' | 'en'
+
+function mapRow(row: any, primaryPhotoUrl?: string, locale: Locale = 'es'): Apartment {
   const capacity = {
     persons: row.persons,
     bedrooms: row.bedrooms,
@@ -29,16 +31,26 @@ function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
     bathrooms: row.bathrooms,
     extras: row.bed_extras ?? undefined,
   }
+  // EN content falls back to ES when the *_en columns are empty / not migrated yet
+  const en = locale === 'en'
+  const title = en ? (row.name_en || row.title) : row.title
+  const subtitle = en ? (row.subtitle_en || row.subtitle) : row.subtitle
+  const description = en ? (row.description_en || row.description) : row.description
+  const keyFeaturesEn = Array.isArray(row.key_features_en)
+    ? row.key_features_en.join(' · ')
+    : (row.key_features_en || '')
+  const key_features = en && keyFeaturesEn ? keyFeaturesEn : computeKeyFeatures(capacity)
+
   return {
     slug: row.slug,
-    title: row.title,
-    subtitle: row.subtitle,
-    key_features: computeKeyFeatures(capacity),
+    title,
+    subtitle,
+    key_features,
     rating: Number(row.rating),
     reviewCount: row.review_count,
     badge: row.badge ?? undefined,
     capacity,
-    description: row.description,
+    description,
     license: row.license,
     photoCount: row.photo_count,
     primaryPhotoUrl,
@@ -49,7 +61,7 @@ function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
   }
 }
 
-export async function getApartments(): Promise<Apartment[]> {
+export async function getApartments(locale: Locale = 'es'): Promise<Apartment[]> {
   const { data, error } = await supabase
     .from('apartments')
     .select('*')
@@ -65,7 +77,7 @@ export async function getApartments(): Promise<Apartment[]> {
     const order = orders[i]
     const primaryPath = order?.[0]
     const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
-    return mapRow(row, primaryPhotoUrl)
+    return mapRow(row, primaryPhotoUrl, locale)
   })
 }
 
@@ -161,7 +173,7 @@ export async function getGlobalBlockedDates(): Promise<string[]> {
     .map(([date]) => date)
 }
 
-export async function getApartmentBySlug(slug: string): Promise<Apartment | null> {
+export async function getApartmentBySlug(slug: string, locale: Locale = 'es'): Promise<Apartment | null> {
   const [{ data: apt, error }, { data: resenas }, order] = await Promise.all([
     supabase.from('apartments').select('*').eq('slug', slug).single(),
     supabase.from('resenas').select('*').eq('apartment_slug', slug).order('id'),
@@ -171,7 +183,7 @@ export async function getApartmentBySlug(slug: string): Promise<Apartment | null
 
   const primaryPath = order?.[0]
   const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
-  const apartment = mapRow(apt, primaryPhotoUrl)
+  const apartment = mapRow(apt, primaryPhotoUrl, locale)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apartment.reviews = ((resenas ?? []) as any[]).map((r): ApartmentReview => ({
     author: r.author,

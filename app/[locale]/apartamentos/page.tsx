@@ -1,5 +1,6 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getTranslations, getLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getApartments } from '@/lib/db';
@@ -17,6 +18,8 @@ export default async function ApartamentosPage({
   searchParams: Promise<{ checkIn?: string; checkOut?: string; apt?: string; flex?: string; flexIn?: string; flexOut?: string }>
 }) {
   const { checkIn, checkOut, apt, flex: flexParam, flexIn: flexInParam, flexOut: flexOutParam } = await searchParams
+  const t = await getTranslations('apartmentsPage')
+  const locale = await getLocale()
   // Support both legacy ?flex= and new per-date ?flexIn=&flexOut= params
   const flexIn = Math.min(7, Math.max(0, Number(flexInParam ?? flexParam) || 0))
   const flexOut = Math.min(7, Math.max(0, Number(flexOutParam ?? flexParam) || 0))
@@ -38,7 +41,7 @@ export default async function ApartamentosPage({
     : apartments
 
   function fmtDate(d: string) {
-    return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Date(d + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   return (
@@ -47,32 +50,32 @@ export default async function ApartamentosPage({
 
       <div className="py-16 text-center" style={{ backgroundColor: 'var(--arena)' }}>
         <p className="text-xs uppercase tracking-widest mb-3 font-medium" style={{ color: 'var(--on-surface-variant)' }}>
-          Marbella · España
+          {t('eyebrow')}
         </p>
         <h1 className="text-4xl md:text-5xl font-bold" style={{ color: 'var(--primary)' }}>
-          Nuestros{' '}
-          <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>Apartamentos</span>
+          {t('title1')}{' '}
+          <span className="font-serif-italic" style={{ fontWeight: 'normal' }}>{t('titleItalic')}</span>
         </h1>
         {hasDates ? (
           <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>
-            Disponibilidad para{' '}
+            {t('availabilityFor')}{' '}
             <strong style={{ color: 'var(--primary)' }}>{fmtDate(checkIn!)} → {fmtDate(checkOut!)}</strong>
             {(flexIn > 0 || flexOut > 0) && (
               <span style={{ color: 'var(--on-surface-variant)' }}>
                 {flexIn === flexOut
-                  ? ` (±${flex} días de flexibilidad)`
-                  : ` (llegada ±${flexIn}, salida ±${flexOut} días)`}
+                  ? t('flexBoth', { days: flex })
+                  : t('flexSplit', { in: flexIn, out: flexOut })}
               </span>
             )}
           </p>
         ) : (
           <p className="text-base mt-4 max-w-xl mx-auto" style={{ color: 'var(--on-surface-variant)' }}>
-            5 apartamentos únicos en el corazón de Marbella, gestionados con mimo.
+            {t('subtitle')}
           </p>
         )}
         {hasDates && (
           <Link href="/apartamentos" className="inline-block mt-4 text-sm underline underline-offset-4" style={{ color: 'var(--primary)' }}>
-            ← Ver todos sin filtro de fechas
+            {t('clearFilter')}
           </Link>
         )}
       </div>
@@ -106,7 +109,7 @@ export default async function ApartamentosPage({
                           border: `1px solid ${isAvailable ? '#6ee7b7' : '#d1d5db'}`,
                         }}
                       >
-                        {isAvailable ? '✓ Disponible' : 'No disponible en estas fechas'}
+                        {isAvailable ? t('available') : t('notAvailable')}
                       </span>
                     )}
                   </div>
@@ -118,7 +121,7 @@ export default async function ApartamentosPage({
                         {apt.rating.toFixed(2)}
                       </span>
                       <span className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-                        ({apt.reviewCount} reseñas)
+                        ({apt.reviewCount} {t('reviews')})
                       </span>
                     </div>
                     <h3 className="text-base font-bold leading-snug mb-0.5" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}>
@@ -133,17 +136,17 @@ export default async function ApartamentosPage({
                     {isAvailable === false && <ClearDatesLink />}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
-                        Desde{' '}
+                        {t('from')}{' '}
                         <span className="font-bold text-base" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}>
                           {apt.priceRange[0]}€
                         </span>
-                        {' '}/noche
+                        {' '}{t('perNightShort')}
                       </span>
                       <span
                         className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border transition-all group-hover:text-white"
                         style={{ borderColor: isAvailable === false ? '#d1d5db' : 'var(--primary)', color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}
                       >
-                        Ver →
+                        {t('viewShort')}
                       </span>
                     </div>
                   </div>

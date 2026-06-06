@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
 const MapboxMap = dynamic(() => import('./MapboxMap'), { ssr: false });
-import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPhotos } from '@/lib/apartments';
@@ -79,6 +79,7 @@ export default function ApartamentoDetail({
   minNightsRanges?: Array<{ start: string; end: string; min_nights: number }>;
   storagePhotos?: string[];
 }) {
+  const t = useTranslations('detail');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
@@ -148,7 +149,7 @@ export default function ApartamentoDetail({
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="flex items-center gap-2 bg-white text-black text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
                       <Grid3X3 size={14} />
-                      Ver todas ({photos.length})
+                      {t('showAllPhotosShort', { count: photos.length })}
                     </div>
                   </div>
                 )}
@@ -163,7 +164,7 @@ export default function ApartamentoDetail({
           style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
         >
           <Grid3X3 size={14} />
-          Ver todas las fotos ({photos.length})
+          {t('showAllPhotos', { count: photos.length })}
         </button>
       </div>
 
@@ -177,7 +178,7 @@ export default function ApartamentoDetail({
               <span className="flex items-center gap-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                 <span className="text-yellow-400">★</span>
                 <strong style={{ color: 'var(--on-surface)' }}>{apartment.rating.toFixed(2)}</strong>
-                · {apartment.reviewCount} reseñas
+                · {apartment.reviewCount} {t('reviewsSuffix')}
               </span>
             </div>
             <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--on-surface-variant)' }}>
@@ -190,25 +191,25 @@ export default function ApartamentoDetail({
               {apartment.key_features}
             </p>
             <p className="text-xs mt-2" style={{ color: 'var(--on-surface-variant)' }}>
-              Licencia turística: {apartment.license}
+              {t('license', { license: apartment.license })}
             </p>
           </div>
 
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>Descripción</h2>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>{t('description')}</h2>
             <p className="text-base leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
               {expanded || !isLong ? apartment.description : `${shortDesc}...`}
             </p>
             {isLong && (
               <button onClick={() => setExpanded(e => !e)} className="mt-3 text-sm font-bold underline underline-offset-4" style={{ color: 'var(--primary)' }}>
-                {expanded ? 'Leer menos' : 'Leer más'}
+                {expanded ? t('readLess') : t('readMore')}
               </button>
             )}
           </div>
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-            <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--on-surface)' }}>Lo que ofrece este espacio</h2>
+            <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--on-surface)' }}>{t('offers')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {apartment.topAmenities.map((item) => {
                 const Icon = getTopAmenityIcon(item);
@@ -227,21 +228,21 @@ export default function ApartamentoDetail({
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)'; }}
             >
-              Mostrar todas las amenidades
+              {t('showAllAmenities')}
             </button>
           </div>
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--on-surface)' }}>Ubicación</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>Marbella, Málaga, España</p>
+            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--on-surface)' }}>{t('location')}</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>{t('locationCity')}</p>
             {APT_COORDS[slug] && process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
               <MapboxMap lng={APT_COORDS[slug].lng} lat={APT_COORDS[slug].lat} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN} />
             ) : (
               <div className="w-full rounded-2xl flex items-center justify-center" style={{ height: 280, backgroundColor: 'var(--arena)', border: '1px solid var(--outline-variant)' }}>
                 <div className="text-center">
                   <Mountain size={32} strokeWidth={1} style={{ color: 'var(--primary)', margin: '0 auto 8px' }} />
-                  <p className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>Mapa disponible próximamente</p>
-                  <p className="text-xs mt-1" style={{ color: 'var(--outline-variant)' }}>Mapbox · Pin exacto</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--on-surface-variant)' }}>{t('mapSoon')}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--outline-variant)' }}>{t('mapPin')}</p>
                 </div>
               </div>
             )}
@@ -249,11 +250,11 @@ export default function ApartamentoDetail({
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>Reseñas</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>{t('reviews')}</h2>
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">★</span>
                 <span className="font-bold" style={{ color: 'var(--on-surface)' }}>{apartment.rating.toFixed(2)}</span>
-                <span className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>· {apartment.reviewCount} reseñas</span>
+                <span className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>· {apartment.reviewCount} {t('reviewsSuffix')}</span>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -277,7 +278,7 @@ export default function ApartamentoDetail({
 
           {/* ── CALENDAR — visible on mobile only ── */}
           <div id="calendario" className="py-8 border-b lg:hidden" style={{ borderColor: 'var(--outline-variant)' }}>
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>Reservar</h2>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>{t('reservarSection')}</h2>
             <CalendarPicker
               slug={slug}
               blockedRanges={blockedRanges}
@@ -291,43 +292,43 @@ export default function ApartamentoDetail({
           </div>
 
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-            <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--on-surface)' }}>Normas de la casa</h2>
+            <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--on-surface)' }}>{t('houseRules')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { Icon: Clock, text: 'Check-in: desde las 14:00' },
-                { Icon: Clock, text: 'Check-out: hasta las 11:00' },
-                { Icon: Users, text: 'Máximo 2 personas' },
-                { Icon: Ban, text: 'No se admiten mascotas' },
-                { Icon: Ban, text: 'No se permiten fiestas ni eventos' },
-                { Icon: Cigarette, text: 'Prohibido fumar' },
-                { Icon: Volume2, text: 'Silencio: 22:00 – 8:00' },
-                { Icon: Camera, text: 'No fotografías comerciales' },
-              ].map(({ Icon, text }) => (
-                <div key={text} className="flex items-center gap-3">
+                { Icon: Clock, key: 'checkInRule' },
+                { Icon: Clock, key: 'checkOutRule' },
+                { Icon: Users, key: 'maxGuests' },
+                { Icon: Ban, key: 'noPets' },
+                { Icon: Ban, key: 'noParties' },
+                { Icon: Cigarette, key: 'noSmoking' },
+                { Icon: Volume2, key: 'quietHours' },
+                { Icon: Camera, key: 'noCommercialPhoto' },
+              ].map(({ Icon, key }) => (
+                <div key={key} className="flex items-center gap-3">
                   <Icon size={16} strokeWidth={1.5} style={{ color: 'var(--on-surface-variant)', flexShrink: 0 }} />
-                  <span className="text-sm" style={{ color: 'var(--on-surface)' }}>{text}</span>
+                  <span className="text-sm" style={{ color: 'var(--on-surface)' }}>{t(key)}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="py-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>Política de cancelación</h2>
+            <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>{t('cancellationTitle')}</h2>
             <div className="space-y-4">
               <div>
-                <p className="font-semibold text-sm mb-1" style={{ color: 'var(--on-surface)' }}>Estancias cortas (menos de 28 noches)</p>
+                <p className="font-semibold text-sm mb-1" style={{ color: 'var(--on-surface)' }}>{t('cancellationShortTitle')}</p>
                 <ul className="text-sm space-y-1" style={{ color: 'var(--on-surface-variant)' }}>
-                  <li>· Cancelación gratuita hasta 5 días antes de la llegada</li>
-                  <li>· 50% de reembolso entre 5 días antes y la llegada</li>
-                  <li>· Sin reembolso desde el día de llegada</li>
+                  <li>{t('cancellationShort1')}</li>
+                  <li>{t('cancellationShort2')}</li>
+                  <li>{t('cancellationShort3')}</li>
                 </ul>
               </div>
               <div>
-                <p className="font-semibold text-sm mb-1" style={{ color: 'var(--on-surface)' }}>Estancias largas (28 noches o más)</p>
+                <p className="font-semibold text-sm mb-1" style={{ color: 'var(--on-surface)' }}>{t('cancellationLongTitle')}</p>
                 <ul className="text-sm space-y-1" style={{ color: 'var(--on-surface-variant)' }}>
-                  <li>· Cancelación gratuita hasta 30 días antes</li>
-                  <li>· Primeras 30 noches no reembolsables si cancelas después</li>
-                  <li>· Sin reembolso desde el día de llegada</li>
+                  <li>{t('cancellationLong1')}</li>
+                  <li>{t('cancellationLong2')}</li>
+                  <li>{t('cancellationLong3')}</li>
                 </ul>
               </div>
             </div>
@@ -340,12 +341,12 @@ export default function ApartamentoDetail({
             <div className="mb-3 pb-3 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
               <p className="text-2xl font-bold" style={{ color: 'var(--on-surface)' }}>
                 {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€{' '}
-                <span className="text-base font-normal text-stone-400">/ noche</span>
+                <span className="text-base font-normal text-stone-400">{t('perNight')}</span>
               </p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-yellow-400 text-sm">★</span>
                 <span className="text-sm font-semibold">{apartment.rating.toFixed(2)}</span>
-                <span className="text-sm text-stone-400">· {apartment.reviewCount} reseñas</span>
+                <span className="text-sm text-stone-400">· {apartment.reviewCount} {t('reviewsSuffix')}</span>
               </div>
             </div>
             <CalendarPicker
@@ -368,10 +369,10 @@ export default function ApartamentoDetail({
           <span className="font-bold text-base" style={{ color: 'var(--on-surface)' }}>
             {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€
           </span>
-          <span className="text-sm text-stone-400"> / noche</span>
+          <span className="text-sm text-stone-400"> {t('perNight')}</span>
         </div>
         <a href="#calendario" className="text-white font-bold text-sm px-6 py-3 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
-          Ver fechas
+          {t('viewDates')}
         </a>
       </div>
 
@@ -381,14 +382,14 @@ export default function ApartamentoDetail({
           <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm font-medium bg-black/50 px-4 py-1 rounded-full">
             {lightboxIndex + 1} / {photos.length}
           </div>
-          <button onClick={closeLightbox} className="absolute top-4 right-4 text-white p-2 rounded-full transition-colors hover:bg-white/20" aria-label="Cerrar">
+          <button onClick={closeLightbox} className="absolute top-4 right-4 text-white p-2 rounded-full transition-colors hover:bg-white/20" aria-label={t('close')}>
             <X size={24} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); prevPhoto(); }} className="absolute left-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label="Foto anterior">
+          <button onClick={(e) => { e.stopPropagation(); prevPhoto(); }} className="absolute left-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label={t('prevPhoto')}>
             <ChevronLeft size={32} />
           </button>
           <img src={photos[lightboxIndex]} alt={`${apartment.title} ${lightboxIndex + 1}`} className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
-          <button onClick={(e) => { e.stopPropagation(); nextPhoto(); }} className="absolute right-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label="Foto siguiente">
+          <button onClick={(e) => { e.stopPropagation(); nextPhoto(); }} className="absolute right-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label={t('nextPhoto')}>
             <ChevronRight size={32} />
           </button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 overflow-x-auto max-w-[90vw] px-2">
@@ -406,7 +407,7 @@ export default function ApartamentoDetail({
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={() => setAmenitiesOpen(false)}>
           <div className="relative w-full max-w-2xl my-8 mx-4 rounded-2xl p-8 shadow-2xl" style={{ backgroundColor: 'white' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>Todas las amenidades</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>{t('amenitiesTitle')}</h2>
               <button onClick={() => setAmenitiesOpen(false)} className="p-2 rounded-full transition-colors hover:bg-stone-100">
                 <X size={20} />
               </button>
