@@ -218,27 +218,18 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
             </div>
           </div>
 
-          {/* Mar placeholder */}
+          {/* Mar */}
           <div className="relative">
             <div className="absolute -inset-4 rounded-3xl opacity-10" style={{ backgroundColor: 'var(--primary)' }} />
             <div
-              className="relative w-full rounded-2xl border-2 overflow-hidden flex flex-col items-center justify-center"
+              className="relative w-full rounded-2xl border-2 overflow-hidden"
               style={{ aspectRatio: '4/5', backgroundColor: 'var(--arena)', borderColor: 'var(--outline-variant)' }}
             >
-              <div className="flex flex-col items-center justify-center px-10 text-center">
-                <div
-                  className="w-28 h-28 rounded-full border-2 flex items-center justify-center mb-6 bg-white"
-                  style={{ borderColor: 'var(--outline-variant)' }}
-                >
-                  <span className="text-5xl font-bold select-none" style={{ color: 'var(--primary)' }}>M</span>
-                </div>
-                <p className="text-2xl font-bold tracking-wide mb-1" style={{ color: 'var(--primary)' }}>Mar</p>
-                <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>{t('marRole')}</p>
-                <div className="text-yellow-400 text-xl tracking-widest mb-5">★★★★★</div>
-                <p className="font-serif-italic text-sm leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
-                  &ldquo;{t('marQuote')}&rdquo;
-                </p>
-              </div>
+              <img
+                src="https://kftyemxltrzxafzpyafh.supabase.co/storage/v1/object/public/Public/mar-diez.jpg"
+                alt={`Mar · ${t('marRole')}`}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>

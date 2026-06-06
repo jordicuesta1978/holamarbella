@@ -261,6 +261,32 @@ await check(browser, 'Reservar Micu (envío form)', '/es/reservar/micu', [
   }},
 ])
 
+// ── NORMAS Y REGISTRO (multiidioma) ───────────────────────────────────────────
+
+await check(browser, 'Normas (ES)', '/es/normas', [
+  { desc: 'H1 "Normas de la casa"', fn: p => p.locator('h1:has-text("Normas de la casa")').waitFor({ timeout: 8000 }) },
+  { desc: 'Contenido real en español', fn: p => p.locator('text=Pérdida de llaves: 100€').first().waitFor({ timeout: 6000 }) },
+])
+
+await check(browser, 'Normas (EN)', '/en/normas', [
+  { desc: 'H1 "House rules"', fn: p => p.locator('h1:has-text("House rules")').waitFor({ timeout: 8000 }) },
+  { desc: 'Contenido real en inglés', fn: p => p.locator('text=Lost keys: €100').first().waitFor({ timeout: 6000 }) },
+])
+
+await check(browser, 'Registro viajeros (ES)', '/es/registro-viajeros', [
+  { desc: 'H1 "Registro de viajeros"', fn: p => p.locator('h1:has-text("Registro de viajeros")').waitFor({ timeout: 8000 }) },
+  { desc: 'Sección "Datos personales"', fn: p => p.locator('text=Datos personales').first().waitFor({ timeout: 6000 }) },
+  { desc: 'Sección "Lugar de residencia habitual"', fn: p => p.locator('text=Lugar de residencia habitual').first().waitFor({ timeout: 6000 }) },
+  { desc: 'Botón "Enviar registro"', fn: p => p.locator('button:has-text("Enviar registro")').waitFor({ timeout: 6000 }) },
+])
+
+await check(browser, 'Registro viajeros (EN)', '/en/registro-viajeros', [
+  { desc: 'H1 "Traveller registration"', fn: p => p.locator('h1:has-text("Traveller registration")').waitFor({ timeout: 8000 }) },
+  { desc: 'Sección "Personal details"', fn: p => p.locator('text=Personal details').first().waitFor({ timeout: 6000 }) },
+  { desc: 'Sección "Usual place of residence"', fn: p => p.locator('text=Usual place of residence').first().waitFor({ timeout: 6000 }) },
+  { desc: 'Botón "Submit registration"', fn: p => p.locator('button:has-text("Submit registration")').waitFor({ timeout: 6000 }) },
+])
+
 // ── FLOWS PROFUNDOS ───────────────────────────────────────────────────────────
 
 // FLOW 1: Reserva completa end-to-end
