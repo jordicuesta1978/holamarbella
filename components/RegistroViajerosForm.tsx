@@ -29,6 +29,12 @@ const EMPTY = {
 }
 type FormState = typeof EMPTY
 
+const LABEL_CLS = 'block text-xs font-bold uppercase tracking-widest mb-1.5'
+const FIELD_CLS = 'w-full rounded-xl border px-4 py-2.5 text-sm outline-none'
+const FIELD_STYLE: React.CSSProperties = { borderColor: 'var(--outline-variant)', backgroundColor: 'white', color: 'var(--on-surface)' }
+const ERR_STYLE: React.CSSProperties = { borderColor: '#dc2626' }
+const SECTION_CLS = 'text-xs font-bold uppercase tracking-widest mb-4 pt-2'
+
 function isMinor(birth: string): boolean {
   if (!birth) return false
   const b = new Date(birth)
@@ -40,6 +46,37 @@ function isMinor(birth: string): boolean {
   return age < 18
 }
 
+// Module-scope field component — defined here (not inside the form) so inputs
+// keep focus and don't remount on every keystroke.
+function Field({
+  label, value, onChange, error, type = 'text', optional, optionalText, hint,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  error?: boolean
+  type?: string
+  optional?: boolean
+  optionalText?: string
+  hint?: string
+}) {
+  return (
+    <div>
+      <label className={LABEL_CLS} style={{ color: 'var(--on-surface-variant)' }}>
+        {label}{optional && <span className="font-normal normal-case"> {optionalText}</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className={FIELD_CLS}
+        style={error ? { ...FIELD_STYLE, ...ERR_STYLE } : FIELD_STYLE}
+      />
+      {hint && <p className="text-xs mt-1" style={{ color: 'var(--on-surface-variant)' }}>{hint}</p>}
+    </div>
+  )
+}
+
 export default function RegistroViajerosForm({ apartments }: { apartments: Apartment[] }) {
   const t = useTranslations('registro')
   const [f, setF] = useState<FormState>(EMPTY)
@@ -48,7 +85,7 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
   const [serverError, setServerError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
-  const set = (k: keyof FormState, v: string) => {
+  const set = (k: keyof FormState) => (v: string) => {
     setF(prev => ({ ...prev, [k]: v }))
     if (errors[k]) setErrors(prev => ({ ...prev, [k]: false }))
   }
@@ -131,27 +168,7 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
     )
   }
 
-  const labelCls = 'block text-xs font-bold uppercase tracking-widest mb-1.5'
-  const fieldCls = 'w-full rounded-xl border px-4 py-2.5 text-sm outline-none'
-  const fieldStyle = { borderColor: 'var(--outline-variant)', backgroundColor: 'white', color: 'var(--on-surface)' } as React.CSSProperties
-  const errStyle = { borderColor: '#dc2626' } as React.CSSProperties
-  const sectionTitleCls = 'text-xs font-bold uppercase tracking-widest mb-4 pt-2'
-
-  const Field = ({ name, label, type = 'text', optional = false, hint }: { name: keyof FormState; label: string; type?: string; optional?: boolean; hint?: string }) => (
-    <div>
-      <label className={labelCls} style={{ color: 'var(--on-surface-variant)' }}>
-        {label}{optional && <span className="font-normal normal-case"> {t('optional')}</span>}
-      </label>
-      <input
-        type={type}
-        value={f[name]}
-        onChange={e => set(name, e.target.value)}
-        className={fieldCls}
-        style={errors[name] ? { ...fieldStyle, ...errStyle } : fieldStyle}
-      />
-      {hint && <p className="text-xs mt-1" style={{ color: 'var(--on-surface-variant)' }}>{hint}</p>}
-    </div>
-  )
+  const opt = t('optional')
 
   return (
     <form onSubmit={onSubmit} className="rounded-2xl border p-6 md:p-8" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }} noValidate>
@@ -163,10 +180,10 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
       {/* Apartamento (opcional) */}
       {apartments.length > 0 && (
         <div className="mb-5">
-          <label className={labelCls} style={{ color: 'var(--on-surface-variant)' }}>
-            {t('apartmentLabel')}<span className="font-normal normal-case"> {t('optional')}</span>
+          <label className={LABEL_CLS} style={{ color: 'var(--on-surface-variant)' }}>
+            {t('apartmentLabel')}<span className="font-normal normal-case"> {opt}</span>
           </label>
-          <select value={f.apartmentSlug} onChange={e => set('apartmentSlug', e.target.value)} className={fieldCls} style={fieldStyle}>
+          <select value={f.apartmentSlug} onChange={e => set('apartmentSlug')(e.target.value)} className={FIELD_CLS} style={FIELD_STYLE}>
             <option value="">{t('apartmentPlaceholder')}</option>
             {apartments.map(a => <option key={a.slug} value={a.slug}>{a.title}</option>)}
           </select>
@@ -174,62 +191,58 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
       )}
 
       {/* Datos personales */}
-      <h3 className={sectionTitleCls} style={{ color: 'var(--primary)' }}>{t('personalTitle')}</h3>
+      <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('personalTitle')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field name="nombre" label={t('nombre')} />
-        <Field name="apellidos" label={t('apellidos')} />
+        <Field label={t('nombre')} value={f.nombre} onChange={set('nombre')} error={errors.nombre} />
+        <Field label={t('apellidos')} value={f.apellidos} onChange={set('apellidos')} error={errors.apellidos} />
         <div>
-          <label className={labelCls} style={{ color: 'var(--on-surface-variant)' }}>{t('sexo')}</label>
-          <select value={f.sexo} onChange={e => set('sexo', e.target.value)} className={fieldCls} style={errors.sexo ? { ...fieldStyle, ...errStyle } : fieldStyle}>
+          <label className={LABEL_CLS} style={{ color: 'var(--on-surface-variant)' }}>{t('sexo')}</label>
+          <select value={f.sexo} onChange={e => set('sexo')(e.target.value)} className={FIELD_CLS} style={errors.sexo ? { ...FIELD_STYLE, ...ERR_STYLE } : FIELD_STYLE}>
             <option value="">{t('selectPlaceholder')}</option>
             <option value="M">{t('sexoM')}</option>
             <option value="F">{t('sexoF')}</option>
           </select>
         </div>
         <div>
-          <label className={labelCls} style={{ color: 'var(--on-surface-variant)' }}>{t('tipoDocumento')}</label>
-          <select value={f.tipoDocumento} onChange={e => set('tipoDocumento', e.target.value)} className={fieldCls} style={errors.tipoDocumento ? { ...fieldStyle, ...errStyle } : fieldStyle}>
+          <label className={LABEL_CLS} style={{ color: 'var(--on-surface-variant)' }}>{t('tipoDocumento')}</label>
+          <select value={f.tipoDocumento} onChange={e => set('tipoDocumento')(e.target.value)} className={FIELD_CLS} style={errors.tipoDocumento ? { ...FIELD_STYLE, ...ERR_STYLE } : FIELD_STYLE}>
             <option value="">{t('selectPlaceholder')}</option>
             <option value="DNI">{t('docDni')}</option>
             <option value="Pasaporte">{t('docPasaporte')}</option>
             <option value="TIE">{t('docTie')}</option>
           </select>
         </div>
-        <Field name="numeroDocumento" label={t('numeroDocumento')} />
-        {isDni && <Field name="numeroSoporte" label={t('numeroSoporte')} hint={t('numeroSoporteHint')} />}
-        <Field name="nacionalidad" label={t('nacionalidad')} />
-        <Field name="fechaNacimiento" label={t('fechaNacimiento')} type="date" />
+        <Field label={t('numeroDocumento')} value={f.numeroDocumento} onChange={set('numeroDocumento')} error={errors.numeroDocumento} />
+        {isDni && <Field label={t('numeroSoporte')} value={f.numeroSoporte} onChange={set('numeroSoporte')} error={errors.numeroSoporte} hint={t('numeroSoporteHint')} />}
+        <Field label={t('nacionalidad')} value={f.nacionalidad} onChange={set('nacionalidad')} error={errors.nacionalidad} />
+        <Field label={t('fechaNacimiento')} value={f.fechaNacimiento} onChange={set('fechaNacimiento')} error={errors.fechaNacimiento} type="date" />
       </div>
 
       {/* Residencia */}
-      <h3 className={sectionTitleCls} style={{ color: 'var(--primary)' }}>{t('residenceTitle')}</h3>
+      <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('residenceTitle')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="sm:col-span-2"><Field name="direccion" label={t('direccion')} /></div>
-        <Field name="localidad" label={t('localidad')} />
-        <Field name="codigoPostal" label={t('codigoPostal')} />
-        <Field name="pais" label={t('pais')} />
+        <div className="sm:col-span-2"><Field label={t('direccion')} value={f.direccion} onChange={set('direccion')} error={errors.direccion} /></div>
+        <Field label={t('localidad')} value={f.localidad} onChange={set('localidad')} error={errors.localidad} />
+        <Field label={t('codigoPostal')} value={f.codigoPostal} onChange={set('codigoPostal')} error={errors.codigoPostal} />
+        <Field label={t('pais')} value={f.pais} onChange={set('pais')} error={errors.pais} />
       </div>
 
       {/* Contacto y estancia */}
-      <h3 className={sectionTitleCls} style={{ color: 'var(--primary)' }}>{t('contactTitle')}</h3>
+      <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('contactTitle')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field name="telefonoMovil" label={t('telefonoMovil')} type="tel" />
-        <Field name="telefonoFijo" label={t('telefonoFijo')} type="tel" optional />
-        <Field name="email" label={t('email')} type="email" optional />
-        <Field name="numViajeros" label={t('numViajeros')} type="number" />
+        <Field label={t('telefonoMovil')} value={f.telefonoMovil} onChange={set('telefonoMovil')} error={errors.telefonoMovil} type="tel" />
+        <Field label={t('telefonoFijo')} value={f.telefonoFijo} onChange={set('telefonoFijo')} type="tel" optional optionalText={opt} />
+        <Field label={t('email')} value={f.email} onChange={set('email')} type="email" optional optionalText={opt} />
+        <Field label={t('numViajeros')} value={f.numViajeros} onChange={set('numViajeros')} error={errors.numViajeros} type="number" />
         {minor && (
           <div className="sm:col-span-2">
-            <Field name="parentesco" label={t('parentesco')} hint={t('parentescoHint')} />
+            <Field label={t('parentesco')} value={f.parentesco} onChange={set('parentesco')} error={errors.parentesco} hint={t('parentescoHint')} />
           </div>
         )}
       </div>
 
-      {serverError && (
-        <p className="mt-6 text-sm font-semibold" style={{ color: '#dc2626' }}>{serverError}</p>
-      )}
-      {Object.keys(errors).length > 0 && (
-        <p className="mt-6 text-sm" style={{ color: '#dc2626' }}>{t('checkRequired')}</p>
-      )}
+      {serverError && <p className="mt-6 text-sm font-semibold" style={{ color: '#dc2626' }}>{serverError}</p>}
+      {Object.keys(errors).length > 0 && <p className="mt-6 text-sm" style={{ color: '#dc2626' }}>{t('checkRequired')}</p>}
 
       <button
         type="submit"
