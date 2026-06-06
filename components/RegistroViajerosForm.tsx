@@ -32,17 +32,6 @@ const FIELD_STYLE: React.CSSProperties = { borderColor: 'var(--outline-variant)'
 const ERR_STYLE: React.CSSProperties = { borderColor: '#dc2626' }
 const SECTION_CLS = 'text-lg md:text-xl font-bold mb-5 pt-4'
 
-function isMinor(birth: string): boolean {
-  if (!birth) return false
-  const b = new Date(birth)
-  if (isNaN(b.getTime())) return false
-  const now = new Date()
-  let age = now.getFullYear() - b.getFullYear()
-  const m = now.getMonth() - b.getMonth()
-  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--
-  return age < 18
-}
-
 // Module-scope field component — defined here (not inside the form) so inputs
 // keep focus and don't remount on every keystroke.
 function Field({
@@ -88,7 +77,6 @@ export default function RegistroViajerosForm() {
   }
 
   const isDni = f.tipoDocumento === 'DNI'
-  const minor = isMinor(f.fechaNacimiento)
 
   function validate(): boolean {
     const req: (keyof FormState)[] = [
@@ -97,7 +85,6 @@ export default function RegistroViajerosForm() {
       'pais', 'telefonoMovil', 'numViajeros',
     ]
     if (isDni) req.push('numeroSoporte')
-    if (minor) req.push('parentesco')
     const next: Record<string, boolean> = {}
     for (const k of req) if (!String(f[k]).trim()) next[k] = true
     setErrors(next)
@@ -211,11 +198,9 @@ export default function RegistroViajerosForm() {
         <Field label={t('telefonoFijo')} value={f.telefonoFijo} onChange={set('telefonoFijo')} type="tel" optional optionalText={opt} />
         <Field label={t('email')} value={f.email} onChange={set('email')} type="email" optional optionalText={opt} />
         <Field label={t('numViajeros')} value={f.numViajeros} onChange={set('numViajeros')} error={errors.numViajeros} type="number" />
-        {minor && (
-          <div className="sm:col-span-2">
-            <Field label={t('parentesco')} value={f.parentesco} onChange={set('parentesco')} error={errors.parentesco} hint={t('parentescoHint')} />
-          </div>
-        )}
+        <div className="sm:col-span-2">
+          <Field label={t('parentesco')} value={f.parentesco} onChange={set('parentesco')} />
+        </div>
       </div>
 
       {serverError && <p className="mt-6 text-sm font-semibold" style={{ color: '#dc2626' }}>{serverError}</p>}
