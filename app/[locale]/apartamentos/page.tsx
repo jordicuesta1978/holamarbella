@@ -24,7 +24,7 @@ export default async function ApartamentosPage({
   const flexIn = Math.min(7, Math.max(0, Number(flexInParam ?? flexParam) || 0))
   const flexOut = Math.min(7, Math.max(0, Number(flexOutParam ?? flexParam) || 0))
   const flex = Math.max(flexIn, flexOut)
-  const apartments = await getApartments()
+  const apartments = await getApartments(locale)
 
   const hasDates = !!(checkIn && checkOut && checkIn < checkOut)
   let availability: Record<string, boolean> | null = null

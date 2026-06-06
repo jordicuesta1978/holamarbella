@@ -9,10 +9,10 @@ import ReservarContent from '@/components/ReservarContent';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ReservarPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ReservarPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const { locale, slug } = await params;
   const [apartment, priceRanges] = await Promise.all([
-    getApartmentBySlug(slug),
+    getApartmentBySlug(slug, locale),
     getPriceRanges(slug).catch(() => []),
   ]);
   if (!apartment) notFound();

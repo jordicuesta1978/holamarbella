@@ -1,5 +1,8 @@
-import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder } from '../actions'
+import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder, getApartmentTranslationsForAdmin } from '../actions'
 import PhotoGallery from '@/components/PhotoGallery'
+import ApartmentTranslations from '@/components/ApartmentTranslations'
+import { TRANSLATABLE_LOCALES } from '@/lib/translations'
+import { computeKeyFeatures } from '@/lib/apartments'
 
 function label(text: string, hint?: string) {
   return (
@@ -24,9 +27,10 @@ function field(name: string, value: unknown, type: string = 'text', extra: Recor
 
 export default async function ApartamentosContentPage() {
   const apartments = await getApartamentos()
-  const photosPerApt = await Promise.all(
-    apartments.map(apt => getApartamentoPhotos(apt.slug).catch(() => []))
-  )
+  const [photosPerApt, translationsBySlug] = await Promise.all([
+    Promise.all(apartments.map(apt => getApartamentoPhotos(apt.slug).catch(() => []))),
+    getApartmentTranslationsForAdmin().catch(() => ({} as Awaited<ReturnType<typeof getApartmentTranslationsForAdmin>>)),
+  ])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -205,6 +209,24 @@ export default async function ApartamentosContentPage() {
                 </button>
               </div>
             </form>
+
+            {/* Traducciones (idiomas no base) */}
+            <ApartmentTranslations
+              slug={apt.slug}
+              locales={TRANSLATABLE_LOCALES}
+              esReference={{
+                subtitle: apt.subtitle ?? '',
+                description: apt.description ?? '',
+                keyFeatures: computeKeyFeatures({
+                  persons: apt.persons,
+                  bedrooms: apt.bedrooms,
+                  bed: apt.bed,
+                  bathrooms: apt.bathrooms,
+                  extras: apt.bed_extras ?? undefined,
+                }),
+              }}
+              initial={translationsBySlug[apt.slug] ?? {}}
+            />
           </div>
         )
       })}

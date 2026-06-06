@@ -6,9 +6,9 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const apt = await getApartmentBySlug(slug);
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const apt = await getApartmentBySlug(slug, locale);
   if (!apt) return {};
   return {
     title: `${apt.title} · HolaMarbella`,
@@ -19,11 +19,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ApartamentoPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ locale: string; slug: string }>
 }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const [apartment, blockedRanges, priceRanges, minNightsRanges, storagePhotos] = await Promise.all([
-    getApartmentBySlug(slug),
+    getApartmentBySlug(slug, locale),
     getBlockedRanges(slug).catch(() => []),
     getPriceRanges(slug).catch(() => []),
     getMinNightsRanges(slug).catch(() => []),

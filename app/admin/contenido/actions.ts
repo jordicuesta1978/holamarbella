@@ -131,6 +131,50 @@ export async function saveApartamentoFull(slug: string, fields: {
   revalidatePath(`/apartamentos/${slug}`)
 }
 
+// ── Traducciones de apartamentos ───────────────────────────────────────────────
+
+// Todas las traducciones, agrupadas por slug → locale, para el gestor.
+export async function getApartmentTranslationsForAdmin(): Promise<
+  Record<string, Record<string, { subtitle: string; description: string; key_features: string[] }>>
+> {
+  const { data } = await db
+    .from('apartment_translations')
+    .select('apartment_slug, locale, subtitle, description, key_features')
+  const map: Record<string, Record<string, { subtitle: string; description: string; key_features: string[] }>> = {}
+  for (const r of data ?? []) {
+    if (!map[r.apartment_slug]) map[r.apartment_slug] = {}
+    map[r.apartment_slug][r.locale] = {
+      subtitle: r.subtitle ?? '',
+      description: r.description ?? '',
+      key_features: r.key_features ?? [],
+    }
+  }
+  return map
+}
+
+export async function saveApartmentTranslation(
+  slug: string,
+  locale: string,
+  fields: { subtitle: string; description: string; key_features: string[] }
+) {
+  const { error } = await db.from('apartment_translations').upsert(
+    {
+      apartment_slug: slug,
+      locale,
+      subtitle: fields.subtitle.trim() || null,
+      description: fields.description.trim() || null,
+      key_features: fields.key_features.length > 0 ? fields.key_features : null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'apartment_slug,locale' }
+  )
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath('/apartamentos')
+  revalidatePath(`/apartamentos/${slug}`)
+  revalidatePath('/')
+}
+
 // ── Articulos ─────────────────────────────────────────────────────────────────
 
 export async function getArticulos() {

@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { supabaseAdmin } from './supabase-admin'
 import type { Apartment, ApartmentReview, AmenityCategory } from './apartments'
 import { computeKeyFeatures } from './apartments'
+import { getApartmentTranslation, getApartmentTranslations, type ApartmentTranslation } from './translations'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SUPABASE_STORAGE_BASE = (() => {
@@ -21,9 +22,11 @@ async function readOrderJson(slug: string): Promise<string[] | null> {
   } catch { return null }
 }
 
-type Locale = 'es' | 'en'
+type Locale = string
 
-function mapRow(row: any, primaryPhotoUrl?: string, locale: Locale = 'es'): Apartment {
+// Builds the base (ES) apartment from a DB row. Localized content is layered
+// on top via applyTranslation() so this stays a pure, synchronous mapping.
+function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
   const capacity = {
     persons: row.persons,
     bedrooms: row.bedrooms,
@@ -31,26 +34,17 @@ function mapRow(row: any, primaryPhotoUrl?: string, locale: Locale = 'es'): Apar
     bathrooms: row.bathrooms,
     extras: row.bed_extras ?? undefined,
   }
-  // EN content falls back to ES when the *_en columns are empty / not migrated yet
-  const en = locale === 'en'
-  const title = en ? (row.name_en || row.title) : row.title
-  const subtitle = en ? (row.subtitle_en || row.subtitle) : row.subtitle
-  const description = en ? (row.description_en || row.description) : row.description
-  const keyFeaturesEn = Array.isArray(row.key_features_en)
-    ? row.key_features_en.join(' · ')
-    : (row.key_features_en || '')
-  const key_features = en && keyFeaturesEn ? keyFeaturesEn : computeKeyFeatures(capacity)
 
   return {
     slug: row.slug,
-    title,
-    subtitle,
-    key_features,
+    title: row.title,
+    subtitle: row.subtitle,
+    key_features: computeKeyFeatures(capacity),
     rating: Number(row.rating),
     reviewCount: row.review_count,
     badge: row.badge ?? undefined,
     capacity,
-    description,
+    description: row.description,
     license: row.license,
     photoCount: row.photo_count,
     primaryPhotoUrl,
@@ -61,6 +55,22 @@ function mapRow(row: any, primaryPhotoUrl?: string, locale: Locale = 'es'): Apar
   }
 }
 
+// Overlays a translation (subtitle / description / key_features) onto a base
+// apartment. Empty fields fall back to the ES content. `title` is never
+// translated (not in apartment_translations) — it stays the same across locales.
+function applyTranslation(apt: Apartment, tr: ApartmentTranslation | null): Apartment {
+  if (!tr) return apt
+  const key_features = Array.isArray(tr.key_features) && tr.key_features.length > 0
+    ? tr.key_features.join(' · ')
+    : apt.key_features
+  return {
+    ...apt,
+    subtitle: tr.subtitle || apt.subtitle,
+    description: tr.description || apt.description,
+    key_features,
+  }
+}
+
 export async function getApartments(locale: Locale = 'es'): Promise<Apartment[]> {
   const { data, error } = await supabase
     .from('apartments')
@@ -68,16 +78,17 @@ export async function getApartments(locale: Locale = 'es'): Promise<Apartment[]>
     .neq('active', false)
     .order('id')
   if (error) throw new Error(error.message)
-  // Fetch primary photos from _order.json in parallel
   const rows = data as any[]
-  const orders = await Promise.all(
-    rows.map(r => readOrderJson(r.slug).catch(() => null))
-  )
+  // Primary photos (_order.json) and translations fetched in parallel
+  const [orders, translations] = await Promise.all([
+    Promise.all(rows.map(r => readOrderJson(r.slug).catch(() => null))),
+    getApartmentTranslations(rows.map(r => r.slug), locale),
+  ])
   return rows.map((row, i) => {
     const order = orders[i]
     const primaryPath = order?.[0]
     const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
-    return mapRow(row, primaryPhotoUrl, locale)
+    return applyTranslation(mapRow(row, primaryPhotoUrl), translations[row.slug] ?? null)
   })
 }
 
@@ -174,16 +185,17 @@ export async function getGlobalBlockedDates(): Promise<string[]> {
 }
 
 export async function getApartmentBySlug(slug: string, locale: Locale = 'es'): Promise<Apartment | null> {
-  const [{ data: apt, error }, { data: resenas }, order] = await Promise.all([
+  const [{ data: apt, error }, { data: resenas }, order, translation] = await Promise.all([
     supabase.from('apartments').select('*').eq('slug', slug).single(),
     supabase.from('resenas').select('*').eq('apartment_slug', slug).order('id'),
     readOrderJson(slug).catch(() => null),
+    getApartmentTranslation(slug, locale),
   ])
   if (error || !apt) return null
 
   const primaryPath = order?.[0]
   const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
-  const apartment = mapRow(apt, primaryPhotoUrl, locale)
+  const apartment = applyTranslation(mapRow(apt, primaryPhotoUrl), translation)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   apartment.reviews = ((resenas ?? []) as any[]).map((r): ApartmentReview => ({
     author: r.author,
