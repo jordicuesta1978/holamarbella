@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
-import { getTranslations, getLocale } from 'next-intl/server'
+import { getTranslations } from 'next-intl/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import RegistroViajerosForm from '@/components/RegistroViajerosForm'
-import { getApartments } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +16,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RegistroViajerosPage() {
   const t = await getTranslations('registro')
-  const locale = await getLocale()
-  const apartments = (await getApartments(locale).catch(() => []))
-    .map(a => ({ slug: a.slug, title: a.title }))
 
   return (
     <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
@@ -36,9 +32,9 @@ export default async function RegistroViajerosPage() {
 
       <main className="max-w-3xl mx-auto px-8 py-16">
         <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface)' }}>
-          {t('intro')}
+          {t.rich('intro', { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
-        <RegistroViajerosForm apartments={apartments} />
+        <RegistroViajerosForm />
       </main>
 
       <Footer />

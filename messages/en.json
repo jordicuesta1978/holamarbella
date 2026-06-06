@@ -226,9 +226,7 @@
   "registro": {
     "title": "Traveller registration",
     "subtitle": "Mandatory registration under Royal Decree 933/2021.",
-    "intro": "In compliance with Royal Decree 933/2021, it is mandatory to register every traveller staying at the apartment. To make your arrival smoother on check-in day, we recommend completing the registration in advance. A separate registration must be completed for each person staying. On the day of arrival, we will review the registration details to make sure they are correct.",
-    "apartmentLabel": "Apartment",
-    "apartmentPlaceholder": "Select the apartment",
+    "intro": "In compliance with Royal Decree 933/2021, it is mandatory to register every traveller staying at the apartment. To make your arrival smoother on check-in day, we recommend completing the registration in advance. <b>A separate registration must be completed for each person staying in the apartment.</b> On the day of arrival, we will review the registration details to make sure they are correct.",
     "optional": "(optional)",
     "selectPlaceholder": "Select",
     "personalTitle": "Personal details",
@@ -251,7 +249,6 @@
     "localidad": "Town / city",
     "codigoPostal": "Postcode",
     "pais": "Country",
-    "contactTitle": "Contact and stay",
     "telefonoMovil": "Mobile phone",
     "telefonoFijo": "Landline",
     "email": "Email",

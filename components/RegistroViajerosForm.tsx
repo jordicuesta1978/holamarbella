@@ -2,13 +2,10 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ShieldCheck, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { crearRegistro, type RegistroInput } from '@/app/actions/registro'
 
-type Apartment = { slug: string; title: string }
-
 const EMPTY = {
-  apartmentSlug: '',
   nombre: '',
   apellidos: '',
   sexo: '',
@@ -33,7 +30,7 @@ const LABEL_CLS = 'block text-xs font-bold uppercase tracking-widest mb-1.5'
 const FIELD_CLS = 'w-full rounded-xl border px-4 py-2.5 text-sm outline-none'
 const FIELD_STYLE: React.CSSProperties = { borderColor: 'var(--outline-variant)', backgroundColor: 'white', color: 'var(--on-surface)' }
 const ERR_STYLE: React.CSSProperties = { borderColor: '#dc2626' }
-const SECTION_CLS = 'text-xs font-bold uppercase tracking-widest mb-4 pt-2'
+const SECTION_CLS = 'text-lg md:text-xl font-bold mb-5 pt-4'
 
 function isMinor(birth: string): boolean {
   if (!birth) return false
@@ -77,7 +74,7 @@ function Field({
   )
 }
 
-export default function RegistroViajerosForm({ apartments }: { apartments: Apartment[] }) {
+export default function RegistroViajerosForm() {
   const t = useTranslations('registro')
   const [f, setF] = useState<FormState>(EMPTY)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
@@ -113,7 +110,6 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
     if (!validate()) return
     setSubmitting(true)
     const input: RegistroInput = {
-      apartmentSlug: f.apartmentSlug || undefined,
       nombre: f.nombre.trim(),
       apellidos: f.apellidos.trim(),
       sexo: f.sexo,
@@ -172,24 +168,6 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
 
   return (
     <form onSubmit={onSubmit} className="rounded-2xl border p-6 md:p-8" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }} noValidate>
-      <div className="flex items-center gap-3 mb-6">
-        <ShieldCheck size={22} style={{ color: 'var(--primary)' }} />
-        <span className="text-sm font-bold" style={{ color: 'var(--on-surface)' }}>RD 933/2021</span>
-      </div>
-
-      {/* Apartamento (opcional) */}
-      {apartments.length > 0 && (
-        <div className="mb-5">
-          <label className={LABEL_CLS} style={{ color: 'var(--on-surface-variant)' }}>
-            {t('apartmentLabel')}<span className="font-normal normal-case"> {opt}</span>
-          </label>
-          <select value={f.apartmentSlug} onChange={e => set('apartmentSlug')(e.target.value)} className={FIELD_CLS} style={FIELD_STYLE}>
-            <option value="">{t('apartmentPlaceholder')}</option>
-            {apartments.map(a => <option key={a.slug} value={a.slug}>{a.title}</option>)}
-          </select>
-        </div>
-      )}
-
       {/* Datos personales */}
       <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('personalTitle')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -227,9 +205,8 @@ export default function RegistroViajerosForm({ apartments }: { apartments: Apart
         <Field label={t('pais')} value={f.pais} onChange={set('pais')} error={errors.pais} />
       </div>
 
-      {/* Contacto y estancia */}
-      <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('contactTitle')}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Contacto y estancia (sin encabezado de sección) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <Field label={t('telefonoMovil')} value={f.telefonoMovil} onChange={set('telefonoMovil')} error={errors.telefonoMovil} type="tel" />
         <Field label={t('telefonoFijo')} value={f.telefonoFijo} onChange={set('telefonoFijo')} type="tel" optional optionalText={opt} />
         <Field label={t('email')} value={f.email} onChange={set('email')} type="email" optional optionalText={opt} />

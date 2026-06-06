@@ -226,9 +226,7 @@
   "registro": {
     "title": "Registro de viajeros",
     "subtitle": "Registro obligatorio según el Real Decreto 933/2021.",
-    "intro": "En cumplimiento del Real Decreto 933/2021, es obligatorio registrar a todos los viajeros que se van a alojar en el apartamento. Para facilitar vuestra bienvenida el día de la llegada, recomendamos realizar el registro por anticipado. Se debe realizar un registro para cada una de las personas que se van a alojar. El día de la entrada, revisaremos los datos del registro para comprobar que son correctos.",
-    "apartmentLabel": "Apartamento",
-    "apartmentPlaceholder": "Selecciona el apartamento",
+    "intro": "En cumplimiento del Real Decreto 933/2021, es obligatorio registrar a todos los viajeros que se van a alojar en el apartamento. Para facilitar vuestra bienvenida el día de la llegada, recomendamos realizar el registro por anticipado. <b>Se debe realizar un registro para cada una de las personas que se van a alojar.</b> El día de la entrada, revisaremos los datos del registro para comprobar que son correctos.",
     "optional": "(opcional)",
     "selectPlaceholder": "Selecciona",
     "personalTitle": "Datos personales",
@@ -251,7 +249,6 @@
     "localidad": "Localidad",
     "codigoPostal": "Código postal",
     "pais": "País",
-    "contactTitle": "Contacto y estancia",
     "telefonoMovil": "Teléfono móvil",
     "telefonoFijo": "Teléfono fijo",
     "email": "Email",
