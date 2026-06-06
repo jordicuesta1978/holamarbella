@@ -16,8 +16,8 @@ const LOCALE_NAMES: Record<string, string> = {
 
 const FEATURE_SEP = ' · '
 
-type Form = { subtitle: string; description: string; keyFeatures: string }
-type Initial = Record<string, { subtitle: string; description: string; key_features: string[] }>
+type Form = { name: string; subtitle: string; description: string; keyFeatures: string; topAmenities: string }
+type Initial = Record<string, { name: string; subtitle: string; description: string; key_features: string[]; top_amenities: string[] }>
 
 export default function ApartmentTranslations({
   slug,
@@ -27,7 +27,7 @@ export default function ApartmentTranslations({
 }: {
   slug: string
   locales: string[]
-  esReference: { subtitle: string; description: string; keyFeatures: string }
+  esReference: { name: string; subtitle: string; description: string; keyFeatures: string; topAmenities: string }
   initial: Initial
 }) {
   const [active, setActive] = useState(locales[0] ?? '')
@@ -36,9 +36,11 @@ export default function ApartmentTranslations({
     for (const l of locales) {
       const tr = initial[l]
       seed[l] = {
+        name: tr?.name ?? '',
         subtitle: tr?.subtitle ?? '',
         description: tr?.description ?? '',
         keyFeatures: (tr?.key_features ?? []).join(FEATURE_SEP),
+        topAmenities: (tr?.top_amenities ?? []).join(', '),
       }
     }
     return seed
@@ -63,12 +65,18 @@ export default function ApartmentTranslations({
       .split('·')
       .map(s => s.trim())
       .filter(Boolean)
+    const top_amenities = cur.topAmenities
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
     startTransition(async () => {
       try {
         await saveApartmentTranslation(slug, active, {
+          name: cur.name,
           subtitle: cur.subtitle,
           description: cur.description,
           key_features,
+          top_amenities,
         })
         setSavedLocale(active)
       } catch (e) {
@@ -117,6 +125,17 @@ export default function ApartmentTranslations({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
+          <span style={{ fontSize: 11, color: '#aaa' }}>Nombre</span>
+          <input
+            type="text"
+            value={cur.name}
+            placeholder={esReference.name}
+            onChange={e => update({ name: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+
+        <div>
           <span style={{ fontSize: 11, color: '#aaa' }}>Subtítulo</span>
           <input
             type="text"
@@ -146,6 +165,17 @@ export default function ApartmentTranslations({
             placeholder={esReference.keyFeatures}
             onChange={e => update({ keyFeatures: e.target.value })}
             style={inputStyle}
+          />
+        </div>
+
+        <div>
+          <span style={{ fontSize: 11, color: '#aaa' }}>Top amenidades (separadas por coma)</span>
+          <textarea
+            value={cur.topAmenities}
+            placeholder={esReference.topAmenities}
+            onChange={e => update({ topAmenities: e.target.value })}
+            rows={2}
+            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
           />
         </div>
 

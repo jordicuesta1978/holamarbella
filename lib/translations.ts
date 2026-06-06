@@ -2,9 +2,11 @@ import { supabase } from './supabase'
 import { routing } from '@/i18n/routing'
 
 export type ApartmentTranslation = {
+  name: string | null
   subtitle: string | null
   description: string | null
   key_features: string[] | null
+  top_amenities: string[] | null
 }
 
 // Single source of truth for supported locales = i18n routing config.
@@ -24,7 +26,7 @@ export async function getApartmentTranslation(slug: string, locale: string): Pro
   if (locale === BASE_LOCALE) return null
   const { data, error } = await db
     .from('apartment_translations')
-    .select('subtitle, description, key_features')
+    .select('name, subtitle, description, key_features, top_amenities')
     .eq('apartment_slug', slug)
     .eq('locale', locale)
     .maybeSingle()
@@ -37,7 +39,7 @@ export async function getApartmentTranslations(slugs: string[], locale: string):
   if (locale === BASE_LOCALE || slugs.length === 0) return {}
   const { data, error } = await db
     .from('apartment_translations')
-    .select('apartment_slug, subtitle, description, key_features')
+    .select('apartment_slug, name, subtitle, description, key_features, top_amenities')
     .eq('locale', locale)
     .in('apartment_slug', slugs)
   if (error || !data) return {}

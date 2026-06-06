@@ -215,6 +215,7 @@ export default async function ApartamentosContentPage() {
               slug={apt.slug}
               locales={TRANSLATABLE_LOCALES}
               esReference={{
+                name: apt.title ?? '',
                 subtitle: apt.subtitle ?? '',
                 description: apt.description ?? '',
                 keyFeatures: computeKeyFeatures({
@@ -224,6 +225,7 @@ export default async function ApartamentosContentPage() {
                   bathrooms: apt.bathrooms,
                   extras: apt.bed_extras ?? undefined,
                 }),
+                topAmenities: Array.isArray(apt.top_amenities) ? apt.top_amenities.join(', ') : '',
               }}
               initial={translationsBySlug[apt.slug] ?? {}}
             />

@@ -134,19 +134,29 @@ export async function saveApartamentoFull(slug: string, fields: {
 // ── Traducciones de apartamentos ───────────────────────────────────────────────
 
 // Todas las traducciones, agrupadas por slug → locale, para el gestor.
+type AdminTranslation = {
+  name: string
+  subtitle: string
+  description: string
+  key_features: string[]
+  top_amenities: string[]
+}
+
 export async function getApartmentTranslationsForAdmin(): Promise<
-  Record<string, Record<string, { subtitle: string; description: string; key_features: string[] }>>
+  Record<string, Record<string, AdminTranslation>>
 > {
   const { data } = await db
     .from('apartment_translations')
-    .select('apartment_slug, locale, subtitle, description, key_features')
-  const map: Record<string, Record<string, { subtitle: string; description: string; key_features: string[] }>> = {}
+    .select('apartment_slug, locale, name, subtitle, description, key_features, top_amenities')
+  const map: Record<string, Record<string, AdminTranslation>> = {}
   for (const r of data ?? []) {
     if (!map[r.apartment_slug]) map[r.apartment_slug] = {}
     map[r.apartment_slug][r.locale] = {
+      name: r.name ?? '',
       subtitle: r.subtitle ?? '',
       description: r.description ?? '',
       key_features: r.key_features ?? [],
+      top_amenities: r.top_amenities ?? [],
     }
   }
   return map
@@ -155,15 +165,17 @@ export async function getApartmentTranslationsForAdmin(): Promise<
 export async function saveApartmentTranslation(
   slug: string,
   locale: string,
-  fields: { subtitle: string; description: string; key_features: string[] }
+  fields: { name: string; subtitle: string; description: string; key_features: string[]; top_amenities: string[] }
 ) {
   const { error } = await db.from('apartment_translations').upsert(
     {
       apartment_slug: slug,
       locale,
+      name: fields.name.trim() || null,
       subtitle: fields.subtitle.trim() || null,
       description: fields.description.trim() || null,
       key_features: fields.key_features.length > 0 ? fields.key_features : null,
+      top_amenities: fields.top_amenities.length > 0 ? fields.top_amenities : null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'apartment_slug,locale' }

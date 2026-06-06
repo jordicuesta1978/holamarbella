@@ -55,19 +55,24 @@ function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
   }
 }
 
-// Overlays a translation (subtitle / description / key_features) onto a base
-// apartment. Empty fields fall back to the ES content. `title` is never
-// translated (not in apartment_translations) — it stays the same across locales.
+// Overlays a translation (name / subtitle / description / key_features /
+// top_amenities) onto a base apartment. Empty fields fall back to the ES
+// content stored in `apartments`.
 function applyTranslation(apt: Apartment, tr: ApartmentTranslation | null): Apartment {
   if (!tr) return apt
   const key_features = Array.isArray(tr.key_features) && tr.key_features.length > 0
     ? tr.key_features.join(' · ')
     : apt.key_features
+  const topAmenities = Array.isArray(tr.top_amenities) && tr.top_amenities.length > 0
+    ? tr.top_amenities
+    : apt.topAmenities
   return {
     ...apt,
+    title: tr.name || apt.title,
     subtitle: tr.subtitle || apt.subtitle,
     description: tr.description || apt.description,
     key_features,
+    topAmenities,
   }
 }
 
