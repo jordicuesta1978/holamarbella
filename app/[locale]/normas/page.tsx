@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import { Clock, Users, Ban, Volume2, Cigarette, Camera, Check, ShieldCheck } from 'lucide-react'
+import { Clock, Users, Ban, Volume2, Cigarette, ShieldCheck, Wind, Trash2, AlertCircle, Key } from 'lucide-react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
@@ -17,28 +17,29 @@ export default async function NormasPage() {
 
   const sections = [
     {
-      title: t('checkInTitle'),
+      title: t('arrivalTitle'),
       items: [
-        { Icon: Clock, text: t('checkIn') },
         { Icon: Clock, text: t('checkOut') },
+        { Icon: Clock, text: t('checkIn') },
       ],
     },
     {
       title: t('coexistTitle'),
       items: [
         { Icon: Users, text: t('maxGuests') },
-        { Icon: Ban, text: t('noParties') },
-        { Icon: Volume2, text: t('quietHours') },
-        { Icon: Cigarette, text: t('noSmoking') },
+        { Icon: ShieldCheck, text: t('registroRequired') },
         { Icon: Ban, text: t('noPets') },
+        { Icon: Cigarette, text: t('noSmoking') },
+        { Icon: Volume2, text: t('quietHours') },
       ],
     },
     {
       title: t('careTitle'),
       items: [
-        { Icon: Check, text: t('care1') },
-        { Icon: ShieldCheck, text: t('care2') },
-        { Icon: Camera, text: t('care3') },
+        { Icon: Wind, text: t('airConditioning') },
+        { Icon: Trash2, text: t('trash') },
+        { Icon: AlertCircle, text: t('issues') },
+        { Icon: Key, text: t('keysLost') },
       ],
     },
   ]
