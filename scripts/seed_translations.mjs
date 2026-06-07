@@ -194,6 +194,7 @@ async function main() {
         description: t.description,
         key_features: t.key_features,
         top_amenities: t.top_amenities,
+        amenity_categories: t.amenity_categories ?? null,
         updated_at: now,
       })
     }
