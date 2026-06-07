@@ -55,9 +55,7 @@ function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
   }
 }
 
-// Overlays a translation (name / subtitle / description / key_features /
-// top_amenities) onto a base apartment. Empty fields fall back to the ES
-// content stored in `apartments`.
+// Overlays a translation onto a base apartment. Empty fields fall back to ES.
 function applyTranslation(apt: Apartment, tr: ApartmentTranslation | null): Apartment {
   if (!tr) return apt
   const key_features = Array.isArray(tr.key_features) && tr.key_features.length > 0
@@ -66,6 +64,9 @@ function applyTranslation(apt: Apartment, tr: ApartmentTranslation | null): Apar
   const topAmenities = Array.isArray(tr.top_amenities) && tr.top_amenities.length > 0
     ? tr.top_amenities
     : apt.topAmenities
+  const amenityCategories = Array.isArray(tr.amenity_categories) && tr.amenity_categories.length > 0
+    ? tr.amenity_categories
+    : apt.amenityCategories
   return {
     ...apt,
     title: tr.name || apt.title,
@@ -73,6 +74,7 @@ function applyTranslation(apt: Apartment, tr: ApartmentTranslation | null): Apar
     description: tr.description || apt.description,
     key_features,
     topAmenities,
+    amenityCategories,
   }
 }
 

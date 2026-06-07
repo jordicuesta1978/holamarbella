@@ -34,6 +34,7 @@ const db = createClient(
 
 // ── Traducciones ────────────────────────────────────────────────────────────
 // key_features se guarda como array (columna TEXT[]); la web lo une con " · ".
+// amenity_categories se guarda como JSONB: [{ label, items[] }]
 const TRANSLATIONS = {
   en: {
     paloma: {
@@ -50,6 +51,19 @@ const TRANSLATIONS = {
         'Pool (Jun–Sep)',
         'Full beach kit',
       ],
+      amenity_categories: [
+        { label: 'Bathroom',          items: ['Hair dryer', 'Shampoo', 'Conditioner', 'Shower gel', 'Bed linen and towels included'] },
+        { label: 'Bedroom',           items: ['Wardrobe and chest of drawers', 'Hangers', 'Extra pillows', 'Blackout blinds', 'Safe'] },
+        { label: 'Kitchen',           items: ['Teka induction hob', 'Fridge', 'Freezer', 'Dishwasher', 'Microwave', 'Oven', 'Kettle', 'Nespresso + French press', 'Wine glasses', 'Toaster', 'Blender', 'Rice cooker', 'Utensils', 'Dining table', 'Coffee'] },
+        { label: 'Laundry',           items: ['Washing machine', 'Dryer', 'Iron', 'Clothes rack'] },
+        { label: 'Entertainment',     items: ['50" HD TV', 'Bluetooth speaker', 'Books'] },
+        { label: 'Work & connectivity', items: ['347 Mbps Wi-Fi', 'Work area'] },
+        { label: 'Climate control',   items: ['Central A/C', 'Heating'] },
+        { label: 'Safety',            items: ['Smoke detector', 'First aid kit'] },
+        { label: 'Outdoor & views',   items: ['Views of La Concha', 'Terrace', 'Full beach kit', 'Beach a few minutes walk', 'Steps from the sea'] },
+        { label: 'Access',            items: ['Private entrance', 'Lift', 'Gym', 'Pool (Jun–Sep)', 'Paid parking', 'Luggage storage'] },
+        { label: 'Services',          items: ['Personal check-in with Mar', 'Long stays', 'Mid-stay cleaning'] },
+      ],
     },
     micu: {
       name: 'Micu Apartment',
@@ -64,6 +78,19 @@ const TRANSLATIONS = {
         'Central A/C',
         'Terrace with outdoor dining',
         'Pool (Jun–Sep)',
+      ],
+      amenity_categories: [
+        { label: 'Bathroom',          items: ['Hair dryer', 'Deliplus shampoo', 'Conditioner', 'Shower gel', 'Bed linen and towels included'] },
+        { label: 'Bedroom',           items: ['Wardrobe and chest of drawers', 'Hangers', 'Extra pillows', 'Blackout blinds', 'Safe'] },
+        { label: 'Kitchen',           items: ['Induction hob', 'Beko fridge', 'Freezer', 'Dishwasher', 'Microwave', 'Kettle', 'Nespresso + filter', 'Wine glasses', 'Toaster', 'Utensils', 'Dining table', 'Coffee'] },
+        { label: 'Laundry',           items: ['Washing machine', 'Dryer', 'Iron', 'Clothes rack'] },
+        { label: 'Entertainment',     items: ['50" HD TV', 'Alehop Bluetooth speaker', 'Books'] },
+        { label: 'Work & connectivity', items: ['Wi-Fi', 'Ethernet', 'Ergonomic work area'] },
+        { label: 'Climate control',   items: ['Central A/C', 'Heating'] },
+        { label: 'Safety',            items: ['Smoke detector', 'Fire extinguisher', 'First aid kit'] },
+        { label: 'Outdoor & views',   items: ['Sea views', 'City views', 'Terrace', 'Outdoor dining area', 'Full beach kit', 'Beach a few minutes walk', 'Steps from the sea'] },
+        { label: 'Access',            items: ['Private entrance', 'Lift', 'Gym', 'Pool (Jun–Sep)', 'Luggage storage'] },
+        { label: 'Services',          items: ['Personal check-in with Mar', 'Long stays'] },
       ],
     },
     larysol: {
@@ -80,6 +107,19 @@ const TRANSLATIONS = {
         'Free street parking',
         'Terrace with outdoor dining',
       ],
+      amenity_categories: [
+        { label: 'Bathroom',          items: ['Hair dryer', 'Shampoo', 'Deliplus conditioner', 'Shower gel', 'Cotton bed linen included'] },
+        { label: 'Bedroom',           items: ['Wardrobe and chest of drawers', 'Hangers', 'Extra pillows', 'Blackout blinds', 'Safe'] },
+        { label: 'Kitchen',           items: ['Electric hob', 'Fagor oven', 'Fridge', 'Freezer', 'Dishwasher', 'Microwave', 'Kettle', 'Espresso + Keurig + Nespresso', 'Wine glasses', 'Toaster', 'Baking tray', 'Blender', 'Utensils', 'Dining table', 'Coffee'] },
+        { label: 'Laundry',           items: ['Washing machine', 'Dryer', 'Iron', 'Clothes rack'] },
+        { label: 'Entertainment',     items: ['50" HD TV', 'Bluetooth speaker', 'Books'] },
+        { label: 'Work & connectivity', items: ['607 Mbps Wi-Fi', 'Ethernet', 'Private work area'] },
+        { label: 'Climate control',   items: ['Split A/C', 'Ceiling fan', 'Split heating', 'Portable heater'] },
+        { label: 'Safety',            items: ['Smoke detector', 'Fire extinguisher', 'First aid kit'] },
+        { label: 'Outdoor & views',   items: ['Terrace', 'Outdoor dining area', 'Full beach kit', 'Beach a few minutes walk', 'Steps from the sea'] },
+        { label: 'Access',            items: ['Private entrance', 'Lift', 'Gym', 'Free street parking', 'Paid garage parking', 'Luggage storage'] },
+        { label: 'Services',          items: ['Personal check-in with Mar', 'Long stays'] },
+      ],
     },
     ami: {
       name: 'AMI Penthouse',
@@ -95,6 +135,19 @@ const TRANSLATIONS = {
         'Breakfast included',
         'Central A/C',
       ],
+      amenity_categories: [
+        { label: 'Bathroom',          items: ['Hair dryer', 'Deliplus shampoo', 'Conditioner', 'Shower gel', 'Cotton bed linen included'] },
+        { label: 'Bedroom',           items: ['Wardrobe and chest of drawers', 'Hangers', 'Extra pillows', 'Blackout blinds', 'Safe'] },
+        { label: 'Kitchen',           items: ['Electric hob', 'Zanussi oven', 'Roma fridge', 'Freezer', 'Dishwasher', 'Microwave', 'Kettle', 'French press + Nespresso', 'Wine glasses', 'Toaster', 'Baking tray', 'Blender', 'Utensils', 'Dining table', 'Coffee'] },
+        { label: 'Laundry',           items: ['Washing machine', 'Iron', 'Clothes rack'] },
+        { label: 'Entertainment',     items: ['42" TV Netflix + Amazon Prime + cable', 'Bluetooth speaker', 'Books'] },
+        { label: 'Work & connectivity', items: ['Wi-Fi', 'Ethernet', 'Workspace with door'] },
+        { label: 'Climate control',   items: ['Central A/C', 'Heating'] },
+        { label: 'Safety',            items: ['Smoke detector', 'Fire extinguisher', 'First aid kit'] },
+        { label: 'Outdoor & views',   items: ['Views of La Concha', 'Private terrace', 'Outdoor dining area', 'Full beach kit', 'Beach a few minutes walk', 'Steps from the sea'] },
+        { label: 'Access',            items: ['Private entrance', 'Lift', 'Paid parking', 'Luggage storage'] },
+        { label: 'Services',          items: ['Personal check-in with Mar', 'Breakfast included', 'Long stays', 'Cleaning (extra cost)'] },
+      ],
     },
     banesto: {
       name: 'Banesto Penthouse',
@@ -109,6 +162,19 @@ const TRANSLATIONS = {
         'Split A/C',
         'Netflix',
         '200m from La Venus beach',
+      ],
+      amenity_categories: [
+        { label: 'Bathroom',          items: ['Hair dryer', 'Deliplus shampoo', 'Conditioner', 'Shower gel', 'Bed linen and towels included'] },
+        { label: 'Bedroom',           items: ['Wardrobe and chest of drawers', 'Hangers', 'Extra pillows', 'Blackout blinds', 'Safe'] },
+        { label: 'Kitchen',           items: ['Electric hob', 'Beko fridge', 'Freezer', 'Dishwasher', 'Microwave', 'Kettle', 'Nespresso', 'Wine glasses', 'Toaster', 'Blender', 'Utensils', 'Dining table', 'Coffee'] },
+        { label: 'Laundry',           items: ['Washing machine', 'Dryer', 'Iron', 'Clothes rack'] },
+        { label: 'Entertainment',     items: ['40" TV Netflix + cable', 'Books'] },
+        { label: 'Work & connectivity', items: ['552 Mbps Wi-Fi', 'Ethernet', 'Workspace with door'] },
+        { label: 'Climate control',   items: ['Split A/C', 'Split heating'] },
+        { label: 'Safety',            items: ['Smoke detector', 'Fire extinguisher', 'First aid kit'] },
+        { label: 'Outdoor & views',   items: ['Old Town views', 'Large terrace (table for 4)', 'Full beach kit', 'Beach a few minutes walk', 'Steps from the sea'] },
+        { label: 'Access',            items: ['Private entrance', 'Lift', 'Gym', 'Paid parking', 'Luggage storage'] },
+        { label: 'Services',          items: ['Personal check-in with Mar', 'Long stays'] },
       ],
     },
   },

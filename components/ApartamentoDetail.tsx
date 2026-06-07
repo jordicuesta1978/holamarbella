@@ -18,31 +18,32 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>> = {
-  'Baño': Droplets,
-  'Dormitorio': BedDouble,
-  'Cocina': ChefHat,
-  'Lavandería': Shirt,
-  'Entretenimiento': Tv,
-  'Trabajo y conectividad': Wifi,
-  'Climatización': Wind,
-  'Seguridad': ShieldCheck,
-  'Exterior y vistas': Sun,
-  'Acceso': Building2,
-  'Servicios': Star,
+  'Baño': Droplets,        'Bathroom': Droplets,
+  'Dormitorio': BedDouble, 'Bedroom': BedDouble,
+  'Cocina': ChefHat,       'Kitchen': ChefHat,
+  'Lavandería': Shirt,     'Laundry': Shirt,
+  'Entretenimiento': Tv,   'Entertainment': Tv,
+  'Trabajo y conectividad': Wifi, 'Work & connectivity': Wifi,
+  'Climatización': Wind,   'Climate control': Wind,
+  'Seguridad': ShieldCheck,'Safety': ShieldCheck,
+  'Exterior y vistas': Sun,'Outdoor & views': Sun,
+  'Acceso': Building2,     'Access': Building2,
+  'Servicios': Star,       'Services': Star,
 };
 
 function getTopAmenityIcon(label: string): React.ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }> {
   const l = label.toLowerCase();
-  if (l.includes('wifi') || l.includes('internet')) return Wifi;
-  if (l.includes('a/c') || l.includes('aire') || l.includes('ventilador')) return Wind;
-  if (l.includes('vista')) return Mountain;
-  if (l.includes('cocina')) return ChefHat;
-  if (l.includes('piscina') || l.includes('playa') || l.includes('mar') || l.includes('fontanilla')) return Waves;
+  if (l.includes('wifi') || l.includes('wi-fi') || l.includes('internet')) return Wifi;
+  if (l.includes('a/c') || l.includes('aire') || l.includes('ventilador') || l.includes('fan')) return Wind;
+  // 'view' before 'sea' so "Sea views" → Mountain, not Waves
+  if (l.includes('vista') || l.includes('view')) return Mountain;
+  if (l.includes('cocina') || l.includes('kitchen') || l.includes('hob') || l.includes('induction')) return ChefHat;
+  if (l.includes('piscina') || l.includes('pool') || l.includes('playa') || l.includes('beach') || l.includes('sea') || l.includes('mar') || l.includes('fontanilla')) return Waves;
   if (l.includes('netflix') || l.includes('tv') || l.includes('amazon')) return Tv;
-  if (l.includes('trabajo') || l.includes('escritorio')) return Laptop;
-  if (l.includes('terraza')) return Sun;
+  if (l.includes('trabajo') || l.includes('escritorio') || l.includes('workspace') || l.includes('work')) return Laptop;
+  if (l.includes('terraza') || l.includes('terrace')) return Sun;
   if (l.includes('parking') || l.includes('aparcamiento')) return Car;
-  if (l.includes('desayuno') || l.includes('café')) return Coffee;
+  if (l.includes('desayuno') || l.includes('breakfast') || l.includes('café') || l.includes('coffee')) return Coffee;
   return Check;
 }
 
