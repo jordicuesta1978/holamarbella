@@ -54,7 +54,7 @@ export default async function AdminPage() {
         <h1 style={{ margin: '0 0 20px', fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>Dashboard</h1>
 
         {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 28 }}>
+        <div data-tour="stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 28 }}>
           {cards.map(({ icon: Icon, label, sub, value, href }) => (
             <Link key={label} href={href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '18px 20px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 14 }}>

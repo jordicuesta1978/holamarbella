@@ -17,14 +17,26 @@ function aptDisplay(slug: string, fallbackTitle: string): string {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
+async function getAdminPassword(): Promise<string> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabaseAdmin as any)
+      .from('admin_config')
+      .select('value')
+      .eq('key', 'admin_password')
+      .single()
+    if (data?.value) return data.value
+  } catch { /* fallback to env */ }
+  return process.env.ADMIN_PASSWORD ?? ''
+}
+
 export async function login(prevState: string | null, formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  if (
-    email !== process.env.ADMIN_EMAIL ||
-    password !== process.env.ADMIN_PASSWORD
-  ) {
+  const storedPassword = await getAdminPassword()
+
+  if (email !== process.env.ADMIN_EMAIL || password !== storedPassword) {
     return 'Credenciales incorrectas.'
   }
 
@@ -35,6 +47,26 @@ export async function login(prevState: string | null, formData: FormData) {
 export async function logout() {
   await deleteSession()
   redirect('/admin/login')
+}
+
+export async function changePassword(prevState: string | null, formData: FormData) {
+  const current = formData.get('current') as string
+  const next = formData.get('next') as string
+  const confirm = formData.get('confirm') as string
+
+  if (next !== confirm) return 'error:Las contraseñas nuevas no coinciden.'
+  if (next.length < 6) return 'error:La nueva contraseña debe tener al menos 6 caracteres.'
+
+  const storedPassword = await getAdminPassword()
+  if (current !== storedPassword) return 'error:La contraseña actual es incorrecta.'
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabaseAdmin as any)
+    .from('admin_config')
+    .upsert({ key: 'admin_password', value: next, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+
+  if (error) return 'error:No se pudo guardar la contraseña. Inténtalo de nuevo.'
+  return 'ok:Contraseña actualizada correctamente.'
 }
 
 // ── Reservas ──────────────────────────────────────────────────────────────────

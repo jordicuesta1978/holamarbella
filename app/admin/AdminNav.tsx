@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/admin'
-import { LayoutDashboard, BookOpen, CalendarDays, Layers, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, BookOpen, CalendarDays, Layers, ClipboardList, Settings } from 'lucide-react'
 
 export default function AdminNav() {
   const pathname = usePathname()
@@ -19,6 +19,7 @@ export default function AdminNav() {
     { href: '/admin/calendario', label: 'Calendario', icon: CalendarDays },
     { href: '/admin/registros', label: 'Registros', icon: ClipboardList },
     { href: '/admin/contenido', label: 'Contenido', icon: Layers },
+    { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
   ]
 
   return (
