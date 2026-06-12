@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",
+    "@tiptap/extension-image": "^3.26.0",
+    "@tiptap/react": "^3.26.0",
+    "@tiptap/starter-kit": "^3.26.0",
     "@types/mapbox-gl": "^3.4.1",
     "autoprefixer": "^10.5.0",
     "jose": "^6.2.3",

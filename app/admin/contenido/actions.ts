@@ -189,14 +189,60 @@ export async function saveApartmentTranslation(
 
 // ── Articulos ─────────────────────────────────────────────────────────────────
 
-export async function getArticulos() {
-  const { data } = await db.from('articulos').select('*').order('created_at', { ascending: false })
-  return data ?? []
+export interface ArticuloRow {
+  id: number
+  titulo: string
+  titulo_en?: string | null
+  slug: string
+  contenido: string
+  contenido_en?: string | null
+  publicado: boolean
+  imagen_url?: string | null
+  hero_image?: string | null
+  categoria?: string | null
+  categoria_en?: string | null
+  extracto?: string | null
+  extracto_en?: string | null
+  created_at: string
+  updated_at?: string | null
 }
 
-export async function saveArticulo(id: number | null, titulo: string, slug: string, contenido: string, publicado: boolean, imagen_url?: string) {
-  const payload: Record<string, unknown> = { titulo, slug, contenido, publicado }
-  if (imagen_url !== undefined) payload.imagen_url = imagen_url || null
+export async function getArticulos(): Promise<ArticuloRow[]> {
+  const { data } = await db.from('articulos').select('*').order('created_at', { ascending: false })
+  return (data ?? []) as ArticuloRow[]
+}
+
+export async function saveArticulo(
+  id: number | null,
+  data: {
+    titulo: string
+    slug: string
+    contenido: string
+    publicado: boolean
+    imagen_url?: string
+    titulo_en?: string
+    contenido_en?: string
+    categoria?: string
+    categoria_en?: string
+    extracto?: string
+    extracto_en?: string
+    hero_image?: string
+  }
+) {
+  const payload: Record<string, unknown> = {
+    titulo: data.titulo,
+    slug: data.slug,
+    contenido: data.contenido,
+    publicado: data.publicado,
+    imagen_url: data.imagen_url || null,
+    titulo_en: data.titulo_en || null,
+    contenido_en: data.contenido_en || null,
+    categoria: data.categoria || null,
+    categoria_en: data.categoria_en || null,
+    extracto: data.extracto || null,
+    extracto_en: data.extracto_en || null,
+    hero_image: data.hero_image || null,
+  }
   if (id) {
     payload.updated_at = new Date().toISOString()
     await db.from('articulos').update(payload).eq('id', id)
