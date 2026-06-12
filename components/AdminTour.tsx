@@ -6,19 +6,35 @@ import 'shepherd.js/dist/css/shepherd.css'
 const STORAGE_KEY = 'hmb_tour_done'
 
 const TOUR_CSS = `
+  /* Shape & shadow */
   .hmb-tour .shepherd-content { border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.16); border: 1px solid #e2e8f0; font-family: system-ui,-apple-system,'Segoe UI',sans-serif; overflow: hidden; min-width: 300px; max-width: 380px; }
-  .hmb-tour .shepherd-header { background: #4B766B; padding: 14px 18px 12px; display: flex; align-items: center; justify-content: space-between; }
-  .hmb-tour .shepherd-title { color: #fff; font-size: 14px; font-weight: 700; margin: 0; }
-  .hmb-tour .shepherd-cancel-icon { color: rgba(255,255,255,0.7); background: none; border: none; font-size: 22px; cursor: pointer; padding: 0; line-height: 1; }
-  .hmb-tour .shepherd-cancel-icon:hover { color: #fff; }
+
+  /* Header — must beat Shepherd's ".shepherd-has-title .shepherd-content .shepherd-header" (0,3,0) */
+  .shepherd-has-title.hmb-tour .shepherd-content .shepherd-header { background: #4B766B !important; padding: 14px 18px 12px !important; border-radius: 12px 12px 0 0; }
+
+  /* Title — must beat Shepherd's ".shepherd-title" (0,1,0) */
+  .shepherd-has-title.hmb-tour .shepherd-content .shepherd-title { color: #fff !important; font-size: 14px; font-weight: 700; }
+
+  /* Cancel icon — must beat Shepherd's ".shepherd-has-title .shepherd-content .shepherd-cancel-icon" (0,3,0) */
+  .shepherd-has-title.hmb-tour .shepherd-content .shepherd-cancel-icon { color: rgba(255,255,255,0.75) !important; font-size: 20px; }
+  .shepherd-has-title.hmb-tour .shepherd-content .shepherd-cancel-icon:hover { color: #fff !important; }
+
+  /* Arrow color to match green header when tooltip is below the target */
+  .shepherd-has-title.hmb-tour[data-popper-placement^=bottom] > .shepherd-arrow:before { background-color: #4B766B !important; }
+
+  /* Body text */
   .hmb-tour .shepherd-text { padding: 16px 18px; font-size: 13px; line-height: 1.7; color: #333; }
   .hmb-tour .shepherd-text p { margin: 0 0 8px; }
   .hmb-tour .shepherd-text p:last-child { margin: 0; }
+
+  /* Footer & buttons */
   .hmb-tour .shepherd-footer { padding: 4px 18px 16px; display: flex; justify-content: flex-end; gap: 8px; }
   .hmb-tour .shepherd-button { border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: opacity 0.15s; }
   .hmb-tour .shepherd-button:hover { opacity: 0.85; }
   .hmb-tour .shepherd-button-primary { background: #4B766B; color: #fff; }
   .hmb-tour .shepherd-button-secondary { background: #f0f0f0; color: #555; }
+
+  /* Modal overlay */
   .shepherd-modal-overlay-container { fill: #1a1a2e; opacity: 0.45 !important; }
 `
 
@@ -62,7 +78,7 @@ export default function AdminTour() {
       tour.addStep({
         id: 'bienvenida',
         title: '¡Hola, Mar! 👋',
-        text: '<p>Bienvenida a tu panel de gestión de HolaMarbella. Te hacemos un tour rápido para que te orientes.</p><p>Solo tardará un minuto.</p>',
+        text: '<p>Bienvenida a tu panel de gestión. Te hacemos un tour rápido para que te orientes.</p><p>Solo tardará un minuto.</p>',
         buttons: [done, next],
       })
 
