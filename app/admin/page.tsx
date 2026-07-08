@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from './AdminNavServer'
 import DashboardRefresh from './DashboardRefresh'
-import AdminTour from '@/components/AdminTour'
 import { CalendarDays, BookOpen, Users } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,7 +75,6 @@ export default async function AdminPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
-      <AdminTour />
       <AdminNavServer />
       <DashboardRefresh />
 

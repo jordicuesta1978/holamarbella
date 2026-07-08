@@ -1,7 +1,6 @@
 'use client'
 
 import { useActionState } from 'react'
-import { useRouter } from 'next/navigation'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { changePassword } from '@/app/actions/admin'
 
@@ -13,12 +12,6 @@ const iStyle: React.CSSProperties = {
 
 export default function ConfiguracionPage() {
   const [result, action, pending] = useActionState(changePassword, null)
-  const router = useRouter()
-
-  function resetTour() {
-    localStorage.removeItem('hmb_tour_done')
-    router.push('/admin')
-  }
 
   const isError = result?.startsWith('error:')
   const isOk = result?.startsWith('ok:')
@@ -79,28 +72,6 @@ export default function ConfiguracionPage() {
               {pending ? 'Guardando…' : 'Guardar'}
             </button>
           </form>
-        </div>
-
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden', marginTop: 20 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
-            <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Tour de bienvenida</h2>
-          </div>
-          <div style={{ padding: '20px' }}>
-            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#666', lineHeight: 1.6 }}>
-              Vuelve a ver el tour introductorio del panel de administración.
-            </p>
-            <button
-              type="button"
-              onClick={resetTour}
-              style={{
-                background: '#f4f5f7', color: '#1a1a2e', border: '1.5px solid #e2e8f0',
-                borderRadius: 10, padding: '10px 18px', fontSize: 14,
-                fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Reiniciar tour de bienvenida
-            </button>
-          </div>
         </div>
       </div>
     </div>
