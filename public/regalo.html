@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Para Mar 🌸</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde: #4B766B;
+      --verde-claro: #d1ede6;
+      --crema: #fdf9f4;
+      --terracota: #c17b5a;
+      --rosa: #e8b4b8;
+      --amarillo: #f0d98a;
+      --texto: #2c1e0f;
+    }
+
+    html, body {
+      width: 100%; min-height: 100%;
+      background: var(--crema);
+      font-family: 'Inter', sans-serif;
+      color: var(--texto);
+      overflow-x: hidden;
+    }
+
+    /* ── FLORES ── */
+    .flores-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .flor {
+      position: absolute; opacity: 0;
+      animation: flotar 8s ease-in-out infinite;
+    }
+    @keyframes flotar {
+      0% { opacity: 0; transform: translateY(20px) rotate(0deg); }
+      20% { opacity: 0.6; }
+      80% { opacity: 0.4; }
+      100% { opacity: 0; transform: translateY(-40px) rotate(15deg); }
+    }
+
+    /* ── SECCIONES ── */
+    .seccion {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .seccion.activa { display: flex; }
+
+    /* ── BOTÓN ATRÁS ── */
+    .btn-atras {
+      position: absolute;
+      top: 1.25rem;
+      left: 1.25rem;
+      background: none;
+      border: none;
+      font-size: 0.85rem;
+      color: #aaa;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      padding: 0.5rem;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    .btn-atras:hover { color: var(--verde); }
+
+    /* ── BOTÓN PRINCIPAL ── */
+    .btn-p {
+      display: inline-block;
+      background: var(--verde);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 1rem 2.5rem;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+    .btn-p:hover { background: #3a5a50; transform: translateY(-2px); }
+
+    /* ── PANTALLA 1: EL SOBRE ── */
+    #p1 { background: var(--crema); text-align: center; }
+
+    .para-ti {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--terracota);
+      margin-bottom: 1rem;
+    }
+
+    .sobre {
+      width: 200px; height: 140px;
+      margin: 0 auto 2rem;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .sobre:hover { transform: scale(1.05) rotate(-1deg); }
+    .sobre svg { width: 100%; height: 100%; }
+
+    .titulo-sobre {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 7vw, 3.2rem);
+      font-weight: 400;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+    .titulo-sobre em { font-style: italic; color: var(--verde); }
+
+    .subtitulo-sobre {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #7a6a5a;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── PANTALLA 2: LA CARTA ── */
+    #p2 { background: var(--crema); justify-content: flex-start; padding-top: 4rem; }
+
+    .carta-interior {
+      max-width: 580px;
+      width: 100%;
+    }
+
+    .sello {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--verde-claro);
+      border: 2px solid var(--verde);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin: 0 auto 2rem;
+    }
+
+    .carta-texto {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1rem, 2.5vw, 1.15rem);
+      line-height: 1.9;
+      color: var(--texto);
+      margin-bottom: 2rem;
+    }
+
+    .carta-texto .inicial {
+      font-size: 2.5rem;
+      float: left;
+      line-height: 0.8;
+      margin-right: 0.1em;
+      color: var(--verde);
+    }
+
+    .carta-firma {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: #7a6a5a;
+      margin-bottom: 2.5rem;
+      padding-left: 1rem;
+      border-left: 3px solid var(--rosa);
+    }
+
+    .separador { text-align: center; font-size: 1.4rem; margin: 1.5rem 0 2rem; letter-spacing: 0.5rem; color: var(--terracota); opacity: 0.6; }
+
+    /* ── PANTALLA 3: EL REVEAL ── */
+    #p3 {
+      background: var(--verde);
+      text-align: center;
+      color: white;
+    }
+
+    .destellos { position: absolute; inset: 0; pointer-events: none; }
+    .destello {
+      position: absolute; border-radius: 50%;
+      animation: dest 2s ease-in-out infinite;
+    }
+    @keyframes dest {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .reveal-inner { position: relative; z-index: 2; }
+
+    .eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 1rem;
+    }
+
+    .reveal-inner h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 9vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .reveal-inner h2 em { font-style: italic; color: var(--amarillo); }
+
+    .reveal-inner p {
+      font-size: 1.05rem;
+      opacity: 0.85;
+      max-width: 400px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* ── PANTALLA 4: ESPERA ── */
+    #p4 { background: var(--crema); text-align: center; }
+
+    .espera-inner { max-width: 440px; }
+
+    .espera-icon { font-size: 3rem; margin-bottom: 1.5rem; }
+
+    .espera-inner h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 6vw, 2.6rem);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+      color: var(--texto);
+    }
+    .espera-inner h2 em { font-style: italic; color: var(--verde); }
+
+    .espera-inner p {
+      font-size: 1rem;
+      color: #7a6a5a;
+      line-height: 1.7;
+      font-weight: 300;
+      margin-bottom: 2rem;
+    }
+
+    .espera-inner .nota {
+      margin-top: 1.25rem;
+      font-size: 0.85rem;
+      color: #bbb;
+      font-style: italic;
+    }
+
+    /* ── FADE ── */
+    .fade-in { animation: fadeIn 0.7s ease forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ PANTALLA 1: EL SOBRE ══ -->
+<div id="p1" class="seccion activa">
+  <div class="flores-bg" id="flores-bg"></div>
+
+  <div class="fade-in" style="text-align:center; max-width:480px; position:relative; z-index:2;">
+    <p class="para-ti">Para Mar</p>
+
+    <div class="sobre">
+      <svg viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="140" rx="8" fill="#f0ebe3"/>
+        <rect width="200" height="140" rx="8" stroke="#c8b89a" stroke-width="1.5"/>
+        <path d="M4 4 L100 80 L196 4" stroke="#c8b89a" stroke-width="1.5" fill="none"/>
+        <path d="M4 136 L70 80" stroke="#c8b89a" stroke-width="1" fill="none"/>
+        <path d="M196 136 L130 80" stroke="#c8b89a" stroke-width="1" fill="none"/>
+        <circle cx="170" cy="110" r="12" fill="#e8b4b8" opacity="0.6"/>
+        <circle cx="170" cy="110" r="6" fill="#c17b5a" opacity="0.4"/>
+        <circle cx="182" cy="100" r="7" fill="#c5b8d8" opacity="0.5"/>
+        <circle cx="158" cy="100" r="5" fill="#f0d98a" opacity="0.6"/>
+        <circle cx="100" cy="80" r="8" fill="#4B766B"/>
+        <text x="100" y="84" text-anchor="middle" font-size="10" fill="white">✿</text>
+      </svg>
+    </div>
+
+    <h1 class="titulo-sobre">
+      Hoy es<br>
+      <em>un día especial</em>
+    </h1>
+    <p class="subtitulo-sobre">
+      Hay regalos que se compran,<br>
+      y hay regalos que se construyen.<br>
+      Este es del segundo tipo.
+    </p>
+    <button class="btn-p" onclick="ir(2)">Abrir el sobre ✉</button>
+  </div>
+</div>
+
+
+<!-- ══ PANTALLA 2: LA CARTA ══ -->
+<div id="p2" class="seccion">
+  <button class="btn-atras" onclick="ir(1)">← Atrás</button>
+
+  <div class="carta-interior fade-in">
+    <div class="sello">✿</div>
+
+    <div class="carta-texto">
+      <span class="inicial">M</span>ar,<br><br>
+      Llevas años cuidando apartamentos, recibiendo a desconocidos como si fueran familia, respondiendo mensajes a cualquier hora, recibiendo a huéspedes a las tantas, preparando cada detalle con una dedicación que muy poca gente ve a primera vista pero que todos terminan sintiendo.<br><br>
+      Mereces algo que esté a tu altura.<br><br>
+      Así que este año, en lugar de un ramo de flores o una cena, decidí hacerte algo muy especial.<br><br>
+      Lleva meses de trabajo en ratos libres, con mis propias manos.<br><br>
+      Ahora es tuyo. Completamente tuyo.
+    </div>
+
+    <div class="carta-firma">
+      Con mucho cariño,<br>
+      Jordi
+    </div>
+
+    <div class="separador">✿ ❀ ✿</div>
+
+    <div style="text-align:center;">
+      <button class="btn-p" onclick="ir(3)">Ver mi regalo →</button>
+    </div>
+    <div style="height: 3rem;"></div>
+  </div>
+</div>
+
+
+<!-- ══ PANTALLA 3: EL REVEAL ══ -->
+<div id="p3" class="seccion">
+  <button class="btn-atras" onclick="ir(2)" style="color:rgba(255,255,255,0.5);">← Atrás</button>
+  <div class="destellos" id="destellos"></div>
+
+  <div class="reveal-inner fade-in">
+    <p class="eyebrow">Tu regalo de cumpleaños</p>
+    <h2>Tu web.<br><em>Tu negocio.</em></h2>
+    <p>
+      Hecha a medida,<br>con cada detalle pensado para ti.<br>
+      Déjame enseñártela.
+    </p>
+    <button class="btn-p" style="background:white; color:var(--verde); font-weight:600;" onclick="ir(4)">
+      Ver mi web ✨
+    </button>
+  </div>
+</div>
+
+
+<!-- ══ PANTALLA 4: ESPERA ══ -->
+<div id="p4" class="seccion">
+  <button class="btn-atras" onclick="ir(3)">← Atrás</button>
+
+  <div class="espera-inner fade-in">
+    <div class="espera-icon">🌸</div>
+    <h2>Explórala<br><em>con calma</em></h2>
+    <p>
+      Abre tu web, date una vuelta, mira cada rincón.<br>
+      Cuando hayas terminado, vuelve aquí.
+    </p>
+
+    <a class="btn-p" href="https://holamarbella.vercel.app" target="_blank">
+      Abrir mi web →
+    </a>
+
+    <div style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid #e8e0d5; width: 100%;">
+      <p style="font-size:0.9rem; color:#aaa; margin-bottom:1rem;">¿Ya has terminado de explorar?</p>
+      <a class="btn-p" style="background: transparent; color: var(--verde); border: 1.5px solid var(--verde);" href="https://holamarbella.vercel.app/admin" target="_blank">
+        ¡Ya estoy lista! Enséñame más →
+      </a>
+    </div>
+
+    <p class="nota">Jordi estará contigo para explicarte todo</p>
+  </div>
+</div>
+
+
+<script>
+  function crearFlores() {
+    const flores = ['✿','❀','✾','❁','🌸','🌺','🌼','🌻','🌷'];
+    const bg = document.getElementById('flores-bg');
+    for (let i = 0; i < 20; i++) {
+      const f = document.createElement('span');
+      f.className = 'flor';
+      f.textContent = flores[Math.floor(Math.random() * flores.length)];
+      f.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${1+Math.random()*1.5}rem;animation-delay:${Math.random()*6}s;animation-duration:${5+Math.random()*6}s;`;
+      bg.appendChild(f);
+    }
+  }
+
+  function crearDestellos() {
+    const c = document.getElementById('destellos');
+    if (c.children.length > 0) return;
+    const colors = ['#f0d98a','#e8b4b8','#c5b8d8','white','#d1ede6'];
+    for (let i = 0; i < 40; i++) {
+      const d = document.createElement('div');
+      d.className = 'destello';
+      const size = 2 + Math.random() * 6;
+      d.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s;`;
+      c.appendChild(d);
+    }
+  }
+
+  function ir(n) {
+    document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+    const target = document.getElementById('p' + n);
+    target.classList.add('activa');
+    window.scrollTo(0, 0);
+    if (n === 3) crearDestellos();
+    // re-trigger fade
+    const fadeEl = target.querySelector('.fade-in');
+    if (fadeEl) {
+      fadeEl.style.animation = 'none';
+      fadeEl.offsetHeight;
+      fadeEl.style.animation = '';
+    }
+  }
+
+  crearFlores();
+</script>
+
+</body>
+</html>
