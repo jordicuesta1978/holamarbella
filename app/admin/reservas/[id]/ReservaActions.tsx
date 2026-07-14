@@ -123,3 +123,22 @@ export default function ReservaActions({
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button
                 onClick={() => setShowModal(false)}
+                style={{ flex: 1, background: '#f4f5f7', color: '#555', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCancelSubmit}
+                disabled={isPending}
+                style={{ flex: 1, background: '#e53e3e', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                {isPending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+                Rechazar y enviar email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

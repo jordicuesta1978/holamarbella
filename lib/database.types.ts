@@ -99,4 +99,9 @@ export type Database = {
           leido: boolean
           created_at: string
         }
-     
+        Insert: Omit<Database['public']['Tables']['mensajes_chat']['Row'], 'id' | 'created_at'>
+        Update: Partial<Database['public']['Tables']['mensajes_chat']['Insert']>
+      }
+    }
+  }
+}

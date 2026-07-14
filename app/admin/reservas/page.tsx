@@ -160,4 +160,16 @@ export default async function ReservasPage({
                         <Link href={`/admin/reservas/${r.id}`} style={{ fontSize: 12, color: '#4B766B', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>Ver →</Link>
                       </td>
                     </tr>
-            
+                  )
+                })}
+                {reservas.length === 0 && (
+                  <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No hay reservas en esta categoría</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

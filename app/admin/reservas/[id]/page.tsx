@@ -217,4 +217,19 @@ export default async function ReservaDetailPage({
           checkOut={reserva.check_out ?? undefined}
           initialQuoteMessage={reserva.quote_message ?? ''}
           quoteStatus={reserva.status}
-          quoteSentAt={reserva.quote_sen
+          quoteSentAt={reserva.quote_sent_at}
+          quoteAcceptedAt={reserva.quote_accepted_at}
+        />
+
+        {/* Actions */}
+        {['pending', 'quote_sent', 'quote_accepted'].includes(reserva.status) && (
+          <ReservaActions id={reserva.id} status={reserva.status} depositPaid={reserva.deposit_paid ?? 0} />
+        )}
+
+        {['confirmed', 'cancelled'].includes(reserva.status) && (
+          <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center' }}>Esta reserva ya fue procesada.</p>
+        )}
+      </div>
+    </div>
+  )
+}

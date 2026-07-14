@@ -280,4 +280,52 @@ export default function PricingPanel({
           {depositPaid > 0 && (
             <>
               <div style={rowStyle}><span style={{ color: '#888' }}>Pagado a cuenta</span><span>−{depositPaid}€</span></div>
-              <div style={{ ...rowStyle, fontWeight:
+              <div style={{ ...rowStyle, fontWeight: 700, color: pending > 0 ? '#d97706' : '#4B766B' }}>
+                <span>Pendiente de pago</span>
+                <span>{pending}€</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {error && <p style={{ fontSize: 13, color: '#e53e3e', marginBottom: 10 }}>{error}</p>}
+        {saved && <p style={{ fontSize: 13, color: '#4B766B', marginBottom: 10, fontWeight: 600 }}>✓ Precio guardado</p>}
+
+        <button onClick={handleSave} disabled={isPending}
+          style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isPending ? 0.6 : 1 }}>
+          {isPending ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Guardando…</> : 'Guardar precio'}
+        </button>
+
+        {/* Presupuesto al cliente */}
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #e2e8f0' }}>
+          <label style={lbl}>Mensaje para el cliente (opcional)</label>
+          <textarea
+            value={quoteMessage}
+            onChange={e => setQuoteMessage(e.target.value)}
+            placeholder="Ej: Para confirmar tu reserva necesitamos un pago del 10% por transferencia. Te paso los datos bancarios…"
+            rows={4}
+            style={{ ...inp(), width: '100%', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box', marginBottom: 12 }}
+          />
+
+          {(quoteStatus === 'quote_sent' || quoteStatus === 'quote_accepted') && (
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
+              {quoteStatus === 'quote_accepted'
+                ? `✓ Presupuesto aceptado por el cliente${quoteAcceptedAt ? ` el ${new Date(quoteAcceptedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}.`
+                : `Presupuesto enviado${quoteSentAt ? ` el ${new Date(quoteSentAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}, esperando respuesta del cliente.`}
+            </p>
+          )}
+
+          {quoteError && <p style={{ fontSize: 13, color: '#e53e3e', marginBottom: 10 }}>{quoteError}</p>}
+          {quoteSent && <p style={{ fontSize: 13, color: '#4B766B', marginBottom: 10, fontWeight: 600 }}>✓ Presupuesto enviado al cliente</p>}
+
+          <button onClick={handleSendQuote} disabled={isSending}
+            style={{ background: '#fff', color: '#4B766B', border: '1.5px solid #4B766B', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isSending ? 0.6 : 1 }}>
+            {isSending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
+            {quoteStatus === 'quote_sent' || quoteStatus === 'quote_accepted' ? 'Reenviar presupuesto' : 'Enviar presupuesto'}
+          </button>
+        </div>
+
+      </div>
+    </section>
+  )
+}
