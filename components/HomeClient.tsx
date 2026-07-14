@@ -3,19 +3,14 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Users, MapPin, House } from 'lucide-react';
-import { FaInstagram, FaFacebookF, FaTiktok, FaAirbnb, FaGoogle } from 'react-icons/fa6';
+import { FaInstagram, FaFacebookF, FaTiktok, FaAirbnb } from 'react-icons/fa6';
+import { FcGoogle } from 'react-icons/fc';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HeroSearch from '@/components/HeroSearch';
 import type { Apartment } from '@/lib/apartments';
 
-const SOCIAL_LINKS = [
-  { name: 'Instagram', href: 'https://www.instagram.com/hola_marbella_apartments/', Icon: FaInstagram },
-  { name: 'Facebook', href: 'https://www.facebook.com/holaMarBella.casa', Icon: FaFacebookF },
-  { name: 'TikTok', href: 'https://www.tiktok.com/@hola_marbella', Icon: FaTiktok },
-  { name: 'Airbnb', href: 'https://www.airbnb.es/users/show/5284060', Icon: FaAirbnb },
-  { name: 'Google Reviews', href: 'https://share.google/eI4hLRRMCOefRYXkw', Icon: FaGoogle },
-];
+const AIRBNB_URL = 'https://www.airbnb.es/users/show/5284060';
 
 const reviews = [
   {
@@ -182,6 +177,17 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
               </div>
             </div>
 
+            <a
+              href={AIRBNB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mb-8 text-base font-bold transition-opacity hover:opacity-80"
+              style={{ color: '#FF5A5F' }}
+            >
+              <FaAirbnb size={26} />
+              {t('airbnbProfile')}
+            </a>
+
             {/* Reviews */}
             <div className="rounded-2xl p-8 border" style={{ backgroundColor: 'var(--arena)', borderColor: 'var(--outline-variant)' }}>
               <p className="font-serif-italic text-base leading-relaxed mb-4" style={{ color: 'var(--on-surface)' }}>
@@ -225,6 +231,55 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                 ))}
               </div>
             </div>
+
+            {/* Follow */}
+            <div className="mt-8">
+              <p className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--on-surface-variant)' }}>
+                {t('followMe')}
+              </p>
+              <div className="flex items-center gap-4">
+                <a
+                  href="https://www.instagram.com/hola_marbella_apartments/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform hover:scale-105"
+                  style={{ background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)' }}
+                >
+                  <FaInstagram size={28} color="white" />
+                </a>
+                <a
+                  href="https://www.facebook.com/holaMarBella.casa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform hover:scale-105"
+                  style={{ backgroundColor: '#1877F2' }}
+                >
+                  <FaFacebookF size={26} color="white" />
+                </a>
+                <a
+                  href="https://www.tiktok.com/@hola_marbella"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="TikTok"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform hover:scale-105 border-2"
+                  style={{ borderColor: 'var(--outline-variant)' }}
+                >
+                  <FaTiktok size={28} color="#000000" />
+                </a>
+                <a
+                  href="https://share.google/eI4hLRRMCOefRYXkw"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Google Reviews"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform hover:scale-105 border-2"
+                  style={{ borderColor: 'var(--outline-variant)' }}
+                >
+                  <FcGoogle size={28} />
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Mar */}
@@ -239,21 +294,6 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                 alt={`Mar · ${t('marRole')}`}
                 className="w-full h-full object-cover"
               />
-            </div>
-            <div className="flex items-center justify-center gap-5 mt-6">
-              {SOCIAL_LINKS.map(({ name, href, Icon }) => (
-                <a
-                  key={name}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={name}
-                  className="transition-opacity hover:opacity-70"
-                  style={{ color: 'var(--primary)' }}
-                >
-                  <Icon size={28} />
-                </a>
-              ))}
             </div>
           </div>
         </div>

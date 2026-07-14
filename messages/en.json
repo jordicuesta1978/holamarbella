@@ -36,7 +36,9 @@
     "superhost": "Superhost",
     "reviewsCount": "+250 verified reviews",
     "marRole": "Host · Marbella",
-    "marQuote": "My goal is for you to feel at home from the very first moment."
+    "marQuote": "My goal is for you to feel at home from the very first moment.",
+    "airbnbProfile": "View my Airbnb profile →",
+    "followMe": "Follow me"
   },
   "search": {
     "checkIn": "Check-in",
