@@ -40,7 +40,7 @@ function buildMarks(
     const end = new Date(p.fecha_fin + 'T00:00:00')
     for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-      if (!marks[key]) marks[key] = { bg: '#f0f9f6', color: '#4B766B', label: `${p.precio_noche}€/n` }
+      marks[key] = { bg: '#f0f9f6', color: '#4B766B', label: `${p.precio_noche}€/n` }
     }
   }
 

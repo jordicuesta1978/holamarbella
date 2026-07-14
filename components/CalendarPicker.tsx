@@ -128,8 +128,11 @@ export default function CalendarPicker({
     const e = new Date(checkOut + 'T00:00:00')
     for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
       const key = toKey(d)
-      // Find applicable price range
-      const range = priceRanges.find(p => key >= p.start && key < p.end)
+      // Find applicable price range — last match wins (most specific overrides base)
+      let range: PriceRange | undefined
+      for (const p of priceRanges) {
+        if (key >= p.start && key < p.end) range = p
+      }
       nights.push({ date: key, price: range?.price ?? midPrice })
     }
     const base = nights.reduce((s, n) => s + n.price, 0)

@@ -49,7 +49,10 @@ function calcNightlyPrices(
   const e = new Date(checkOut + 'T00:00:00')
   for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
     const key = d.toISOString().split('T')[0]
-    const range = priceRanges.find(p => key >= p.start && key < p.end)
+    let range: PriceRange | undefined
+    for (const p of priceRanges) {
+      if (key >= p.start && key < p.end) range = p
+    }
     nights.push({ date: key, price: range?.price ?? midPrice })
   }
   return nights

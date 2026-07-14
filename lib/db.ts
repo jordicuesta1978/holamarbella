@@ -127,7 +127,7 @@ export async function getPriceRanges(slug: string): Promise<Array<{ start: strin
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any
   const today = new Date().toISOString().split('T')[0]
-  const { data } = await db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', slug).gte('fecha_fin', today)
+  const { data } = await db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', slug).gte('fecha_fin', today).order('fecha_inicio')
   return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; precio_noche: number }) => ({
     start: r.fecha_inicio, end: r.fecha_fin, price: r.precio_noche,
   }))
