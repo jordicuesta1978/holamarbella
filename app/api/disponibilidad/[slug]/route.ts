@@ -6,13 +6,18 @@ export const dynamic = 'force-dynamic'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabaseAdmin as any
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
-  const today = new Date().toISOString().split('T')[0]
-  const oneYear = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]
+  const today = localDateStr(new Date())
+  const oneYear = localDateStr(new Date(Date.now() + 365 * 86400000))
 
   const [{ data: reservas }, { data: bloqueos }] = await Promise.all([
     db.from('reservas')

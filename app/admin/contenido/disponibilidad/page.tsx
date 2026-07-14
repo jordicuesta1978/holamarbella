@@ -4,6 +4,11 @@ import CalendarioAdminClient from '@/components/CalendarioAdminClient'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default async function DisponibilidadPage() {
   const db = supabaseAdmin as any
 
@@ -12,8 +17,8 @@ export default async function DisponibilidadPage() {
     getPrecios().catch(() => []),
   ])
 
-  const today = new Date().toISOString().split('T')[0]
-  const sixMonths = new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0]
+  const today = localDateStr(new Date())
+  const sixMonths = localDateStr(new Date(Date.now() + 180 * 86400000))
   const { data: reservasData } = await db
     .from('reservas')
     .select('apartment_slug, check_in, check_out, guest_name')

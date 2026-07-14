@@ -13,6 +13,11 @@ const APTS = [
   { slug: 'banesto', label: 'Banesto' },
 ]
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function toKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 type Bloqueo = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; motivo: string }
 type Reserva = { apartment_slug: string; check_in: string; check_out: string; guest_name: string }
 type Precio = { apartment_slug: string; fecha_inicio: string; fecha_fin: string; precio_noche: number }
@@ -91,7 +96,7 @@ export default function CalendarioAdminClient({ bloqueos, reservas, precios }: P
       // Default hasta: day after
       const d = new Date(dateKey + 'T00:00:00')
       d.setDate(d.getDate() + 1)
-      setHastaInput(d.toISOString().split('T')[0])
+      setHastaInput(toKey(d))
     }
     // confirmed reserva days — no action
   }

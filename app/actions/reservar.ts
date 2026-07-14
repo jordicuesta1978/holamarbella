@@ -42,6 +42,11 @@ type ReservaInputWithToken = ReservaInput & { conversationToken: string; booking
 
 type NightBreakdown = { price: number; count: number }
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function toKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function calcTotalWithRanges(
   checkIn: string,
   checkOut: string,
@@ -53,8 +58,11 @@ function calcTotalWithRanges(
   const s = new Date(checkIn + 'T00:00:00')
   const e = new Date(checkOut + 'T00:00:00')
   for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-    const key = d.toISOString().split('T')[0]
-    const range = priceRanges.find(p => key >= p.fecha_inicio && key < p.fecha_fin)
+    const key = toKey(d)
+    let range: { fecha_inicio: string; fecha_fin: string; precio_noche: number } | undefined
+    for (const p of priceRanges) {
+      if (key >= p.fecha_inicio && key < p.fecha_fin) range = p
+    }
     nights.push(range?.precio_noche ?? midPrice)
   }
   const base = nights.reduce((sum, p) => sum + p, 0)
@@ -80,7 +88,7 @@ export async function crearReserva(
   const db = supabaseAdmin as any
   const [{ data: aptData }, { data: priceRangesData }] = await Promise.all([
     db.from('apartments').select('price_min, price_max, cleaning_fee').eq('slug', input.apartmentSlug).single(),
-    db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', input.apartmentSlug),
+    db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', input.apartmentSlug).order('fecha_inicio'),
   ])
 
   const cleaningFee: number = aptData?.cleaning_fee ?? 40

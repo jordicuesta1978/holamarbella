@@ -5,6 +5,11 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 const ALL_SLUGS = ['paloma', 'micu', 'larysol', 'ami', 'banesto']
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function toKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 async function checkExact(checkIn: string, checkOut: string): Promise<Record<string, boolean>> {
   const db = supabaseAdmin as any
   const { data: occupied } = await db
@@ -42,10 +47,10 @@ export async function getAvailability(checkIn: string, checkOut: string, flex = 
   for (let offset = -flex; offset <= flex; offset++) {
     const d = new Date(checkIn + 'T00:00:00')
     d.setDate(d.getDate() + offset)
-    const altIn = d.toISOString().split('T')[0]
+    const altIn = toKey(d)
     const d2 = new Date(d)
     d2.setDate(d2.getDate() + duration)
-    const altOut = d2.toISOString().split('T')[0]
+    const altOut = toKey(d2)
     const avail = await checkExact(altIn, altOut)
     for (const slug of ALL_SLUGS) {
       if (avail[slug]) results[slug] = true

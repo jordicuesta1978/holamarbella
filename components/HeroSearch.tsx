@@ -14,7 +14,8 @@ const DAYS_BY_LOCALE: Record<string, string[]> = {
 
 function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
 
-function toKey(d: Date) { return d.toISOString().split('T')[0] }
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function toKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 function daysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate() }
 function firstWeekday(y: number, m: number) { return (new Date(y, m, 1).getDay() + 6) % 7 }
 

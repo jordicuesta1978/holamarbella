@@ -22,6 +22,16 @@ async function readOrderJson(slug: string): Promise<string[] | null> {
   } catch { return null }
 }
 
+// Local-date helpers — avoid toISOString() to prevent UTC+N shift
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+function daysFromNow(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return localDateStr(d)
+}
+
 type Locale = string
 
 // Builds the base (ES) apartment from a DB row. Localized content is layered
@@ -126,7 +136,7 @@ export async function getStoragePhotos(slug: string): Promise<string[]> {
 export async function getPriceRanges(slug: string): Promise<Array<{ start: string; end: string; price: number }>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateStr(new Date())
   const { data } = await db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', slug).gte('fecha_fin', today).order('fecha_inicio')
   return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; precio_noche: number }) => ({
     start: r.fecha_inicio, end: r.fecha_fin, price: r.precio_noche,
@@ -146,8 +156,8 @@ export async function getMinNightsRanges(slug: string): Promise<Array<{ start: s
 }
 
 export async function getBlockedRanges(slug: string): Promise<Array<{ start: string; end: string }>> {
-  const today = new Date().toISOString().split('T')[0]
-  const oneYear = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]
+  const today = localDateStr(new Date())
+  const oneYear = daysFromNow(365)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any
   const [{ data: reservas }, { data: bloqueos }] = await Promise.all([
@@ -162,8 +172,8 @@ export async function getBlockedRanges(slug: string): Promise<Array<{ start: str
 
 export async function getGlobalBlockedDates(): Promise<string[]> {
   const SLUGS = ['paloma', 'micu', 'larysol', 'ami', 'banesto']
-  const today = new Date().toISOString().split('T')[0]
-  const sixMonths = new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0]
+  const today = localDateStr(new Date())
+  const sixMonths = daysFromNow(180)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any
   const [{ data: reservas }, { data: bloqueos }] = await Promise.all([
@@ -177,7 +187,7 @@ export async function getGlobalBlockedDates(): Promise<string[]> {
     const s = new Date(start + 'T00:00:00')
     const e = new Date(end + 'T00:00:00')
     for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split('T')[0]
+      const key = localDateStr(d)
       if (!occupied[key]) occupied[key] = new Set()
       occupied[key].add(slug)
     }

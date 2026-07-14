@@ -8,6 +8,11 @@ import { Plus, X, Loader2, Send } from 'lucide-react'
 
 type PriceRange = { start: string; end: string; price: number }
 
+// Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
+function toKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // Same logic as CalendarPicker / ReservarContent — not modified
 function calcNightlyPrices(
   checkIn: string,
@@ -19,7 +24,7 @@ function calcNightlyPrices(
   const s = new Date(checkIn + 'T00:00:00')
   const e = new Date(checkOut + 'T00:00:00')
   for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
-    const key = d.toISOString().split('T')[0]
+    const key = toKey(d)
     let range: PriceRange | undefined
     for (const p of priceRanges) {
       if (key >= p.start && key < p.end) range = p
