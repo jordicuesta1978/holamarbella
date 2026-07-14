@@ -7,11 +7,9 @@ import { CheckCircle2, XCircle, Loader2, X, AlertTriangle } from 'lucide-react'
 
 export default function ReservaActions({
   id,
-  status,
   depositPaid = 0,
 }: {
   id: number
-  status?: string
   depositPaid?: number
 }) {
   const router = useRouter()
@@ -60,7 +58,7 @@ export default function ReservaActions({
     <>
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '20px 24px' }}>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: '#555', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Acción</p>
-        {(status !== 'quote_accepted' || depositPaid <= 0) && (
+        {depositPaid <= 0 && (
           <div style={{
             display: 'flex', gap: 8, alignItems: 'flex-start',
             background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8,
@@ -68,11 +66,7 @@ export default function ReservaActions({
           }}>
             <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>
-              {status !== 'quote_accepted'
-                ? 'El cliente todavía no ha aceptado el presupuesto. '
-                : ''}
-              {depositPaid <= 0 ? 'No hay ningún depósito registrado todavía. ' : ''}
-              Lo habitual es aprobar la reserva solo cuando el cliente haya pagado el anticipo.
+              No hay ningún depósito registrado todavía. Lo habitual es aprobar la reserva solo cuando el cliente haya pagado el anticipo.
             </span>
           </div>
         )}

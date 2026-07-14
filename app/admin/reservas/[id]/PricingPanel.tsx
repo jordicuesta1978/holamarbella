@@ -59,7 +59,6 @@ type Props = {
   initialQuoteMessage?: string
   quoteStatus?: string
   quoteSentAt?: string | null
-  quoteAcceptedAt?: string | null
 }
 
 export default function PricingPanel({
@@ -77,7 +76,6 @@ export default function PricingPanel({
   initialQuoteMessage = '',
   quoteStatus,
   quoteSentAt,
-  quoteAcceptedAt,
 }: Props) {
   const router = useRouter()
   const midPrice = Math.round((priceMin + priceMax) / 2)
@@ -315,11 +313,9 @@ export default function PricingPanel({
             style={{ ...inp(), width: '100%', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box', marginBottom: 12 }}
           />
 
-          {(quoteStatus === 'quote_sent' || quoteStatus === 'quote_accepted') && (
+          {quoteStatus === 'quote_sent' && (
             <p style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
-              {quoteStatus === 'quote_accepted'
-                ? `✓ Presupuesto aceptado por el cliente${quoteAcceptedAt ? ` el ${new Date(quoteAcceptedAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}.`
-                : `Presupuesto enviado${quoteSentAt ? ` el ${new Date(quoteSentAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}, esperando respuesta del cliente.`}
+              {`Presupuesto enviado${quoteSentAt ? ` el ${new Date(quoteSentAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. En cuanto Mar registre el pago del anticipo, podrá aprobar la reserva.`}
             </p>
           )}
 
@@ -329,7 +325,7 @@ export default function PricingPanel({
           <button onClick={handleSendQuote} disabled={isSending}
             style={{ background: '#fff', color: '#4B766B', border: '1.5px solid #4B766B', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isSending ? 0.6 : 1 }}>
             {isSending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
-            {quoteStatus === 'quote_sent' || quoteStatus === 'quote_accepted' ? 'Reenviar presupuesto' : 'Enviar presupuesto'}
+            {quoteStatus === 'quote_sent' ? 'Reenviar presupuesto' : 'Enviar presupuesto'}
           </button>
         </div>
 

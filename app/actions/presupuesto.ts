@@ -8,8 +8,6 @@ import type { Extra } from './admin'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
-const MAR = process.env.MAR_EMAIL
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
 const db = supabaseAdmin as any
 
@@ -77,7 +75,17 @@ function pricingHtml(r: any): string {
   </table>`
 }
 
-function quoteHtml(r: any, aptTitle: string, message: string, link: string) {
+function paymentMethodsHtml(): string {
+  return `
+    <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#4B766B;">Formas de pago</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#444;line-height:1.7;">Puedes hacer el ingreso del anticipo a través de:</p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">Transferencia bancaria: ES03 0081 7460 6000 0209 2117</p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">Revolut: @mar14pu1</p>
+    </div>`
+}
+
+function quoteHtml(r: any, aptTitle: string, message: string) {
   const firstName = (r.guest_name as string).split(' ')[0]
   return shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">Presupuesto de tu reserva</h1>
@@ -94,14 +102,10 @@ function quoteHtml(r: any, aptTitle: string, message: string, link: string) {
           <td style="padding:12px 16px;font-size:14px;color:#1A1A1A;border-top:1px solid #e8e0d0;">${fmt(r.check_out)}</td></tr>
     </table>
     ${pricingHtml(r)}
+    ${paymentMethodsHtml()}
     ${message ? `<div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
       <p style="margin:0;font-size:14px;color:#444;line-height:1.7;white-space:pre-wrap;">${message.replace(/\n/g, '<br>')}</p>
     </div>` : ''}
-    <div style="text-align:center;">
-      <a href="${link}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 32px;border-radius:10px;">
-        Ver presupuesto y confirmar
-      </a>
-    </div>
   `)
 }
 
@@ -120,16 +124,12 @@ export async function sendQuote(id: number, message: string) {
   if (error || !reserva) throw new Error(error?.message ?? 'Reserva no encontrada')
   if (!reserva.total_price) throw new Error('Define primero el precio antes de enviar el presupuesto.')
 
-  const token = reserva.quote_token || crypto.randomUUID()
-
   const { error: updError } = await db
     .from('reservas')
     .update({
       status: 'quote_sent',
       quote_message: message,
-      quote_token: token,
       quote_sent_at: new Date().toISOString(),
-      quote_accepted_at: null,
     })
     .eq('id', id)
 
@@ -137,67 +137,14 @@ export async function sendQuote(id: number, message: string) {
 
   const apt = await db.from('apartments').select('title').eq('slug', reserva.apartment_slug).single()
   const aptTitle = APT_NAMES[reserva.apartment_slug] || apt.data?.title || reserva.apartment_slug
-  const link = `${BASE_URL}/presupuesto/${token}`
 
   await resend.emails.send({
     from: FROM,
     to: reserva.guest_email,
     subject: `Presupuesto de tu reserva — ${aptTitle}`,
-    html: quoteHtml(reserva, aptTitle, message, link),
+    html: quoteHtml(reserva, aptTitle, message),
   })
 
   revalidatePath(`/admin/reservas/${id}`)
-  return { ok: true, token }
-}
-
-export async function getReservaByQuoteToken(token: string) {
-  const { data: reserva } = await db
-    .from('reservas')
-    .select('id, guest_name, apartment_slug, check_in, check_out, status, total_price, cleaning_fee, extras, quote_message, quote_sent_at, quote_accepted_at')
-    .eq('quote_token', token)
-    .single()
-
-  return reserva ?? null
-}
-
-/**
- * El huésped acepta el presupuesto desde la página pública.
- */
-export async function acceptQuote(token: string) {
-  const { data: reserva, error } = await db
-    .from('reservas')
-    .select('id, guest_name, apartment_slug, status')
-    .eq('quote_token', token)
-    .single()
-
-  if (error || !reserva) throw new Error('Presupuesto no encontrado')
-  if (reserva.status === 'quote_accepted' || reserva.status === 'confirmed') {
-    return { ok: true, alreadyAccepted: true }
-  }
-
-  const { error: updError } = await db
-    .from('reservas')
-    .update({ status: 'quote_accepted', quote_accepted_at: new Date().toISOString() })
-    .eq('id', reserva.id)
-
-  if (updError) throw new Error(updError.message)
-
-  if (MAR) {
-    const aptTitle = APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
-    await resend.emails.send({
-      from: FROM,
-      to: MAR,
-      subject: `${reserva.guest_name} ha aceptado el presupuesto — ${aptTitle}`,
-      html: shell(`
-        <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#4B766B;">Presupuesto aceptado</h1>
-        <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">
-          <strong>${reserva.guest_name}</strong> ha aceptado el presupuesto de su reserva en <strong>${aptTitle}</strong>.
-          Ya puedes registrar el depósito cuando lo recibas y aprobar la reserva desde el admin.
-        </p>
-      `),
-    })
-  }
-
-  revalidatePath(`/admin/reservas/${reserva.id}`)
-  return { ok: true, alreadyAccepted: false }
+  return { ok: true }
 }

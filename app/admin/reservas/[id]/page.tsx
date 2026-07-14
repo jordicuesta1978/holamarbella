@@ -218,12 +218,11 @@ export default async function ReservaDetailPage({
           initialQuoteMessage={reserva.quote_message ?? ''}
           quoteStatus={reserva.status}
           quoteSentAt={reserva.quote_sent_at}
-          quoteAcceptedAt={reserva.quote_accepted_at}
         />
 
         {/* Actions */}
-        {['pending', 'quote_sent', 'quote_accepted'].includes(reserva.status) && (
-          <ReservaActions id={reserva.id} status={reserva.status} depositPaid={reserva.deposit_paid ?? 0} />
+        {['pending', 'quote_sent'].includes(reserva.status) && (
+          <ReservaActions id={reserva.id} depositPaid={reserva.deposit_paid ?? 0} />
         )}
 
         {['confirmed', 'cancelled'].includes(reserva.status) && (
