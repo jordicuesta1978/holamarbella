@@ -3,9 +3,17 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateReservaStatus } from '@/app/actions/admin'
-import { CheckCircle2, XCircle, Loader2, X } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, X, AlertTriangle } from 'lucide-react'
 
-export default function ReservaActions({ id }: { id: number }) {
+export default function ReservaActions({
+  id,
+  status,
+  depositPaid = 0,
+}: {
+  id: number
+  status?: string
+  depositPaid?: number
+}) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [done, setDone] = useState(false)
@@ -52,6 +60,22 @@ export default function ReservaActions({ id }: { id: number }) {
     <>
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '20px 24px' }}>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: '#555', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Acción</p>
+        {(status !== 'quote_accepted' || depositPaid <= 0) && (
+          <div style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8,
+            padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e',
+          }}>
+            <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>
+              {status !== 'quote_accepted'
+                ? 'El cliente todavía no ha aceptado el presupuesto. '
+                : ''}
+              {depositPaid <= 0 ? 'No hay ningún depósito registrado todavía. ' : ''}
+              Lo habitual es aprobar la reserva solo cuando el cliente haya pagado el anticipo.
+            </span>
+          </div>
+        )}
         {error && (
           <p style={{ margin: '0 0 16px', fontSize: 13, color: '#e53e3e', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px' }}>{error}</p>
         )}
@@ -99,22 +123,3 @@ export default function ReservaActions({ id }: { id: number }) {
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button
                 onClick={() => setShowModal(false)}
-                style={{ flex: 1, background: '#f4f5f7', color: '#555', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCancelSubmit}
-                disabled={isPending}
-                style={{ flex: 1, background: '#e53e3e', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              >
-                {isPending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : null}
-                Rechazar y enviar email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}

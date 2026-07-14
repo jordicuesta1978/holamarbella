@@ -15,7 +15,7 @@ async function getReservas(status?: string): Promise<any[]> {
     .select('id, guest_name, apartment_slug, check_in, check_out, status, booking_ref, created_at, total_price, paid_at, cleaning_fee')
     .order('created_at', { ascending: false })
 
-  if (status && ['pending', 'confirmed', 'cancelled'].includes(status)) {
+  if (status && ['pending', 'quote_sent', 'quote_accepted', 'confirmed', 'cancelled'].includes(status)) {
     q = q.eq('status', status)
   }
 
@@ -23,9 +23,18 @@ async function getReservas(status?: string): Promise<any[]> {
   return (data ?? []) as any[]
 }
 
-const STATUS_LABEL: Record<string, string> = { pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada' }
-const STATUS_COLOR: Record<string, string> = { pending: '#d97706', confirmed: '#4B766B', cancelled: '#9ca3af' }
-const STATUS_BG: Record<string, string> = { pending: '#fef3c7', confirmed: '#d1fae5', cancelled: '#f3f4f6' }
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pendiente', quote_sent: 'Presupuesto enviado', quote_accepted: 'Presupuesto aceptado',
+  confirmed: 'Confirmada', cancelled: 'Cancelada',
+}
+const STATUS_COLOR: Record<string, string> = {
+  pending: '#d97706', quote_sent: '#2563eb', quote_accepted: '#7c3aed',
+  confirmed: '#4B766B', cancelled: '#9ca3af',
+}
+const STATUS_BG: Record<string, string> = {
+  pending: '#fef3c7', quote_sent: '#dbeafe', quote_accepted: '#ede9fe',
+  confirmed: '#d1fae5', cancelled: '#f3f4f6',
+}
 
 function fmt(d: string | null) {
   if (!d) return '—'
@@ -48,6 +57,8 @@ export default async function ReservasPage({
   const tabs = [
     { label: 'Todas', value: undefined },
     { label: 'Pendientes', value: 'pending' },
+    { label: 'Presupuesto enviado', value: 'quote_sent' },
+    { label: 'Presupuesto aceptado', value: 'quote_accepted' },
     { label: 'Confirmadas', value: 'confirmed' },
     { label: 'Canceladas', value: 'cancelled' },
   ]
@@ -149,16 +160,4 @@ export default async function ReservasPage({
                         <Link href={`/admin/reservas/${r.id}`} style={{ fontSize: 12, color: '#4B766B', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>Ver →</Link>
                       </td>
                     </tr>
-                  )
-                })}
-                {reservas.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding: '40px', textAlign: 'center', color: '#aaa' }}>No hay reservas en esta categoría</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+            

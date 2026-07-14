@@ -35,9 +35,18 @@ function fmtDatetime(d: string) {
   })
 }
 
-const STATUS_LABEL: Record<string, string> = { pending: 'Pendiente', confirmed: 'Confirmada', cancelled: 'Cancelada' }
-const STATUS_COLOR: Record<string, string> = { pending: '#d97706', confirmed: '#4B766B', cancelled: '#9ca3af' }
-const STATUS_BG: Record<string, string> = { pending: '#fef3c7', confirmed: '#d1fae5', cancelled: '#f3f4f6' }
+const STATUS_LABEL: Record<string, string> = {
+  pending: 'Pendiente', quote_sent: 'Presupuesto enviado', quote_accepted: 'Presupuesto aceptado',
+  confirmed: 'Confirmada', cancelled: 'Cancelada',
+}
+const STATUS_COLOR: Record<string, string> = {
+  pending: '#d97706', quote_sent: '#2563eb', quote_accepted: '#7c3aed',
+  confirmed: '#4B766B', cancelled: '#9ca3af',
+}
+const STATUS_BG: Record<string, string> = {
+  pending: '#fef3c7', quote_sent: '#dbeafe', quote_accepted: '#ede9fe',
+  confirmed: '#d1fae5', cancelled: '#f3f4f6',
+}
 
 export default async function ReservaDetailPage({
   params,
@@ -86,7 +95,7 @@ export default async function ReservaDetailPage({
     'Un saludo,',
     'Mar Diez',
   ].filter(l => l !== undefined).join('\n')
-  const mailtoHref = `mailto:${reserva.guest_email}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`
+  const gmailComposeHref = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(reserva.guest_email)}&su=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
@@ -104,7 +113,9 @@ export default async function ReservaDetailPage({
               {STATUS_LABEL[reserva.status]}
             </span>
             <a
-              href={mailtoHref}
+              href={gmailComposeHref}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: '#4B766B', color: '#fff', textDecoration: 'none',
@@ -200,20 +211,10 @@ export default async function ReservaDetailPage({
           initialCleaningFee={reserva.cleaning_fee ?? 40}
           initialExtras={reserva.extras ?? []}
           initialTotal={reserva.total_price}
+          initialDepositPaid={reserva.deposit_paid ?? 0}
           priceRanges={priceRanges}
           checkIn={reserva.check_in ?? undefined}
           checkOut={reserva.check_out ?? undefined}
-        />
-
-        {/* Actions */}
-        {reserva.status === 'pending' && (
-          <ReservaActions id={reserva.id} />
-        )}
-
-        {reserva.status !== 'pending' && (
-          <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center' }}>Esta reserva ya fue procesada.</p>
-        )}
-      </div>
-    </div>
-  )
-}
+          initialQuoteMessage={reserva.quote_message ?? ''}
+          quoteStatus={reserva.status}
+          quoteSentAt={reserva.quote_sen

@@ -118,7 +118,8 @@ export async function savePricing(
   id: number,
   cleaningFee: number,
   extras: Extra[],
-  baseAmount: number
+  baseAmount: number,
+  depositPaid: number = 0
 ) {
   const extrasTotal = extras.reduce((sum, e) => sum + e.amount * (e.quantity ?? 1), 0)
   const total = baseAmount + cleaningFee + extrasTotal
@@ -126,7 +127,7 @@ export async function savePricing(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabaseAdmin as any)
     .from('reservas')
-    .update({ cleaning_fee: cleaningFee, extras, total_price: total })
+    .update({ cleaning_fee: cleaningFee, extras, total_price: total, deposit_paid: depositPaid })
     .eq('id', id)
 
   if (error) throw new Error(error.message)

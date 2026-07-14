@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { savePricing, type Extra } from '@/app/actions/admin'
-import { Plus, X, Loader2 } from 'lucide-react'
+import { sendQuote } from '@/app/actions/presupuesto'
+import { Plus, X, Loader2, Send } from 'lucide-react'
 
 type PriceRange = { start: string; end: string; price: number }
 
@@ -43,9 +44,14 @@ type Props = {
   initialCleaningFee: number
   initialExtras: Extra[]
   initialTotal: number | null
+  initialDepositPaid?: number
   priceRanges?: PriceRange[]
   checkIn?: string
   checkOut?: string
+  initialQuoteMessage?: string
+  quoteStatus?: string
+  quoteSentAt?: string | null
+  quoteAcceptedAt?: string | null
 }
 
 export default function PricingPanel({
@@ -56,9 +62,14 @@ export default function PricingPanel({
   initialCleaningFee,
   initialExtras,
   initialTotal,
+  initialDepositPaid = 0,
   priceRanges = [],
   checkIn,
   checkOut,
+  initialQuoteMessage = '',
+  quoteStatus,
+  quoteSentAt,
+  quoteAcceptedAt,
 }: Props) {
   const router = useRouter()
   const midPrice = Math.round((priceMin + priceMax) / 2)
@@ -79,6 +90,8 @@ export default function PricingPanel({
   const [rate, setRate] = useState(defaultRate)
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
+  const [depositPaid, setDepositPaid] = useState(initialDepositPaid)
+  const [quoteMessage, setQuoteMessage] = useState(initialQuoteMessage)
 
   const [newName, setNewName] = useState('')
   const [newAmount, setNewAmount] = useState('')
@@ -89,10 +102,15 @@ export default function PricingPanel({
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [isSending, startSendTransition] = useTransition()
+  const [quoteSent, setQuoteSent] = useState(false)
+  const [quoteError, setQuoteError] = useState<string | null>(null)
+
   // base: use range breakdown total when available; otherwise manual rate × nights
   const base = rangeBase > 0 ? rangeBase : rate * nights
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
+  const pending = Math.max(total - depositPaid, 0)
 
   const addCustom = () => {
     if (!newName.trim() || !newAmount) return
@@ -111,11 +129,25 @@ export default function PricingPanel({
     setSaved(false); setError(null)
     startTransition(async () => {
       try {
-        await savePricing(id, cleaningFee, extras, base)
+        await savePricing(id, cleaningFee, extras, base, depositPaid)
         setSaved(true)
         router.refresh()
       } catch {
         setError('Error al guardar. Inténtalo de nuevo.')
+      }
+    })
+  }
+
+  const handleSendQuote = () => {
+    setQuoteSent(false); setQuoteError(null)
+    startSendTransition(async () => {
+      try {
+        await savePricing(id, cleaningFee, extras, base, depositPaid)
+        await sendQuote(id, quoteMessage)
+        setQuoteSent(true)
+        router.refresh()
+      } catch {
+        setQuoteError('Error al enviar el presupuesto. Inténtalo de nuevo.')
       }
     })
   }
@@ -213,6 +245,13 @@ export default function PricingPanel({
           </div>
         </div>
 
+        {/* Pagado a cuenta (pago por adelantado gestionado fuera de la plataforma) */}
+        <div style={{ marginBottom: 16, background: '#f8fafc', borderRadius: 10, padding: 14, border: '1px solid #e2e8f0' }}>
+          <label style={lbl}>Pagado a cuenta (€) — anticipo recibido por transferencia/otro medio</label>
+          <input type="number" value={depositPaid} onChange={e => setDepositPaid(Number(e.target.value))} min={0}
+            style={{ ...inp(), width: 90 }} />
+        </div>
+
         {/* Total */}
         <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: 12, marginBottom: 16 }}>
           {rangeBreakdown.length > 1 ? (
@@ -238,17 +277,7 @@ export default function PricingPanel({
             <span>Total</span>
             <span>{total}€</span>
           </div>
-        </div>
-
-        {error && <p style={{ fontSize: 13, color: '#e53e3e', marginBottom: 10 }}>{error}</p>}
-        {saved && <p style={{ fontSize: 13, color: '#4B766B', marginBottom: 10, fontWeight: 600 }}>✓ Precio guardado</p>}
-
-        <button onClick={handleSave} disabled={isPending}
-          style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: isPending ? 0.6 : 1 }}>
-          {isPending ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Guardando…</> : 'Guardar precio'}
-        </button>
-
-      </div>
-    </section>
-  )
-}
+          {depositPaid > 0 && (
+            <>
+              <div style={rowStyle}><span style={{ color: '#888' }}>Pagado a cuenta</span><span>−{depositPaid}€</span></div>
+              <div style={{ ...rowStyle, fontWeight:

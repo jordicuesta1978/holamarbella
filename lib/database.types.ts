@@ -55,11 +55,16 @@ export type Database = {
           check_in: string
           check_out: string
           guests: number
-          status: 'pending' | 'confirmed' | 'cancelled'
+          status: 'pending' | 'quote_sent' | 'quote_accepted' | 'confirmed' | 'cancelled'
           notes: string | null
           total_price: number | null
           cleaning_fee: number
           extras: Array<{ name: string; amount: number; quantity?: number; unit?: string }>
+          deposit_paid: number
+          quote_message: string | null
+          quote_token: string | null
+          quote_sent_at: string | null
+          quote_accepted_at: string | null
           conversation_token: string | null
           stripe_session_id: string | null
           paid_at: string | null
@@ -94,9 +99,4 @@ export type Database = {
           leido: boolean
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['mensajes_chat']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['mensajes_chat']['Insert']>
-      }
-    }
-  }
-}
+     
