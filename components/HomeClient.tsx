@@ -3,10 +3,19 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { Users, MapPin, House } from 'lucide-react';
+import { FaInstagram, FaFacebookF, FaTiktok, FaAirbnb, FaGoogle } from 'react-icons/fa6';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HeroSearch from '@/components/HeroSearch';
 import type { Apartment } from '@/lib/apartments';
+
+const SOCIAL_LINKS = [
+  { name: 'Instagram', href: 'https://www.instagram.com/hola_marbella_apartments/', Icon: FaInstagram },
+  { name: 'Facebook', href: 'https://www.facebook.com/holaMarBella.casa', Icon: FaFacebookF },
+  { name: 'TikTok', href: 'https://www.tiktok.com/@hola_marbella', Icon: FaTiktok },
+  { name: 'Airbnb', href: 'https://www.airbnb.es/users/show/5284060', Icon: FaAirbnb },
+  { name: 'Google Reviews', href: 'https://share.google/eI4hLRRMCOefRYXkw', Icon: FaGoogle },
+];
 
 const reviews = [
   {
@@ -230,6 +239,21 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
                 alt={`Mar · ${t('marRole')}`}
                 className="w-full h-full object-cover"
               />
+            </div>
+            <div className="flex items-center justify-center gap-5 mt-6">
+              {SOCIAL_LINKS.map(({ name, href, Icon }) => (
+                <a
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={name}
+                  className="transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  <Icon size={28} />
+                </a>
+              ))}
             </div>
           </div>
         </div>
