@@ -12,25 +12,21 @@ import type { Apartment } from '@/lib/apartments';
 
 const AIRBNB_URL = 'https://www.airbnb.es/users/show/5284060';
 
-const reviews = [
-  {
-    text: "Mar fue una anfitriona excepcional. El apartamento estaba impecable y la ubicación no podría ser mejor para descubrir Marbella.",
-    author: "Carlos · Madrid",
-  },
-  {
-    text: "Mar was an amazing host. The apartment was spotless and the location couldn't be better. Perfect for a long stay.",
-    author: "Sarah · London",
-  },
-  {
-    text: "Todo perfecto desde el primer mensaje. Mar nos recibió en persona y el apartamento superó todas nuestras expectativas.",
-    author: "Laura · Barcelona",
-  },
-];
+type FeaturedReview = {
+  author: string;
+  location: string | null;
+  date: string;
+  rating: number;
+  text: string;
+  source?: string | null;
+  source_url?: string | null;
+};
 
-export default function HomeClient({ apartments, globalBlockedDates }: { apartments: Apartment[]; globalBlockedDates: string[] }) {
+export default function HomeClient({ apartments, globalBlockedDates, featuredReviews }: { apartments: Apartment[]; globalBlockedDates: string[]; featuredReviews: FeaturedReview[] }) {
   const t = useTranslations('home');
   const [heroIndex, setHeroIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const reviews = featuredReviews ?? [];
 
   const FEATURES = [
     { Icon: Users, title: t('feature1Title'), italic: t('feature1Italic'), desc: t('feature1Desc') },
@@ -50,6 +46,14 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
     }, 5000);
     return () => clearInterval(timer);
   }, [heroSlides.length]);
+
+  useEffect(() => {
+    if (reviews.length <= 1) return;
+    const timer = setInterval(() => {
+      setReviewIndex(prev => (prev + 1) % reviews.length);
+    }, 6500);
+    return () => clearInterval(timer);
+  }, [reviews.length]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
@@ -189,48 +193,63 @@ export default function HomeClient({ apartments, globalBlockedDates }: { apartme
             </a>
 
             {/* Reviews */}
-            <div className="rounded-2xl p-8 border" style={{ backgroundColor: 'var(--arena)', borderColor: 'var(--outline-variant)' }}>
-              <p className="font-serif-italic text-base leading-relaxed mb-4" style={{ color: 'var(--on-surface)' }}>
-                &ldquo;{reviews[reviewIndex].text}&rdquo;
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-px inline-block" style={{ backgroundColor: 'var(--primary)' }} />
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
-                    {reviews[reviewIndex].author}
-                  </span>
+            {reviews.length > 0 && (
+              <div className="rounded-2xl p-8 border" style={{ backgroundColor: 'var(--arena)', borderColor: 'var(--outline-variant)' }}>
+                <p className="font-serif-italic text-base leading-relaxed mb-4" style={{ color: 'var(--on-surface)' }}>
+                  &ldquo;{reviews[reviewIndex].text}&rdquo;
+                </p>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-px inline-block" style={{ backgroundColor: 'var(--primary)' }} />
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--primary)' }}>
+                      {reviews[reviewIndex].author}{reviews[reviewIndex].location ? ` · ${reviews[reviewIndex].location}` : ''}
+                    </span>
+                    {reviews[reviewIndex].source === 'airbnb' && <FaAirbnb size={14} style={{ color: '#FF5A5F' }} />}
+                    {reviews[reviewIndex].source === 'google' && <FcGoogle size={14} />}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setReviewIndex((reviewIndex - 1 + reviews.length) % reviews.length)}
+                      className="w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all hover:text-white"
+                      style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)'; }}
+                      aria-label="Reseña anterior"
+                    >←</button>
+                    <button
+                      onClick={() => setReviewIndex((reviewIndex + 1) % reviews.length)}
+                      className="w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all hover:text-white"
+                      style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)'; }}
+                      aria-label="Siguiente reseña"
+                    >→</button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setReviewIndex((reviewIndex - 1 + reviews.length) % reviews.length)}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all hover:text-white"
-                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)'; }}
-                    aria-label="Reseña anterior"
-                  >←</button>
-                  <button
-                    onClick={() => setReviewIndex((reviewIndex + 1) % reviews.length)}
-                    className="w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-all hover:text-white"
-                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)'; }}
-                    aria-label="Siguiente reseña"
-                  >→</button>
+                {reviews[reviewIndex].source_url && (
+                  <a
+                    href={reviews[reviewIndex].source_url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 text-xs font-medium underline underline-offset-2"
+                    style={{ color: 'var(--primary)' }}
+                  >
+                    Ver reseña original ↗
+                  </a>
+                )}
+                <div className="flex gap-1.5 mt-4">
+                  {reviews.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setReviewIndex(i)}
+                      className={`rounded-full transition-all duration-300 ${i === reviewIndex ? 'w-4 h-1.5' : 'w-1.5 h-1.5'}`}
+                      style={{ backgroundColor: i === reviewIndex ? 'var(--primary)' : 'var(--outline-variant)' }}
+                      aria-label={`Reseña ${i + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
-              <div className="flex gap-1.5 mt-4">
-                {reviews.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setReviewIndex(i)}
-                    className={`rounded-full transition-all duration-300 ${i === reviewIndex ? 'w-4 h-1.5' : 'w-1.5 h-1.5'}`}
-                    style={{ backgroundColor: i === reviewIndex ? 'var(--primary)' : 'var(--outline-variant)' }}
-                    aria-label={`Reseña ${i + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Follow */}
             <div className="mt-8">

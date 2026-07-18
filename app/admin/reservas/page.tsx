@@ -12,7 +12,7 @@ const APT_NAMES: Record<string, string> = {
 async function getReservas(status?: string): Promise<any[]> {
   let q = (supabaseAdmin as any)
     .from('reservas')
-    .select('id, guest_name, apartment_slug, check_in, check_out, status, booking_ref, created_at, total_price, paid_at, cleaning_fee')
+    .select('id, guest_name, apartment_slug, check_in, check_out, status, booking_ref, created_at, total_price, deposit_paid, cleaning_fee')
     .order('created_at', { ascending: false })
 
   if (status && ['pending', 'quote_sent', 'quote_accepted', 'confirmed', 'cancelled'].includes(status)) {
@@ -65,13 +65,10 @@ export default async function ReservasPage({
 
   // Totals summary
   const totalPendiente = reservas.reduce((sum: number, r: any) => {
-    if (r.status === 'confirmed' && r.total_price && !r.paid_at) return sum + r.total_price
+    if (r.status === 'confirmed' && r.total_price) return sum + Math.max(r.total_price - (r.deposit_paid ?? 0), 0)
     return sum
   }, 0)
-  const totalCobrado = reservas.reduce((sum: number, r: any) => {
-    if (r.paid_at && r.total_price) return sum + r.total_price
-    return sum
-  }, 0)
+  const totalCobrado = reservas.reduce((sum: number, r: any) => sum + Math.min(r.deposit_paid ?? 0, r.total_price ?? r.deposit_paid ?? 0), 0)
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
@@ -130,7 +127,7 @@ export default async function ReservasPage({
               <tbody>
                 {reservas.map((r: any, i: number) => {
                   const total: number | null = r.total_price ?? null
-                  const cobrado: number = r.paid_at && total ? total : 0
+                  const cobrado: number = Math.min(r.deposit_paid ?? 0, total ?? r.deposit_paid ?? 0)
                   const pendiente: number = total ? total - cobrado : 0
 
                   return (

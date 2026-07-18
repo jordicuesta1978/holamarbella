@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
-import { CheckCircle2, Home, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Home } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 function fmtDate(d: string, locale: string) {
@@ -18,7 +18,6 @@ export default function ConfirmacionContent() {
   const searchParams = useSearchParams();
   const name = searchParams.get('name') || '';
   const slug = searchParams.get('apartment') || '';
-  const token = searchParams.get('token') || '';
   const ref = searchParams.get('ref') || '';
   const checkin = searchParams.get('checkin') || '';
   const checkout = searchParams.get('checkout') || '';
@@ -104,15 +103,6 @@ export default function ConfirmacionContent() {
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        {token && (
-          <a
-            href={`/conversacion/${token}`}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-widest text-white transition-opacity hover:opacity-90"
-            style={{ backgroundColor: 'var(--primary)' }}
-          >
-            {t('viewReservation')} <ArrowRight size={16} />
-          </a>
-        )}
         <Link
           href="/"
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border font-bold text-sm uppercase tracking-widest transition-opacity hover:opacity-70"

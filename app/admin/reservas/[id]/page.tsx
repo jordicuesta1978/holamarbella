@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import ReservaActions from './ReservaActions'
+import ReopenReservaButton from './ReopenReservaButton'
 import PricingPanel from './PricingPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
@@ -186,16 +187,14 @@ export default async function ReservaDetailPage({
             </div>
             {([
               ['Total reserva', `${reserva.total_price}€`],
-              reserva.paid_at
-                ? ['Pagado', `${reserva.total_price}€ · ${new Date(reserva.paid_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`]
-                : null,
-              !reserva.paid_at ? ['Pendiente', `${reserva.total_price}€`] : null,
+              (reserva.deposit_paid ?? 0) > 0 ? ['Pagado a cuenta', `${Math.min(reserva.deposit_paid, reserva.total_price)}€`] : null,
+              ['Pendiente', `${Math.max(reserva.total_price - (reserva.deposit_paid ?? 0), 0)}€`],
             ] as ([string, string] | null)[]).filter((x): x is [string, string] => x !== null).map(([label, value]) => (
               <div key={label} style={{ display: 'flex', padding: '12px 20px', borderBottom: '1px solid #f5f5f5', gap: 16 }}>
                 <span style={{ width: 160, flexShrink: 0, fontSize: 13, color: '#888', fontWeight: 500 }}>{label}</span>
                 <span style={{
                   fontSize: 13, fontWeight: 600,
-                  color: label === 'Pagado' ? '#4B766B' : label === 'Pendiente' ? '#d97706' : '#1a1a2e',
+                  color: label === 'Pagado a cuenta' ? '#4B766B' : label === 'Pendiente' ? '#d97706' : '#1a1a2e',
                 }}>{value}</span>
               </div>
             ))}
@@ -226,7 +225,7 @@ export default async function ReservaDetailPage({
         )}
 
         {['confirmed', 'cancelled'].includes(reserva.status) && (
-          <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center' }}>Esta reserva ya fue procesada.</p>
+          <ReopenReservaButton id={reserva.id} status={reserva.status} />
         )}
       </div>
     </div>

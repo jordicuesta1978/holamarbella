@@ -94,6 +94,11 @@ export default function PricingPanel({
       : midPrice)
 
   const [rate, setRate] = useState(defaultRate)
+  const [tierRows, setTierRows] = useState<Array<{ label: string; amount: number }>>(() =>
+    rangeBreakdown.length > 1
+      ? rangeBreakdown.map(g => ({ label: `${g.price}€/n × ${g.count} noche${g.count > 1 ? 's' : ''}`, amount: g.price * g.count }))
+      : []
+  )
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
   const [depositPaid, setDepositPaid] = useState(initialDepositPaid)
@@ -112,11 +117,17 @@ export default function PricingPanel({
   const [quoteSent, setQuoteSent] = useState(false)
   const [quoteError, setQuoteError] = useState<string | null>(null)
 
-  // base: use range breakdown total when available; otherwise manual rate × nights
-  const base = rangeBase > 0 ? rangeBase : rate * nights
+  // base: editable tier rows when there were multiple price tramos; otherwise
+  // the range base (single tramo) or manual rate × nights
+  const tierRowsTotal = tierRows.reduce((s, r) => s + r.amount, 0)
+  const base = tierRows.length > 0 ? tierRowsTotal : (rangeBase > 0 ? rangeBase : rate * nights)
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
   const pending = Math.max(total - depositPaid, 0)
+
+  const updateTierAmount = (i: number, amount: number) =>
+    setTierRows(prev => prev.map((r, idx) => idx === i ? { ...r, amount } : r))
+  const removeTierRow = (i: number) => setTierRows(prev => prev.filter((_, idx) => idx !== i))
 
   const addCustom = () => {
     if (!newName.trim() || !newAmount) return
@@ -174,14 +185,18 @@ export default function PricingPanel({
 
         {/* Rate / breakdown */}
         <div style={{ marginBottom: 16 }}>
-          {rangeBreakdown.length > 1 ? (
+          {tierRows.length > 0 ? (
             <>
               <label style={lbl}>Precio por tramos (€)</label>
               <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e2e8f0' }}>
-                {rangeBreakdown.map((g, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', padding: '3px 0' }}>
-                    <span>{g.price}€/n × {g.count} noche{g.count > 1 ? 's' : ''}</span>
-                    <strong style={{ color: '#1a1a2e' }}>{g.price * g.count}€</strong>
+                {tierRows.map((r, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555', padding: '3px 0', gap: 8 }}>
+                    <span style={{ flex: 1 }}>{r.label}</span>
+                    <input type="number" value={r.amount} onChange={e => updateTierAmount(i, Number(e.target.value))} min={0}
+                      style={{ ...inp(), width: 80 }} />
+                    <button onClick={() => removeTierRow(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 2 }}>
+                      <X size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -260,11 +275,11 @@ export default function PricingPanel({
 
         {/* Total */}
         <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: 12, marginBottom: 16 }}>
-          {rangeBreakdown.length > 1 ? (
-            rangeBreakdown.map((g, i) => (
+          {tierRows.length > 0 ? (
+            tierRows.map((r, i) => (
               <div key={i} style={rowStyle}>
-                <span style={{ color: '#888' }}>{g.price}€/n × {g.count} noche{g.count > 1 ? 's' : ''}</span>
-                <span>{g.price * g.count}€</span>
+                <span style={{ color: '#888' }}>{r.label}</span>
+                <span>{r.amount}€</span>
               </div>
             ))
           ) : nights > 0 && (
@@ -315,7 +330,7 @@ export default function PricingPanel({
 
           {quoteStatus === 'quote_sent' && (
             <p style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
-              {`Presupuesto enviado${quoteSentAt ? ` el ${new Date(quoteSentAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. En cuanto Mar registre el pago del anticipo, podrá aprobar la reserva.`}
+              {`Presupuesto enviado${quoteSentAt ? ` el ${new Date(quoteSentAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}.`}
             </p>
           )}
 

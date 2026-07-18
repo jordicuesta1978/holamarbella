@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getConversacionByToken } from '@/app/actions/mensajes'
 import { CreditCard, CheckCircle, Clock, XCircle, CalendarDays } from 'lucide-react'
-import PagoButton from './PagoButton'
 
 const APT_NAMES: Record<string, string> = {
   paloma: 'Apartamento Paloma',
@@ -30,24 +29,22 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 
 export default async function ConversacionPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ token: string }>
-  searchParams: Promise<{ pago?: string }>
 }) {
-  const [{ token }, { pago }] = await Promise.all([params, searchParams])
+  const { token } = await params
   const data = await getConversacionByToken(token)
   if (!data) notFound()
 
-  const { reserva, mensajes } = data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { reserva, mensajes } = data as { reserva: any; mensajes: typeof data.mensajes }
 
   const nights =
     reserva.check_in && reserva.check_out
       ? Math.round((new Date(reserva.check_out).getTime() - new Date(reserva.check_in).getTime()) / 86400000)
       : null
 
-  const isPaid = !!(reserva as any).paid_at
-  const pagoOk = pago === 'ok'
+  const isPaid = (reserva.deposit_paid ?? 0) >= (reserva.total_price ?? 0) && !!reserva.total_price
 
   const lastPayment = [...mensajes].reverse().find(
     m => m.tipo === 'payment_request' && m.sender === 'admin'
@@ -72,18 +69,6 @@ export default async function ConversacionPage({
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 20px 40px' }}>
 
-        {/* Success banner after payment */}
-        {pagoOk && (
-          <div style={{
-            background: '#f0f9f6', border: '2px solid #4B766B', borderRadius: 12,
-            padding: '24px', textAlign: 'center', marginBottom: 16,
-          }}>
-            <CheckCircle size={36} color="#4B766B" style={{ display: 'block', margin: '0 auto 10px' }} />
-            <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#4B766B' }}>¡Pago recibido!</p>
-            <p style={{ margin: 0, fontSize: 13, color: '#666' }}>Hemos recibido tu pago. El gestor revisará y confirmará tu reserva en breve.</p>
-          </div>
-        )}
-
         {/* Reservation details */}
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 16 }}>
           <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
@@ -96,10 +81,10 @@ export default async function ConversacionPage({
               <span key="s" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 5,
                 padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
-                background: STATUS_BG[(reserva as any).status], color: STATUS_COLOR[(reserva as any).status],
+                background: STATUS_BG[reserva.status], color: STATUS_COLOR[reserva.status],
               }}>
-                {STATUS_ICON[(reserva as any).status]}
-                {STATUS_LABEL[(reserva as any).status]}
+                {STATUS_ICON[reserva.status]}
+                {STATUS_LABEL[reserva.status]}
               </span>
             )],
             ['Huésped', reserva.guest_name],
@@ -116,7 +101,7 @@ export default async function ConversacionPage({
         </div>
 
         {/* Payment request */}
-        {!pagoOk && lastPayment && lastPayment.payment_amount && (
+        {lastPayment && lastPayment.payment_amount && (
           <div style={{
             background: '#fff', border: '2px solid #4B766B',
             borderRadius: 12, padding: '24px', textAlign: 'center',
@@ -138,7 +123,11 @@ export default async function ConversacionPage({
                 <CheckCircle size={16} /> Pagado — ¡Gracias!
               </div>
             ) : (
-              <PagoButton token={token} amount={lastPayment.payment_amount} />
+              <div style={{ background: '#f9f7f4', borderRadius: 10, padding: '16px 20px', textAlign: 'left' }}>
+                <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: '#4B766B' }}>Formas de pago</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#444', lineHeight: 1.7 }}>Transferencia bancaria: ES03 0081 7460 6000 0209 2117</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#444', lineHeight: 1.7 }}>Revolut: @mar14pu1</p>
+              </div>
             )}
           </div>
         )}

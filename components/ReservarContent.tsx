@@ -157,6 +157,7 @@ export default function ReservarContent({
         checkIn: form.checkIn,
         checkOut: form.checkOut,
         mensaje: form.mensaje,
+        locale: locale === 'en' ? 'en' : 'es',
       });
 
       if (!result.ok) {

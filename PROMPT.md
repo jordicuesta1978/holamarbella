@@ -266,7 +266,7 @@ Pendiente → Aprobada → Pago (opcional) → Confirmada / Rechazada
 
 3\. Nuevo mensaje de Mar → aviso
 
-4\. Solicitud de pago → email con enlace Stripe
+4\. Solicitud de pago → email con importe y formas de pago (transferencia bancaria / Revolut)
 
 5\. Pago confirmado → email resumen completo (apartamento, fechas, personas, importe, check-in en persona coordinado con Mar, normas, contacto, enlace conversación)
 
@@ -286,19 +286,19 @@ Pendiente → Aprobada → Pago (opcional) → Confirmada / Rechazada
 
 \- Bandeja unificada en admin ordenada por último mensaje
 
-\- Botón "Solicitar pago" en el chat genera enlace Stripe y lo envía como mensaje
+\- Botón "Solicitar pago" en el chat envía el importe y las formas de pago (transferencia bancaria / Revolut) como mensaje
 
 \- Enlace caduca cuando la reserva se cierra
 
 
 
-\## PAGOS (STRIPE)
+\## PAGOS (MANUALES)
 
 \- Importe 100% personalizable por el gestor por reserva
 
-\- Generado desde el chat
+\- Sin pasarela de pago: transferencia bancaria o Revolut, comunicado desde el chat
 
-\- El gestor puede confirmar sin requerir pago
+\- El gestor registra el anticipo/pago recibido a mano y puede confirmar sin requerir pago
 
 \- Historial de pagos en el panel admin
 
@@ -402,7 +402,7 @@ Pendiente → Aprobada → Pago (opcional) → Confirmada / Rechazada
 
 \- Supabase: base de datos, autenticación y storage de imágenes
 
-\- Stripe: pagos con importe personalizable
+\- Pagos manuales (transferencia bancaria / Revolut), sin pasarela de pago
 
 \- Mapbox: mapas con pin exacto
 

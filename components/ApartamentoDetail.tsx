@@ -272,6 +272,17 @@ export default function ApartamentoDetail({
                     <div className="ml-auto text-yellow-400 text-sm">{'★'.repeat(review.rating)}</div>
                   </div>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>"{review.text}"</p>
+                  {review.source_url && (
+                    <a
+                      href={review.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-2 text-xs font-medium underline underline-offset-2"
+                      style={{ color: 'var(--primary)' }}
+                    >
+                      Ver reseña original ↗
+                    </a>
+                  )}
                 </div>
               ))}
             </div>

@@ -18,22 +18,15 @@ type PagoRow = {
   nights: number
   totalPrice: number
   lastPayReqAt: string | null
-  paidAt: string | null
+  depositPaid: number
 }
 
 async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow[] }> {
-  const [{ data: rPend }, { data: rPag }, { data: payReqs }] = await Promise.all([
+  const [{ data: reservasConfirmadas }, { data: payReqs }] = await Promise.all([
     db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at, booking_ref')
+      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, deposit_paid, created_at, booking_ref')
       .eq('status', 'confirmed')
-      .is('paid_at', null)
       .order('created_at', { ascending: false }),
-    db.from('reservas')
-      .select('id, guest_name, apartment_slug, check_in, check_out, total_price, paid_at, created_at, booking_ref')
-      .eq('status', 'confirmed')
-      .not('paid_at', 'is', null)
-      .order('paid_at', { ascending: false })
-      .limit(20),
     db.from('mensajes_chat')
       .select('reserva_id, created_at')
       .eq('tipo', 'payment_request')
@@ -59,13 +52,15 @@ async function getPagosData(): Promise<{ pendientes: PagoRow[]; pagados: PagoRow
       nights,
       totalPrice: r.total_price,
       lastPayReqAt: lastPayReq[r.id] ?? null,
-      paidAt: r.paid_at ?? null,
+      depositPaid: r.deposit_paid ?? 0,
     }
   }
 
+  const rows = (reservasConfirmadas ?? []).map(toRow)
+
   return {
-    pendientes: (rPend ?? []).map(toRow),
-    pagados: (rPag ?? []).map(toRow),
+    pendientes: rows.filter((r: PagoRow) => r.depositPaid < r.totalPrice),
+    pagados: rows.filter((r: PagoRow) => r.depositPaid >= r.totalPrice && r.totalPrice > 0),
   }
 }
 
@@ -185,7 +180,6 @@ export default async function PagosPage() {
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 100 }}>
                     <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#4B766B' }}>{p.totalPrice}€</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, color: '#aaa' }}>{fmtRelative(p.paidAt)}</p>
                   </div>
                   <Link href={`/admin/reservas/${p.id}#chat`} style={{
                     fontSize: 12, color: '#4B766B', fontWeight: 600,

@@ -196,13 +196,6 @@ await check(browser, 'Reservar Micu (detalle)', '/es/apartamentos/micu', [
   { desc: 'H1 "Apartamento Micu"', fn: p => p.locator('h1:has-text("Apartamento Micu")').waitFor({ timeout: 8000 }) },
 ])
 
-await check(browser, 'API Pagar (ruta existe)', '/api/pagar/token-inexistente', [
-  { desc: 'Ruta redirige (no se queda en /api/pagar)', fn: async p => {
-    const url = p.url()
-    if (url.includes('/api/pagar/token-inexistente')) throw new Error('Ruta no existe — URL no cambió')
-  }},
-], { allowHttpErrors: true })
-
 await check(browser, 'Admin contenido', '/admin/contenido', [
   { desc: 'Carga sin error de aplicación', fn: async p => {
     const t = await p.textContent('body')
@@ -394,65 +387,6 @@ await check(browser, 'Registro viajeros (EN)', '/en/registro-viajeros', [
   }
 
   results.push({ name, url: '/es/reservar/paloma → /es/confirmacion', passed, failed, screenshot: screenshotFile })
-}
-
-// FLOW 2: API Pagar — reserva confirmada real
-{
-  const name = 'FLOW 2: API Pagar (reserva real)'
-  const passed = [], failed = []
-  let screenshotFile = null
-
-  try {
-    // Buscar reserva confirmada con total_price y conversation_token
-    const reservas = await supabase('reservas?status=eq.confirmed&not.total_price=is.null&order=id.desc&limit=5&select=id,conversation_token,total_price,apartment_slug')
-    const reserva = Array.isArray(reservas) ? reservas.find(r => r.conversation_token) : null
-
-    if (!reserva) {
-      passed.push('Sin reservas confirmadas con token — skip (no hay datos de prueba)')
-      results.push({ name, url: '/api/pagar/[token]', passed, failed, screenshot: null })
-    } else {
-      const token = reserva.conversation_token
-      const page = await browser.newPage()
-      await page.setViewportSize({ width: 1280, height: 900 })
-
-      try {
-        // Navegar a /api/pagar/[token]
-        const res = await page.goto(`${BASE}/api/pagar/${token}`, {
-          waitUntil: 'domcontentloaded', timeout: 30000,
-        })
-        await page.waitForTimeout(2000)
-        const finalUrl = page.url()
-        screenshotFile = await snap(page, name)
-
-        // La ruta debe redirigir a Stripe checkout o a /conversacion
-        if (finalUrl.includes('/api/pagar/')) {
-          failed.push(`Ruta NO redirigió — sigue en /api/pagar/ (URL: ${finalUrl})`)
-        } else if (finalUrl.includes('checkout.stripe.com')) {
-          passed.push(`Redirige a Stripe checkout ✓ (reserva #${reserva.id}, ${reserva.total_price}€)`)
-        } else if (finalUrl.includes('/conversacion/')) {
-          passed.push(`Redirige a /conversacion — reserva ya pagada o sin Stripe configurado (URL: ${finalUrl})`)
-        } else {
-          passed.push(`Redirige a: ${finalUrl.slice(0, 100)} (reserva #${reserva.id})`)
-        }
-
-        // Verificar que NO da 404
-        const status = res?.status() ?? 0
-        if (status === 404) {
-          failed.push(`HTTP 404 en /api/pagar/${token}`)
-        } else {
-          passed.push(`HTTP OK (${status || 'redirigido'}) — ruta /api/pagar existe`)
-        }
-
-      } finally {
-        await page.close()
-      }
-
-      results.push({ name, url: `/api/pagar/${token.slice(0, 8)}...`, passed, failed, screenshot: screenshotFile })
-    }
-  } catch (e) {
-    failed.push(`Error: ${e.message.split('\n')[0].slice(0, 200)}`)
-    results.push({ name, url: '/api/pagar/[token]', passed, failed, screenshot: null })
-  }
 }
 
 // FLOW 3: Checkbox activo — via Supabase API + verificación pública

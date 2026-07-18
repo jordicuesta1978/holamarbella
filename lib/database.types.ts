@@ -66,8 +66,7 @@ export type Database = {
           quote_sent_at: string | null
           quote_accepted_at: string | null
           conversation_token: string | null
-          stripe_session_id: string | null
-          paid_at: string | null
+          locale: 'es' | 'en'
           created_at: string
         }
         Insert: Omit<Database['public']['Tables']['reservas']['Row'], 'id' | 'created_at'>

@@ -9,6 +9,8 @@ export type ApartmentReview = {
   date: string;
   rating: number;
   text: string;
+  source?: string | null;
+  source_url?: string | null;
 };
 
 export type Apartment = {

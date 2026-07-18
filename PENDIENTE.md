@@ -11,7 +11,57 @@
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
 
 ### Verificación
-- [ ] **Correr `node scripts/verificar.mjs`** y adjuntar informe completo
+- [x] **Corrido `node scripts/verificar.mjs`** — 73 OK / 1 fallo (`scripts/informe_2026-07-17T18-59-43.txt`). El único fallo ("Sin badges TOP AIRBNB" en `/es/apartamentos`) es preexistente y no relacionado con el flujo de reserva — no se tocó nada de badges en este batch. FLOW 1 (reserva completa end-to-end) pasó con la migración de `locale` ya aplicada.
+
+---
+
+## COMPLETADO — batch 2026-07-17 (flujo de reserva completo, revisión end-to-end)
+
+- [x] **Fuente del código de Referencia** — quitado `font-family:monospace` en `app/actions/reservar.ts` (afectaba email huésped y email a Mar, misma función `row()`)
+- [x] **Desglose de precio en email a Mar** — sustituida la línea inline "955€ (120€×3 + ...)" por la misma tabla `buildPriceRows()` del email del huésped
+- [x] **Helper compartido de desglose por tramos** — `lib/pricing.ts` (`computeNightlyBreakdown` + `renderPricingTable`), recalcula los tramos de precio/noche desde `precios` para reutilizar en presupuesto y confirmación
+- [x] **Email de presupuesto** (`app/actions/presupuesto.ts`) — el texto libre del admin ahora sustituye la plantilla genérica arriba; desglose completo por tramos; "Precio base" → "Alojamiento"; quitada la frase "Puedes hacer el ingreso del anticipo a través de:"
+- [x] **Email "Reserva confirmada"** (`app/actions/admin.ts`) — mismo desglose por tramos + "Alojamiento"; añadidas líneas "Anticipo pagado" / "Pendiente" cuando hay `deposit_paid`
+- [x] **PricingPanel — mensaje "Presupuesto enviado"** — quitada la frase "En cuanto Mar registre el pago del anticipo, podrá aprobar la reserva."
+- [x] **PricingPanel — líneas del desglose editables/eliminables** — el bloque "Precio por tramos" ahora tiene un input de importe y botón de borrar por tramo, igual que los Extras
+- [x] **Dashboard/lista de reservas no se refrescaban al instante** — añadido `revalidatePath('/admin')` + `revalidatePath('/admin/reservas')` en `updateReservaStatus` y `savePricing`
+- [x] **Botón "Reabrir reserva"** — nueva acción `reopenReserva()` + componente `ReopenReservaButton.tsx`, sustituye el texto estático "Esta reserva ya fue procesada" en confirmadas/canceladas, vuelve a estado `pending` para poder editarla
+- [x] **Localización de emails al huésped (ES/EN)** — nueva columna `locale` en `reservas` (ver migración pendiente arriba), capturada con `useLocale()` en `ReservarContent.tsx`; traducidos "Solicitud recibida", "Solicitud de pago", presupuesto y "Reserva confirmada"/cancelación (`lib/email-i18n.ts`). El email a Mar (admin-facing) se mantiene solo en español a propósito.
+- [x] **Nota sobre remitente `onboarding@resend.dev`** — el código ya soporta `RESEND_FROM` como variable de entorno en los 4 archivos de email; falta verificar un dominio propio en Resend y setear la variable (acción externa, no de código)
+- [x] **Build/typecheck/lint verificados** tras todos los cambios (`tsc --noEmit` limpio, sin errores nuevos de eslint)
+
+---
+
+## COMPLETADO — batch 2026-07-17 (eliminación de Stripe)
+
+- [x] **Decisión de producto**: no se usará ninguna pasarela de pago; todo pago es manual (transferencia bancaria / Revolut), registrado a mano por Mar en `deposit_paid`
+- [x] **Rutas eliminadas**: `app/api/stripe/webhook/`, `app/api/pagar/[token]/`
+- [x] **Acción eliminada**: `app/actions/pagos.ts` (`crearSesionPago`)
+- [x] **Componente eliminado**: `app/conversacion/[token]/PagoButton.tsx` — sustituido por un bloque con las formas de pago (transferencia/Revolut) cuando hay un pago pendiente
+- [x] **Dependencia `stripe` desinstalada** del `package.json`
+- [x] **Variables de entorno `STRIPE_*` eliminadas** de `.env.local`
+- [x] **`app/actions/mensajes.ts`** (`solicitarPago`, `emailPagoGuest`) — ya no genera enlace de pago Stripe, el email muestra las formas de pago directamente
+- [x] **`app/conversacion/[token]/page.tsx`** — `isPaid` ahora se calcula con `deposit_paid >= total_price` en vez de `paid_at`; quitado el banner de "pago recibido" post-redirección de Stripe
+- [x] **`app/admin/pagos/page.tsx`** — los buckets "pendientes"/"pagados" ahora se calculan comparando `deposit_paid` vs `total_price` en vez de `paid_at`
+- [x] **`app/admin/reservas/page.tsx`** — "Cobrado"/"Pendiente" (chips resumen y columnas de la tabla) ahora usan `deposit_paid` con soporte de pago parcial, en vez de todo-o-nada con `paid_at`
+- [x] **`app/admin/reservas/[id]/page.tsx`** — arreglado el bug de la sección "Pagos" que no restaba el anticipo (ver batch anterior); ahora usa `deposit_paid` de forma consistente con el desglose de `PricingPanel`
+- [x] **`lib/database.types.ts`** — quitados los campos `stripe_session_id` y `paid_at`
+- [x] **Migración `supabase/migration_remove_stripe.sql`** creada y ejecutada en Supabase
+- [x] **Scripts de verificación** — eliminado `scripts/verify-pagar.mjs` y el bloque "FLOW 2: API Pagar" de `scripts/verificar.mjs`; borrados artefactos de capturas antiguas de `/api/pagar`
+- [x] **`PROMPT.md`** actualizado — sección "PAGOS (STRIPE)" → "PAGOS (MANUALES)", referencias a enlaces Stripe sustituidas por transferencia/Revolut
+
+---
+
+## COMPLETADO — batch 2026-07-17 (reseñas destacadas en home)
+
+- [x] **Migración SQL reseñas destacadas** — `supabase/migration_resenas_home.sql`
+- [x] **Marcar reseñas destacadas en admin** — `app/admin/contenido/resenas/page.tsx` + `actions.ts`
+- [x] **Mostrar reseñas destacadas en home** — `app/[locale]/page.tsx` + `components/HomeClient.tsx`
+- [x] **Build correcto** tras los cambios
+- [x] **Editar reseñas existentes** — formulario "Editar" desplegable por reseña, se colapsa tras guardar
+- [x] **Campos opcionales en reseñas** — solo Autor y ★ obligatorios (`supabase/migration_resenas_optional_fields.sql`)
+- [x] **Fecha de reseña como mes/año** — `type="month"` en vez de `type="date"`
+- [x] **Quitar botón "Ver mi reserva" en /confirmacion** — `components/ConfirmacionContent.tsx`, coherente con lo ya hecho en el email al huésped
 
 ---
 

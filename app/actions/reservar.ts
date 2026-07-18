@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import type { Database } from '@/lib/database.types'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateDailyBookingRef, getBookingRef } from '@/lib/booking-ref'
+import { EMAIL_LABELS, fmtEmailDate, guestWord, nightWord, type EmailLocale } from '@/lib/email-i18n'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,6 +37,7 @@ export type ReservaInput = {
   checkIn: string
   checkOut: string
   mensaje: string
+  locale?: EmailLocale
 }
 
 type ReservaInputWithToken = ReservaInput & { conversationToken: string; bookingRef: string }
@@ -112,6 +114,7 @@ export async function crearReserva(
     notes: input.mensaje,
     conversation_token: conversationToken,
     total_price: calculatedTotal > 0 ? calculatedTotal : null,
+    locale: input.locale === 'en' ? 'en' : 'es',
   })
 
   if (error) return { ok: false, error: error.message }
@@ -148,12 +151,15 @@ export async function crearReserva(
     breakdown: breakdown.length > 0 ? breakdown : undefined,
   } : undefined
 
+  const locale: EmailLocale = input.locale === 'en' ? 'en' : 'es'
+  const subjectHuesped = locale === 'en' ? 'Request received!' : '¡Solicitud recibida!'
+
   const emailTasks: Promise<unknown>[] = [
     resend.emails.send({
       from: FROM,
       to: input.email,
-      subject: '¡Solicitud recibida!',
-      html: emailHuesped(inputWithToken, displayTitle, priceCalc),
+      subject: subjectHuesped,
+      html: emailHuesped(inputWithToken, displayTitle, locale, priceCalc),
     }),
   ]
 
@@ -173,24 +179,20 @@ export async function crearReserva(
   return { ok: true, token: conversationToken, bookingRef }
 }
 
-function fmt(d: string): string {
+function fmt(d: string, locale: EmailLocale = 'es'): string {
   if (!d) return '—'
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
+  return fmtEmailDate(d, locale)
 }
 
-function nightsLabel(a: string, b: string): string {
+function nightsLabel(a: string, b: string, locale: EmailLocale = 'es'): string {
   if (!a || !b) return ''
   const n = Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000)
-  return n > 0 ? ` · ${n} noche${n > 1 ? 's' : ''}` : ''
+  return n > 0 ? ` · ${n} ${nightWord(n, locale)}` : ''
 }
 
-function shell(content: string): string {
+function shell(content: string, locale: EmailLocale = 'es'): string {
   return `<!DOCTYPE html>
-<html lang="es">
+<html lang="${locale}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -212,8 +214,8 @@ function shell(content: string): string {
       <tr>
         <td style="background:#F5F0E8;padding:24px 40px;text-align:center;border-top:1px solid #e8e0d0;">
           <p style="margin:0;font-size:12px;color:#999;line-height:1.6;">
-            HolaMarbella · Marbella, España<br>
-            © ${new Date().getFullYear()} Todos los derechos reservados
+            HolaMarbella · Marbella, ${locale === 'en' ? 'Spain' : 'España'}<br>
+            © ${new Date().getFullYear()} ${locale === 'en' ? 'All rights reserved' : 'Todos los derechos reservados'}
           </p>
         </td>
       </tr>
@@ -239,7 +241,8 @@ type PriceCalc = {
   breakdown?: NightBreakdown[]
 }
 
-function buildPriceRows(priceCalc: PriceCalc, nights: number): string {
+function buildPriceRows(priceCalc: PriceCalc, nights: number, locale: EmailLocale = 'es'): string {
+  const t = EMAIL_LABELS[locale]
   const cleaningFee = priceCalc.cleaningFee
   const total = priceCalc.totalPrice ?? 0
 
@@ -247,58 +250,66 @@ function buildPriceRows(priceCalc: PriceCalc, nights: number): string {
   if (priceCalc.breakdown && priceCalc.breakdown.length > 0) {
     for (const g of priceCalc.breakdown) {
       const subtotal = g.price * g.count
-      nightRows += `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${g.price}€/noche × ${g.count} noche${g.count > 1 ? 's' : ''}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>`
+      nightRows += `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${g.price}€/${locale === 'en' ? 'night' : 'noche'} × ${g.count} ${nightWord(g.count, locale)}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>`
     }
   } else {
     const midPrice = Math.round((priceCalc.priceMin + priceCalc.priceMax) / 2)
     const subtotal = midPrice * nights
-    nightRows = `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${midPrice}€/noche × ${nights} noche${nights > 1 ? 's' : ''}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>`
+    nightRows = `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${midPrice}€/${locale === 'en' ? 'night' : 'noche'} × ${nights} ${nightWord(nights, locale)}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>`
   }
 
   return `
     <div style="background:#f0f9f6;border:1.5px solid #4B766B;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
-      <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4B766B;">Precio estimado</p>
+      <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4B766B;">${t.estimatedPrice}</p>
       <table width="100%" cellpadding="0" cellspacing="0">
         ${nightRows}
-        <tr><td style="padding:4px 0;font-size:14px;color:#555;">Gastos de limpieza</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${cleaningFee}€</td></tr>
+        <tr><td style="padding:4px 0;font-size:14px;color:#555;">${t.cleaningFee}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${cleaningFee}€</td></tr>
         <tr><td colspan="2" style="border-top:1px solid #b2d4cc;padding-top:8px;"></td></tr>
-        <tr><td style="padding-top:4px;font-size:16px;font-weight:700;color:#1A1A1A;">Total estimado</td><td align="right" style="font-size:16px;font-weight:800;color:#4B766B;">${total}€</td></tr>
+        <tr><td style="padding-top:4px;font-size:16px;font-weight:700;color:#1A1A1A;">${t.estimatedTotal}</td><td align="right" style="font-size:16px;font-weight:800;color:#4B766B;">${total}€</td></tr>
       </table>
-      <p style="margin:10px 0 0;font-size:11px;color:#888;">* El precio exacto será confirmado al revisar tu solicitud.</p>
+      <p style="margin:10px 0 0;font-size:11px;color:#888;">${t.priceFootnote}</p>
     </div>`
 }
 
-function emailHuesped(d: ReservaInputWithToken, displayTitle: string, priceCalc?: PriceCalc): string {
+function emailHuesped(d: ReservaInputWithToken, displayTitle: string, locale: EmailLocale, priceCalc?: PriceCalc): string {
+  const t = EMAIL_LABELS[locale]
   const firstName = d.nombre.split(' ')[0]
   const nights = d.checkIn && d.checkOut
     ? Math.round((new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000)
     : 0
 
-  const priceSection = priceCalc && nights > 0 && priceCalc.totalPrice ? buildPriceRows(priceCalc, nights) : ''
+  const priceSection = priceCalc && nights > 0 && priceCalc.totalPrice ? buildPriceRows(priceCalc, nights, locale) : ''
+
+  const title = locale === 'en' ? 'Request received!' : '¡Solicitud recibida!'
+  const greeting = locale === 'en'
+    ? `Hi <strong style="color:#1A1A1A;">${firstName}</strong>, we've received your request for
+       <strong style="color:#1A1A1A;">${displayTitle}</strong>.
+       We'll review it and get back to you as soon as possible.`
+    : `Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos recibido tu solicitud para
+       <strong style="color:#1A1A1A;">${displayTitle}</strong>.
+       Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.`
 
   return shell(`
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">¡Solicitud recibida!</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#4B766B;">${title}</h1>
     <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.7;">
-      Hola <strong style="color:#1A1A1A;">${firstName}</strong>, hemos recibido tu solicitud para
-      <strong style="color:#1A1A1A;">${displayTitle}</strong>.
-      Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.
+      ${greeting}
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
-      ${row('Apartamento', `<strong>${displayTitle}</strong>`, false)}
-      ${d.bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${d.bookingRef}</strong>`) : ''}
-      ${row('Llegada', fmt(d.checkIn))}
-      ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
-      ${row('Personas', `${d.personas} persona${d.personas > 1 ? 's' : ''}`)}
-      ${row('Tu mensaje', d.mensaje.replace(/\n/g, '<br>'))}
+      ${row(t.apartment, `<strong>${displayTitle}</strong>`, false)}
+      ${d.bookingRef ? row(t.reference, `<strong style="letter-spacing:1px;">${d.bookingRef}</strong>`) : ''}
+      ${row(t.checkIn, fmt(d.checkIn, locale))}
+      ${row(t.checkOut, `${fmt(d.checkOut, locale)}${nightsLabel(d.checkIn, d.checkOut, locale)}`)}
+      ${row(t.guests, `${d.personas} ${guestWord(d.personas, locale)}`)}
+      ${row(t.yourMessage, d.mensaje.replace(/\n/g, '<br>'))}
     </table>
 
     ${priceSection}
 
     <p style="margin:0;font-size:13px;color:#999;line-height:1.6;">
-      ¿Tienes dudas? Responde directamente a este email.
+      ${t.replyPrompt}
     </p>
-  `)
+  `, locale)
 }
 
 function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, reservaId: number, priceCalc?: PriceCalc): string {
@@ -311,20 +322,7 @@ function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, res
     ? Math.round((new Date(d.checkOut).getTime() - new Date(d.checkIn).getTime()) / 86400000)
     : 0
 
-  const total = priceCalc?.totalPrice
-  const cleaningFee = priceCalc?.cleaningFee ?? 40
-
-  // Build compact price string for the table row
-  let estimatedPrice = ''
-  if (priceCalc && total && nights > 0) {
-    if (priceCalc.breakdown && priceCalc.breakdown.length > 1) {
-      const parts = priceCalc.breakdown.map(g => `${g.price}€×${g.count}`).join(' + ')
-      estimatedPrice = `<strong style="font-size:16px;">${total}€</strong> <span style="font-size:12px;color:#888;">(${parts} + ${cleaningFee}€ limpieza)</span>`
-    } else {
-      const midPrice = Math.round((priceCalc.priceMin + priceCalc.priceMax) / 2)
-      estimatedPrice = `<strong style="font-size:16px;">${total}€</strong> <span style="font-size:12px;color:#888;">(${midPrice}€/n × ${nights} noches + ${cleaningFee}€ limpieza)</span>`
-    }
-  }
+  const priceSection = priceCalc && nights > 0 && priceCalc.totalPrice ? buildPriceRows(priceCalc, nights) : ''
 
   return shell(`
     <h1 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#4B766B;">Nueva solicitud de reserva</h1>
@@ -332,7 +330,7 @@ function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, res
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:24px;">
       ${row('Apartamento', `<strong>${displayTitle}</strong>`, false)}
-      ${bookingRef ? row('Referencia', `<strong style="font-family:monospace;letter-spacing:1px;">${bookingRef}</strong>`) : ''}
+      ${bookingRef ? row('Referencia', `<strong style="letter-spacing:1px;">${bookingRef}</strong>`) : ''}
       ${row('Huésped', d.nombre)}
       ${row('Email', `<a href="mailto:${d.email}" style="color:#4B766B;text-decoration:none;">${d.email}</a>`)}
       ${row('Teléfono', d.telefono || '—')}
@@ -340,8 +338,9 @@ function emailMar(d: ReservaInput, bookingRef: string, displayTitle: string, res
       ${row('Salida', `${fmt(d.checkOut)}${nightsLabel(d.checkIn, d.checkOut)}`)}
       ${nightsStr ? row('Duración', nightsStr) : ''}
       ${row('Personas', `${d.personas}`)}
-      ${estimatedPrice ? row('Precio estimado', estimatedPrice) : ''}
     </table>
+
+    ${priceSection}
 
     <div style="background:#F5F0E8;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#888;">Mensaje del huésped</p>

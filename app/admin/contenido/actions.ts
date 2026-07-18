@@ -349,7 +349,9 @@ export async function getResenas() {
 }
 
 export async function saveResena(id: number | null, fields: {
-  apartment_slug: string; author: string; location: string; date: string; rating: number; text: string
+  author: string; rating: number
+  apartment_slug?: string | null; location?: string | null; date?: string | null; text?: string | null
+  source?: string | null; source_url?: string | null; featured?: boolean
 }) {
   if (id) {
     await db.from('resenas').update(fields).eq('id', id)
@@ -359,6 +361,16 @@ export async function saveResena(id: number | null, fields: {
     await db.from('resenas').insert({ ...fields, sort_order: nextOrder })
   }
   revalidatePath('/admin/contenido/resenas')
+  revalidatePath('/')
+}
+
+export async function getFeaturedResenas() {
+  const { data } = await db
+    .from('resenas')
+    .select('*')
+    .eq('featured', true)
+    .order('sort_order', { ascending: true, nullsFirst: false })
+  return data ?? []
 }
 
 export async function deleteResena(id: number) {

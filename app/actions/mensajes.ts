@@ -4,6 +4,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
 import { revalidatePath } from 'next/cache'
+import { EMAIL_LABELS, type EmailLocale } from '@/lib/email-i18n'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
@@ -35,7 +36,7 @@ export async function getMensajesReserva(reservaId: number): Promise<MensajeChat
 export async function getConversacionByToken(token: string) {
   const { data: reserva } = await db
     .from('reservas')
-    .select('id, guest_name, guest_email, apartment_slug, check_in, check_out, status, conversation_token, total_price, paid_at')
+    .select('id, guest_name, guest_email, apartment_slug, check_in, check_out, status, conversation_token, total_price, deposit_paid')
     .eq('conversation_token', token)
     .single()
 
@@ -86,7 +87,7 @@ export async function enviarMensajeHuesped(token: string, texto: string) {
 export async function solicitarPago(reservaId: number, amount: number, comment?: string) {
   const { data: reserva } = await db
     .from('reservas')
-    .select('guest_name, guest_email, conversation_token, apartment_slug')
+    .select('guest_name, guest_email, conversation_token, apartment_slug, locale')
     .eq('id', reservaId)
     .single()
 
@@ -106,17 +107,17 @@ export async function solicitarPago(reservaId: number, amount: number, comment?:
     leido: false,
   })
 
-  // Sync total_price so /api/pagar/[token] can create the Stripe session
   await db.from('reservas').update({ total_price: amount }).eq('id', reservaId)
 
-  const pagarLink = `${BASE_URL}/api/pagar/${reserva.conversation_token}`
   const firstName = (reserva.guest_name as string).split(' ')[0]
+  const locale: EmailLocale = reserva.locale === 'en' ? 'en' : 'es'
+  const subject = locale === 'en' ? 'Payment request — HolaMarbella' : 'Solicitud de pago — HolaMarbella'
 
   await resend.emails.send({
     from: FROM,
     to: reserva.guest_email,
-    subject: 'Solicitud de pago — HolaMarbella',
-    html: emailPagoGuest(firstName, amount, pagarLink, comment),
+    subject,
+    html: emailPagoGuest(firstName, amount, locale, comment),
   }).catch(() => {})
 
   revalidatePath(`/admin/reservas/${reservaId}`)
@@ -135,8 +136,8 @@ export async function marcarMensajesLeidos(reservaId: number, sender: 'guest' | 
 
 // ── Email templates ───────────────────────────────────────────────────────────
 
-function shell(content: string) {
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"></head>
+function shell(content: string, locale: EmailLocale = 'es') {
+  return `<!DOCTYPE html><html lang="${locale}"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#F5F0E8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F0E8;padding:40px 20px;">
 <tr><td align="center">
@@ -146,7 +147,7 @@ function shell(content: string) {
 </td></tr>
 <tr><td style="padding:40px 40px 32px;">${content}</td></tr>
 <tr><td style="background:#F5F0E8;padding:24px 40px;text-align:center;border-top:1px solid #e8e0d0;">
-  <p style="margin:0;font-size:12px;color:#999;">HolaMarBella! · Marbella, España · © ${new Date().getFullYear()}</p>
+  <p style="margin:0;font-size:12px;color:#999;">HolaMarBella! · Marbella, ${locale === 'en' ? 'Spain' : 'España'} · © ${new Date().getFullYear()}</p>
 </td></tr>
 </table>
 </td></tr>
@@ -168,25 +169,28 @@ function emailToGuest(firstName: string, texto: string, link: string) {
   `)
 }
 
-function emailPagoGuest(firstName: string, amount: number, pagarLink: string, comment?: string) {
+function emailPagoGuest(firstName: string, amount: number, locale: EmailLocale, comment?: string) {
+  const t = EMAIL_LABELS[locale]
   const commentHtml = comment
     ? `<div style="background:#f9f7f4;border-left:4px solid #4B766B;padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:24px;">
         <p style="margin:0;font-size:14px;color:#1A1A1A;line-height:1.7;white-space:pre-wrap;">${comment.replace(/\n/g, '<br>')}</p>
       </div>`
     : ''
+  const title = locale === 'en' ? 'Payment request for your booking' : 'Solicitud de pago para tu reserva'
+  const greeting = locale === 'en' ? `Hi <strong style="color:#1A1A1A;">${firstName}</strong>,` : `Hola <strong style="color:#1A1A1A;">${firstName}</strong>,`
   return shell(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#4B766B;">Solicitud de pago para tu reserva</h1>
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#4B766B;">${title}</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
-      Hola <strong style="color:#1A1A1A;">${firstName}</strong>,
+      ${greeting}
     </p>
     ${commentHtml}
     <div style="background:#f0f9f6;border:2px solid #4B766B;border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
       <p style="margin:0;font-size:40px;font-weight:800;color:#1A1A1A;">${amount}€</p>
     </div>
-    <div style="text-align:center;">
-      <a href="${pagarLink}" style="display:inline-block;background:#4B766B;color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;">Pagar ahora</a>
-    </div>
-  `)
+    <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#4B766B;">${t.paymentMethods}</p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">${t.bankTransfer}: ES03 0081 7460 6000 0209 2117</p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;">Revolut: @mar14pu1</p>
+  `, locale)
 }
 
 function emailToAdmin(guestName: string, texto: string, reservaId: number, aptSlug: string) {

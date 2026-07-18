@@ -220,6 +220,8 @@ export async function getApartmentBySlug(slug: string, locale: Locale = 'es'): P
     date: r.date,
     rating: Number(r.rating),
     text: r.text,
+    source: r.source ?? null,
+    source_url: r.source_url ?? null,
   }))
   return apartment
 }
