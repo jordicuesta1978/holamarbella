@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { savePricing, type Extra } from '@/app/actions/admin'
+import { savePricing, updateReservaStatus, type Extra } from '@/app/actions/admin'
 import { sendQuote } from '@/app/actions/presupuesto'
-import { Plus, X, Loader2, Send } from 'lucide-react'
+import { Plus, X, Loader2, Send, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 
 type PriceRange = { start: string; end: string; price: number }
 
@@ -44,6 +44,24 @@ function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{
   return groups
 }
 
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
+
+// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// imported) so this client component never pulls in the server-only Supabase
+// admin client that lib/pricing.ts's module graph depends on.
+function computeVolumeDiscount(
+  rules: VolumeDiscount[],
+  checkIn: string,
+  nights: number,
+  subtotal: number,
+): { percentage: number; amount: number } | null {
+  if (!checkIn || nights <= 0 || subtotal <= 0) return null
+  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
+  if (matches.length === 0) return null
+  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
+}
+
 type Props = {
   id: number
   nights: number
@@ -54,6 +72,7 @@ type Props = {
   initialTotal: number | null
   initialDepositPaid?: number
   priceRanges?: PriceRange[]
+  volumeDiscounts?: VolumeDiscount[]
   checkIn?: string
   checkOut?: string
   initialQuoteMessage?: string
@@ -71,6 +90,7 @@ export default function PricingPanel({
   initialTotal,
   initialDepositPaid = 0,
   priceRanges = [],
+  volumeDiscounts = [],
   checkIn,
   checkOut,
   initialQuoteMessage = '',
@@ -85,20 +105,28 @@ export default function PricingPanel({
     ? calcNightlyPrices(checkIn, checkOut, priceRanges, midPrice)
     : []
   const rangeBreakdown = groupBreakdown(rangeNights)
-  const rangeBase = rangeNights.reduce((s, n) => s + n.price, 0)
-  // Use range base if available; fall back to initialTotal back-calculation or midPrice
-  const defaultRate = rangeBase > 0
-    ? Math.round(rangeBase / Math.max(nights, 1))
-    : (initialTotal && nights > 0
-      ? Math.round((initialTotal - initialCleaningFee - initialExtras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)) / nights)
-      : midPrice)
+  // Fallback rate (only used when no price range matches these dates at all):
+  // back-calculate from the saved total, or fall back to the apartment's mid price
+  const defaultRate = initialTotal && nights > 0
+    ? Math.round((initialTotal - initialCleaningFee - initialExtras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)) / nights)
+    : midPrice
 
   const [rate, setRate] = useState(defaultRate)
+  // Every matched price tramo (even a single one) becomes an editable/removable
+  // row, so a manual edit always takes effect — it's never silently overridden
+  // by the configured range price.
   const [tierRows, setTierRows] = useState<Array<{ label: string; amount: number }>>(() =>
-    rangeBreakdown.length > 1
-      ? rangeBreakdown.map(g => ({ label: `${g.price}€/n × ${g.count} noche${g.count > 1 ? 's' : ''}`, amount: g.price * g.count }))
-      : []
+    rangeBreakdown.map(g => ({ label: `${g.price}€/n × ${g.count} noche${g.count > 1 ? 's' : ''}`, amount: g.price * g.count }))
   )
+  // Automatic volume discount, recomputed from the current rules — editable
+  // and removable just like the tramos, in case the admin wants to override it.
+  const [discountRow, setDiscountRow] = useState<{ label: string; amount: number } | null>(() => {
+    if (!checkIn || nights <= 0) return null
+    const rangeBase = rangeBreakdown.reduce((s, g) => s + g.price * g.count, 0)
+    const rawSubtotal = rangeBase > 0 ? rangeBase : defaultRate * nights
+    const match = computeVolumeDiscount(volumeDiscounts, checkIn, nights, rawSubtotal)
+    return match ? { label: `Descuento estancia larga (-${match.percentage}%)`, amount: -match.amount } : null
+  })
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
   const [depositPaid, setDepositPaid] = useState(initialDepositPaid)
@@ -117,10 +145,16 @@ export default function PricingPanel({
   const [quoteSent, setQuoteSent] = useState(false)
   const [quoteError, setQuoteError] = useState<string | null>(null)
 
+  const [isActionPending, startActionTransition] = useTransition()
+  const [actionDone, setActionDone] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelMsg, setCancelMsg] = useState('')
+
   // base: editable tier rows when there were multiple price tramos; otherwise
   // the range base (single tramo) or manual rate × nights
   const tierRowsTotal = tierRows.reduce((s, r) => s + r.amount, 0)
-  const base = tierRows.length > 0 ? tierRowsTotal : (rangeBase > 0 ? rangeBase : rate * nights)
+  const base = (tierRows.length > 0 ? tierRowsTotal : rate * nights) + (discountRow?.amount ?? 0)
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
   const pending = Math.max(total - depositPaid, 0)
@@ -128,6 +162,10 @@ export default function PricingPanel({
   const updateTierAmount = (i: number, amount: number) =>
     setTierRows(prev => prev.map((r, idx) => idx === i ? { ...r, amount } : r))
   const removeTierRow = (i: number) => setTierRows(prev => prev.filter((_, idx) => idx !== i))
+
+  const updateDiscountAmount = (amount: number) =>
+    setDiscountRow(prev => prev ? { ...prev, amount } : prev)
+  const removeDiscountRow = () => setDiscountRow(null)
 
   const addCustom = () => {
     if (!newName.trim() || !newAmount) return
@@ -169,6 +207,37 @@ export default function PricingPanel({
     })
   }
 
+  // Aprobar/rechazar siempre guardan el precio vigente primero, para que un
+  // anticipo o ajuste de precio sin guardar nunca se pierda silenciosamente.
+  const handleApprove = () => {
+    setActionError(null)
+    startActionTransition(async () => {
+      try {
+        await savePricing(id, cleaningFee, extras, base, depositPaid)
+        await updateReservaStatus(id, 'confirmed')
+        setActionDone(true)
+        router.refresh()
+      } catch {
+        setActionError('Error al actualizar la reserva. Inténtalo de nuevo.')
+      }
+    })
+  }
+
+  const handleRejectSubmit = () => {
+    setActionError(null)
+    startActionTransition(async () => {
+      try {
+        await savePricing(id, cleaningFee, extras, base, depositPaid)
+        await updateReservaStatus(id, 'cancelled', cancelMsg.trim() || undefined)
+        setActionDone(true)
+        setShowCancelModal(false)
+        router.refresh()
+      } catch {
+        setActionError('Error al actualizar la reserva. Inténtalo de nuevo.')
+      }
+    })
+  }
+
   const inp = (extra?: React.CSSProperties): React.CSSProperties => ({
     border: '1.5px solid #d1d5db', borderRadius: 8, padding: '8px 10px',
     fontSize: 13, outline: 'none', color: '#1a1a2e', background: '#fff', ...extra,
@@ -176,7 +245,10 @@ export default function PricingPanel({
   const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: '#888', display: 'block', marginBottom: 4 }
   const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', fontSize: 13 }
 
+  const showActions = ['pending', 'quote_sent'].includes(quoteStatus ?? '') && !actionDone
+
   return (
+    <>
     <section style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 16 }}>
       <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
         <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>Desglose de costes</h2>
@@ -214,6 +286,21 @@ export default function PricingPanel({
             </>
           )}
         </div>
+
+        {/* Automatic volume discount */}
+        {discountRow && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Descuento por volumen de noches</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0f9f6', borderRadius: 8, padding: '10px 14px', border: '1px solid #b2d4cc', gap: 8 }}>
+              <span style={{ flex: 1, fontSize: 13, color: '#4B766B' }}>{discountRow.label}</span>
+              <input type="number" value={discountRow.amount} onChange={e => updateDiscountAmount(Number(e.target.value))}
+                style={{ ...inp(), width: 80 }} />
+              <button onClick={removeDiscountRow} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 2 }}>
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Cleaning fee */}
         <div style={{ marginBottom: 16 }}>
@@ -283,7 +370,10 @@ export default function PricingPanel({
               </div>
             ))
           ) : nights > 0 && (
-            <div style={rowStyle}><span style={{ color: '#888' }}>Precio base ({nights} noches)</span><span>{base}€</span></div>
+            <div style={rowStyle}><span style={{ color: '#888' }}>Precio base ({nights} noches)</span><span>{rate * nights}€</span></div>
+          )}
+          {discountRow && (
+            <div style={rowStyle}><span style={{ color: '#4B766B' }}>{discountRow.label}</span><span style={{ color: '#4B766B' }}>{discountRow.amount}€</span></div>
           )}
           {cleaningFee > 0 && (
             <div style={rowStyle}><span style={{ color: '#888' }}>Limpieza</span><span>{cleaningFee}€</span></div>
@@ -346,5 +436,91 @@ export default function PricingPanel({
 
       </div>
     </section>
+
+    {actionDone && (
+      <div style={{ background: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: 12, padding: '20px 24px', textAlign: 'center', fontSize: 14, color: '#065f46', fontWeight: 600, marginBottom: 16 }}>
+        ✓ Estado actualizado. Email enviado al huésped.
+      </div>
+    )}
+
+    {showActions && (
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', padding: '20px 24px', marginBottom: 16 }}>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#555', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Acción</p>
+        {depositPaid <= 0 && (
+          <div style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8,
+            padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e',
+          }}>
+            <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>
+              No hay ningún depósito registrado todavía. Lo habitual es aprobar la reserva solo cuando el cliente haya pagado el anticipo.
+            </span>
+          </div>
+        )}
+        {actionError && (
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#e53e3e', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px' }}>{actionError}</p>
+        )}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={handleApprove}
+            disabled={isActionPending}
+            style={{ flex: 1, minWidth: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#4B766B', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: isActionPending ? 0.6 : 1 }}
+          >
+            {isActionPending ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <CheckCircle2 size={16} />}
+            Aprobar reserva
+          </button>
+          <button
+            onClick={() => setShowCancelModal(true)}
+            disabled={isActionPending}
+            style={{ flex: 1, minWidth: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', color: '#e53e3e', border: '1.5px solid #e53e3e', borderRadius: 10, padding: '13px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: isActionPending ? 0.6 : 1 }}
+          >
+            <XCircle size={16} />
+            Rechazar
+          </button>
+        </div>
+        <p style={{ margin: '12px 0 0', fontSize: 12, color: '#aaa' }}>Se guardará el precio actual y se enviará un email al huésped con el mensaje que escribas.</p>
+      </div>
+    )}
+
+    {showCancelModal && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '28px 28px 24px', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>Mensaje al huésped</h2>
+            <button onClick={() => setShowCancelModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4 }}>
+              <X size={18} />
+            </button>
+          </div>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: '#666' }}>
+            Escribe el mensaje que recibirá el huésped. Si lo dejas en blanco se enviará el texto por defecto.
+          </p>
+          <textarea
+            value={cancelMsg}
+            onChange={e => setCancelMsg(e.target.value)}
+            placeholder="Ej: Lamentablemente las fechas que solicitas ya están ocupadas. Si quieres, podemos buscar otras fechas disponibles…"
+            rows={5}
+            style={{ width: '100%', border: '1.5px solid #d1d5db', borderRadius: 10, padding: '10px 12px', fontSize: 13, color: '#1a1a2e', resize: 'vertical', outline: 'none', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <button
+              onClick={() => setShowCancelModal(false)}
+              style={{ flex: 1, background: '#f4f5f7', color: '#555', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleRejectSubmit}
+              disabled={isActionPending}
+              style={{ flex: 1, background: '#e53e3e', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: isActionPending ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              {isActionPending ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : null}
+              Rechazar y enviar email
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

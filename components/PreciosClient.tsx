@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
-import { addPrecio, deletePrecio, addMinNights, deleteMinNights } from '@/app/admin/contenido/actions'
+import { addPrecio, deletePrecio, addMinNights, deleteMinNights, addDescuentoVolumen, deleteDescuentoVolumen } from '@/app/admin/contenido/actions'
 
 const APTS = [
   { slug: 'paloma', label: 'Paloma', priceBase: 115 },
@@ -15,6 +15,7 @@ const APTS = [
 
 type Precio = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; precio_noche: number }
 type MinNight = { id: number; apartment_slug: string; start_date: string | null; end_date: string | null; min_nights: number }
+type Descuento = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }
 
 function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -51,7 +52,7 @@ function buildMarks(precios: Precio[], slug: string): Record<string, DayMark> {
   return marks
 }
 
-export default function PreciosClient({ precios, minNights }: { precios: Precio[]; minNights: MinNight[] }) {
+export default function PreciosClient({ precios, minNights, descuentos }: { precios: Precio[]; minNights: MinNight[]; descuentos: Descuento[] }) {
   const router = useRouter()
   const [slug, setSlug] = useState('paloma')
   const [isPending, startTransition] = useTransition()
@@ -60,6 +61,7 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
   const marks = buildMarks(precios, slug)
   const filteredPrecios = precios.filter(p => p.apartment_slug === slug)
   const filteredMN = minNights.filter(m => m.apartment_slug === slug)
+  const filteredDescuentos = descuentos.filter(d => d.apartment_slug === slug)
   const aptInfo = APTS.find(a => a.slug === slug)!
 
   function handleAddPrecio(fd: FormData) {
@@ -88,6 +90,23 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
 
   function handleDelMN(id: number) {
     startTransition(async () => { await deleteMinNights(id); router.refresh() })
+  }
+
+  function handleAddDescuento(fd: FormData) {
+    const desde = fd.get('desde') as string
+    const hastaIncl = fd.get('hasta') as string
+    const noches = Number(fd.get('noches'))
+    const porcentaje = Number(fd.get('porcentaje'))
+    if (!desde || !hastaIncl || desde > hastaIncl || noches <= 0 || porcentaje <= 0) return
+    const hasta = addDay(hastaIncl)  // convert inclusive → exclusive for DB
+    startTransition(async () => {
+      await addDescuentoVolumen(slug, desde, hasta, noches, porcentaje)
+      router.refresh()
+    })
+  }
+
+  function handleDelDescuento(id: number) {
+    startTransition(async () => { await deleteDescuentoVolumen(id); router.refresh() })
   }
 
   const inp: React.CSSProperties = { border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }
@@ -192,6 +211,36 @@ export default function PreciosClient({ precios, minNights }: { precios: Precio[
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, background: '#fef9c3', borderRadius: 6, padding: '2px 10px', color: '#1a1a2e' }}>{mn.min_nights} noches mín.</span>
               <button onClick={() => handleDelMN(mn.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Eliminar
+              </button>
+            </div>
+          ))}
+      </div>
+
+      {/* Descuentos por volumen de noches */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc' }}>
+          <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Descuentos por volumen de noches — {aptInfo.label}</h2>
+          <p style={{ margin: '3px 0 0', fontSize: 11, color: '#aaa' }}>Se aplica automáticamente al alojamiento (no a limpieza/extras) cuando la llegada cae en el rango y la estancia llega al mínimo de noches. Si hay varias reglas que cumplen, se aplica la de mayor % de descuento.</p>
+        </div>
+        <form action={handleAddDescuento} style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+          <div><label style={lbl}>Desde</label><input type="date" name="desde" required style={inp} /></div>
+          <div><label style={lbl}>Hasta (inclusive)</label><input type="date" name="hasta" required style={inp} /></div>
+          <div><label style={lbl}>Noches mín.</label><input type="number" name="noches" min={1} max={365} defaultValue={7} required style={{ ...inp, width: 80 }} /></div>
+          <div><label style={lbl}>% descuento</label><input type="number" name="porcentaje" min={1} max={100} step={0.5} defaultValue={10} required style={{ ...inp, width: 80 }} /></div>
+          <button type="submit" disabled={isPending} style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1 }}>
+            Añadir regla
+          </button>
+        </form>
+        {filteredDescuentos.length === 0
+          ? <p style={{ padding: '16px 20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>Sin reglas para {aptInfo.label}</p>
+          : filteredDescuentos.map((d, i) => (
+            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredDescuentos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
+              <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>
+                {fmt(d.fecha_inicio)} → {fmt(subDay(d.fecha_fin))} · {d.noches_minimas}+ noches
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 800, background: '#d1fae5', borderRadius: 6, padding: '2px 10px', color: '#065f46' }}>-{d.porcentaje}%</span>
+              <button onClick={() => handleDelDescuento(d.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Eliminar
               </button>
             </div>

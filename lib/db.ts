@@ -155,6 +155,18 @@ export async function getMinNightsRanges(slug: string): Promise<Array<{ start: s
   } catch { return [] }
 }
 
+export async function getVolumeDiscounts(slug: string): Promise<Array<{ start: string; end: string; minNights: number; percentage: number }>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabaseAdmin as any
+  try {
+    const { data, error } = await db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje').eq('apartment_slug', slug)
+    if (error) return []
+    return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }) => ({
+      start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje,
+    }))
+  } catch { return [] }
+}
+
 export async function getBlockedRanges(slug: string): Promise<Array<{ start: string; end: string }>> {
   const today = localDateStr(new Date())
   const oneYear = daysFromNow(365)

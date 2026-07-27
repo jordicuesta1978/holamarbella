@@ -87,7 +87,8 @@
       "Bash(echo \"exit:$?\")",
       "Bash(git fetch *)",
       "Bash(npx eslint *)",
-      "Bash(cd \"C:/Users/j.cuesta_liux/Documents/holamarbella\" && rm -f .git/index.lock && git status --short | head -5)"
+      "Bash(cd \"C:/Users/j.cuesta_liux/Documents/holamarbella\" && rm -f .git/index.lock && git status --short | head -5)",
+      "Bash(rm -f \"C:/Users/j.cuesta_liux/Documents/holamarbella/app/admin/reservas/[id]/ReservaActions.tsx\")"
     ]
   }
 }

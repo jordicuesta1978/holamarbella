@@ -84,6 +84,31 @@ export async function getPrecios() {
   return data ?? []
 }
 
+// ── Descuentos por volumen de noches ──────────────────────────────────────────
+
+export async function getDescuentosVolumen(slug?: string): Promise<Array<{ id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }>> {
+  try {
+    let q = db.from('descuentos_volumen').select('*').order('apartment_slug').order('fecha_inicio')
+    if (slug) q = q.eq('apartment_slug', slug)
+    const { data, error } = await q
+    if (error) return []
+    return data ?? []
+  } catch { return [] }
+}
+
+export async function addDescuentoVolumen(slug: string, desde: string, hasta: string, nochesMinimas: number, porcentaje: number) {
+  const { error } = await db.from('descuentos_volumen').insert({
+    apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, noches_minimas: nochesMinimas, porcentaje,
+  })
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+}
+
+export async function deleteDescuentoVolumen(id: number) {
+  await db.from('descuentos_volumen').delete().eq('id', id)
+  revalidatePath('/admin/contenido/precios')
+}
+
 // ── Apartamentos ──────────────────────────────────────────────────────────────
 
 export async function getApartamentos(): Promise<Record<string, any>[]> {

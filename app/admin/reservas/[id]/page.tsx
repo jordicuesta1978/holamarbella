@@ -1,12 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import ReservaActions from './ReservaActions'
 import ReopenReservaButton from './ReopenReservaButton'
 import PricingPanel from './PricingPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
-import { getPriceRanges } from '@/lib/db'
+import { getPriceRanges, getVolumeDiscounts } from '@/lib/db'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReserva(id: number): Promise<any | null> {
@@ -58,9 +57,10 @@ export default async function ReservaDetailPage({
   const reserva = await getReserva(Number(id))
   if (!reserva) notFound()
 
-  const [aptPrices, priceRanges] = await Promise.all([
+  const [aptPrices, priceRanges, volumeDiscounts] = await Promise.all([
     getApartmentPrices(reserva.apartment_slug),
     getPriceRanges(reserva.apartment_slug).catch(() => []),
+    getVolumeDiscounts(reserva.apartment_slug).catch(() => []),
   ])
 
   const nights =
@@ -212,6 +212,7 @@ export default async function ReservaDetailPage({
           initialTotal={reserva.total_price}
           initialDepositPaid={reserva.deposit_paid ?? 0}
           priceRanges={priceRanges}
+          volumeDiscounts={volumeDiscounts}
           checkIn={reserva.check_in ?? undefined}
           checkOut={reserva.check_out ?? undefined}
           initialQuoteMessage={reserva.quote_message ?? ''}
@@ -220,10 +221,6 @@ export default async function ReservaDetailPage({
         />
 
         {/* Actions */}
-        {['pending', 'quote_sent'].includes(reserva.status) && (
-          <ReservaActions id={reserva.id} depositPaid={reserva.deposit_paid ?? 0} />
-        )}
-
         {['confirmed', 'cancelled'].includes(reserva.status) && (
           <ReopenReservaButton id={reserva.id} status={reserva.status} />
         )}

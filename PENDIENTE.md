@@ -6,30 +6,25 @@
 
 ## PENDIENTE — próximas tareas
 
-### Ajustes previos a lanzar en real
+### Migración pendiente de ejecutar en Supabase
+- [ ] **Ejecutar `supabase/migration_descuentos_volumen.sql`** — crea la tabla `descuentos_volumen` (Dashboard → SQL Editor). Hasta que se ejecute, la sección "Descuentos por volumen de noches" en `/admin/contenido/precios` aparecerá vacía y no se podrán crear reglas (el resto de la app sigue funcionando con normalidad, sin descuentos).
 
-#### Listado /apartamentos
-- [ ] **Quitar "Desde X€ /noche" de las tarjetas** — da una información engañosa (el precio real varía mucho por fechas/temporada). No queremos mostrar precios en el listado. `app/[locale]/apartamentos/page.tsx:137-144`
-
-#### Admin — ficha de reserva individual (`PricingPanel.tsx`)
-- [ ] **"Precio por noche" no editable de verdad cuando hay un rango de precio configurado que cubre esas fechas** — confirmado con datos reales: para una reserva sin rango de precio aplicable (p. ej. Micu 10-23 ago 2026, sin rango en `precios` para esas fechas), el input "Precio por noche" sí funciona y controla el total. Pero cuando las fechas SÍ coinciden con un único rango configurado (`rangeBase > 0`, un solo tramo), `base` usa siempre `rangeBase` e ignora lo que el admin escriba en el input — el campo aparenta ser editable pero no tiene efecto real. Se pidió explícitamente que el precio por noche y los gastos de limpieza (las líneas originales de la solicitud) sean editables siempre — hay que hacer que la edición manual tenga prioridad sobre el rango, igual que ya hicimos con los tramos múltiples en el batch anterior.
-- [ ] **Nota — NO es bug**: el aparente desajuste de "Pendiente" (200€ pagados a cuenta pero seguía saliendo el total pendiente) se debió a que el admin escribió 200 en "Pagado a cuenta" pero no pulsó "Guardar precio" antes de la captura — comprobado en Supabase: `deposit_paid` seguía en 0 en la reserva real. El fix del batch anterior (resumen "Pagos" usando `deposit_paid`) funciona correctamente.
-- [ ] **Riesgo de flujo real detectado**: "Guardar precio" y "Aprobar reserva" son dos botones independientes en la misma página. Si el admin escribe el anticipo en "Pagado a cuenta" pero aprueba la reserva sin pulsar antes "Guardar precio", el anticipo se pierde silenciosamente (exactamente lo que pasó en la reserva de prueba 20260810MIC01: aparece "confirmada" pero `deposit_paid=0` en DB, y por eso el email de confirmación no muestra el anticipo pagado — comprobado, es el mismo caso de la nota anterior, no un bug del email). Falta decidir la solución: ¿guardar automáticamente el precio al aprobar, o avisar/bloquear si hay cambios sin guardar?
-
-### Nueva funcionalidad — descuentos automáticos por volumen de noches
-- [ ] **Reglas de descuento por apartamento + rango de fechas + noches mínimas** — nueva configuración en el admin (similar a los rangos de precio por noche que ya existen). Cada regla: apartamento, rango de fechas (fecha_inicio/fecha_fin), noches mínimas, % de descuento. Se aplica sobre el subtotal de alojamiento (noches × precio), NO sobre gastos de limpieza ni extras.
-  - Si hay varias reglas que coinciden (misma fecha, distintos umbrales de noches), se aplica la de mayor descuento entre las que se cumplan — así se pueden montar escalones (7+ noches=10%, 14+ noches=15%) con varias reglas simples en vez de una tabla de tramos en un único formulario.
-  - De cara al huésped, el descuento debe salir como línea aparte en el desglose de precio: "Descuento estancia larga (-X%): -Y€", igual de visible que el resto de conceptos — no simplemente bajar el precio/noche sin indicarlo.
-  - Debe aplicarse en 3 sitios de forma consistente: (1) cálculo del precio estimado que ve el huésped al solicitar (`calcTotalWithRanges` en `app/actions/reservar.ts`), (2) recálculo en el admin al revisar/ajustar el presupuesto (`PricingPanel.tsx`), (3) desglose en los emails (presupuesto y confirmación, vía `lib/pricing.ts`).
-  - Pendiente de decidir en implementación: si el rango de fechas de la regla debe cubrir el check-in, o las noches completas de la estancia (para evitar ambigüedad si una estancia cruza dos rangos con reglas distintas).
-  - Requiere migración nueva (tabla de reglas, ej. `descuentos_volumen`) + UI de gestión en el admin por apartamento.
-
-### Gestor de Contenido
+### Gestor de Contenido (fuera de este batch, sin espec suficiente todavía)
 - [ ] **Amenidades por categorías** — editor interactivo por categoría en admin (AmenidadesEditor.tsx)
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
 
 ### Verificación
-- [x] **Corrido `node scripts/verificar.mjs`** — 73 OK / 1 fallo (`scripts/informe_2026-07-17T18-59-43.txt`). El único fallo ("Sin badges TOP AIRBNB" en `/es/apartamentos`) es preexistente y no relacionado con el flujo de reserva — no se tocó nada de badges en este batch. FLOW 1 (reserva completa end-to-end) pasó con la migración de `locale` ya aplicada.
+- [x] **Corrido `node scripts/verificar.mjs`** (2026-07-27) — 73 OK / 1 fallo (`scripts/informe_2026-07-27T20-08-50.txt`). El único fallo ("Sin badges TOP AIRBNB" en `/es/apartamentos`) es preexistente y no relacionado con nada de este batch. FLOW 1 (reserva completa end-to-end) pasó con el nuevo cálculo de descuentos integrado (sin reglas creadas, no afecta el resultado).
+
+---
+
+## COMPLETADO — batch 2026-07-27 (ajustes pre-lanzamiento + descuentos por volumen)
+
+- [x] **Quitar "Desde X€ /noche" de las tarjetas /apartamentos** — `app/[locale]/apartamentos/page.tsx`
+- [x] **Fix: precio por noche ignorado cuando coincide con un rango configurado** — `PricingPanel.tsx` ahora convierte SIEMPRE cualquier tramo de precio coincidente (incluso uno solo) en una fila editable/eliminable, igual que ya pasaba con los tramos múltiples — la edición manual del admin nunca se ignora
+- [x] **Fusión de "Guardar precio" con "Aprobar/Rechazar reserva"** — se fusionó `ReservaActions.tsx` dentro de `PricingPanel.tsx` (el primero se eliminó); aprobar/rechazar ahora siempre guarda el precio/anticipo vigente antes de cambiar el estado, así nunca se puede perder un anticipo sin guardar
+- [x] **Descuentos automáticos por volumen de noches** — nueva tabla `descuentos_volumen` (apartamento + rango de fechas + noches mínimas + % descuento); si varias reglas coinciden, se aplica la de mayor %; aplicado en `reservar.ts` (precio que ve el huésped), `PricingPanel.tsx` (recálculo admin, editable/eliminable) y `lib/pricing.ts` (emails de presupuesto y confirmación) como línea aparte "Descuento estancia larga (-X%)"; UI de gestión de reglas por apartamento en `/admin/contenido/precios` (`PreciosClient.tsx` + acciones en `app/admin/contenido/actions.ts`)
+- [x] **Build/typecheck/lint verificados** (`tsc --noEmit` limpio, `next build` correcto, sin errores nuevos de eslint) y `scripts/verificar.mjs` corrido (73/74 OK, fallo preexistente sin relación)
 
 ---
 

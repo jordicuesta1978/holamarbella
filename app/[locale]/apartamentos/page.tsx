@@ -134,14 +134,7 @@ export default async function ApartamentosPage({
                       {apt.key_features}
                     </p>
                     {isAvailable === false && <ClearDatesLink />}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--on-surface-variant)' }}>
-                        {t('from')}{' '}
-                        <span className="font-bold text-base" style={{ color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}>
-                          {apt.priceRange[0]}€
-                        </span>
-                        {' '}{t('perNightShort')}
-                      </span>
+                    <div className="flex items-center justify-end">
                       <span
                         className="text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border transition-all group-hover:text-white"
                         style={{ borderColor: isAvailable === false ? '#d1d5db' : 'var(--primary)', color: isAvailable === false ? '#9ca3af' : 'var(--primary)' }}
