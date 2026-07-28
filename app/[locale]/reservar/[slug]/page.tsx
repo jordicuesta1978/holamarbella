@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { getApartmentBySlug, getPriceRanges } from '@/lib/db';
+import { getApartmentBySlug, getPriceRanges, getVolumeDiscounts } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import ReservarContent from '@/components/ReservarContent';
 
@@ -11,9 +11,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReservarPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
-  const [apartment, priceRanges] = await Promise.all([
+  const [apartment, priceRanges, volumeDiscounts] = await Promise.all([
     getApartmentBySlug(slug, locale),
     getPriceRanges(slug).catch(() => []),
+    getVolumeDiscounts(slug).catch(() => []),
   ]);
   if (!apartment) notFound();
 
@@ -35,6 +36,7 @@ export default async function ReservarPage({ params }: { params: Promise<{ local
             apartment={apartment}
             slug={slug}
             priceRanges={priceRanges}
+            volumeDiscounts={volumeDiscounts}
             cleaningFee={cleaningFee}
           />
         </Suspense>

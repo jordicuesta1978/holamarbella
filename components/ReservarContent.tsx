@@ -73,16 +73,36 @@ function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{
   return groups
 }
 
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
+
+// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// imported) so this client component never pulls in the server-only Supabase
+// admin client that lib/pricing.ts's module graph depends on.
+function computeVolumeDiscount(
+  rules: VolumeDiscount[],
+  checkIn: string,
+  nights: number,
+  subtotal: number,
+): { percentage: number; amount: number } | null {
+  if (!checkIn || nights <= 0 || subtotal <= 0) return null
+  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
+  if (matches.length === 0) return null
+  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
+}
+
 const DEFAULT_CLEANING_FEE = 40
 
 export default function ReservarContent({
   apartment, slug,
   priceRanges = [],
+  volumeDiscounts = [],
   cleaningFee = DEFAULT_CLEANING_FEE,
 }: {
   apartment: Apartment
   slug: string
   priceRanges?: PriceRange[]
+  volumeDiscounts?: VolumeDiscount[]
   cleaningFee?: number
 }) {
   const t = useTranslations('reservar');
@@ -110,7 +130,8 @@ export default function ReservarContent({
     ? calcNightlyPrices(form.checkIn, form.checkOut, priceRanges, midPrice)
     : []
   const subtotal = nightlyPrices.reduce((s, n) => s + n.price, 0)
-  const total = subtotal > 0 ? subtotal + cleaningFee : 0
+  const discount = subtotal > 0 ? computeVolumeDiscount(volumeDiscounts, form.checkIn, nights, subtotal) : null
+  const total = subtotal > 0 ? subtotal - (discount?.amount ?? 0) + cleaningFee : 0
   const breakdown = groupBreakdown(nightlyPrices)
 
   const set = (field: keyof FormState) =>
@@ -180,6 +201,7 @@ export default function ReservarContent({
           total: String(total),
           // pass breakdown so confirmation can show per-range desglose
           breakdown: JSON.stringify(breakdown),
+          ...(discount ? { discountPct: String(discount.percentage), discountAmount: String(discount.amount) } : {}),
         } : {}),
       });
       router.push(`/confirmacion?${qs.toString()}`);
@@ -363,6 +385,12 @@ export default function ReservarContent({
                         <span style={{ color: 'var(--on-surface)' }}>{g.price * g.count}€</span>
                       </div>
                     ))}
+                    {discount && (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--primary)' }}>{t('longStayDiscount')} (-{discount.percentage}%)</span>
+                        <span style={{ color: 'var(--primary)' }}>-{discount.amount}€</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span style={{ color: 'var(--on-surface-variant)' }}>{t('cleaning')}</span>
                       <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>

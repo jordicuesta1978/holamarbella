@@ -172,7 +172,8 @@
     "cleaning": "Cleaning fee",
     "totalEstimate": "Estimated total",
     "perNight": "Price / night",
-    "priceNote": "The exact price will be confirmed when we review your request."
+    "priceNote": "The exact price will be confirmed when we review your request.",
+    "longStayDiscount": "Long-stay discount"
   },
   "confirmacion": {
     "sent": "Request sent{name}!",
@@ -190,6 +191,7 @@
     "guestsCount": "{count, plural, one {# guest} other {# guests}}",
     "cleaning": "Cleaning fee",
     "totalEstimate": "Estimated total",
+    "longStayDiscount": "Long-stay discount",
     "priceNote": "* The exact price will be confirmed when we review your request.",
     "willContact": "We'll review your request and get in touch with you as soon as possible.",
     "viewReservation": "View my booking",

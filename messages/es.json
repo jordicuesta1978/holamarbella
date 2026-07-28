@@ -172,7 +172,8 @@
     "cleaning": "Gastos de limpieza",
     "totalEstimate": "Total estimado",
     "perNight": "Precio / noche",
-    "priceNote": "El precio exacto será confirmado al revisar tu solicitud."
+    "priceNote": "El precio exacto será confirmado al revisar tu solicitud.",
+    "longStayDiscount": "Descuento estancia larga"
   },
   "confirmacion": {
     "sent": "¡Solicitud enviada{name}!",
@@ -190,6 +191,7 @@
     "guestsCount": "{count, plural, one {# persona} other {# personas}}",
     "cleaning": "Gastos de limpieza",
     "totalEstimate": "Total estimado",
+    "longStayDiscount": "Descuento estancia larga",
     "priceNote": "* El precio exacto será confirmado al revisar tu solicitud.",
     "willContact": "Revisaremos tu petición y nos pondremos en contacto contigo lo antes posible.",
     "viewReservation": "Ver mi reserva",

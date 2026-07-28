@@ -29,6 +29,8 @@ export default function ConfirmacionContent() {
   const breakdown: Array<{ price: number; count: number }> = (() => {
     try { return breakdownRaw ? JSON.parse(breakdownRaw) : [] } catch { return [] }
   })();
+  const discountPct = searchParams.get('discountPct') || '';
+  const discountAmount = searchParams.get('discountAmount') || '';
 
   const [aptInfo, setAptInfo] = useState<{ title: string; subtitle: string } | null>(null);
 
@@ -54,6 +56,7 @@ export default function ConfirmacionContent() {
       ? breakdown.map(g => [t('lodging', { count: g.count }), `${g.price}€ × ${g.count} = ${g.price * g.count}€`] as [string, string])
       : nights ? [[t('duration'), t('nights', { count: Number(nights) })] as [string, string]] : []
     ),
+    ...(discountAmount ? [[`${t('longStayDiscount')} (-${discountPct}%)`, `-${discountAmount}€`] as [string, string]] : []),
     ...(cleaning ? [[t('cleaning'), `${cleaning}€`] as [string, string]] : []),
     ...(total ? [[t('totalEstimate'), `${total}€`] as [string, string]] : []),
   ];
