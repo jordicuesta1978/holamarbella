@@ -6,9 +6,6 @@
 
 ## PENDIENTE — próximas tareas
 
-### Migración pendiente de ejecutar en Supabase
-- [ ] **Ejecutar `supabase/migration_descuentos_volumen.sql`** — crea la tabla `descuentos_volumen` (Dashboard → SQL Editor). Hasta que se ejecute, la sección "Descuentos por volumen de noches" en `/admin/contenido/precios` aparecerá vacía y no se podrán crear reglas (el resto de la app sigue funcionando con normalidad, sin descuentos).
-
 ### Gestor de Contenido (fuera de este batch, sin espec suficiente todavía)
 - [ ] **Amenidades por categorías** — editor interactivo por categoría en admin (AmenidadesEditor.tsx)
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
@@ -25,6 +22,7 @@
 - [x] **Fusión de "Guardar precio" con "Aprobar/Rechazar reserva"** — se fusionó `ReservaActions.tsx` dentro de `PricingPanel.tsx` (el primero se eliminó); aprobar/rechazar ahora siempre guarda el precio/anticipo vigente antes de cambiar el estado, así nunca se puede perder un anticipo sin guardar
 - [x] **Descuentos automáticos por volumen de noches** — nueva tabla `descuentos_volumen` (apartamento + rango de fechas + noches mínimas + % descuento); si varias reglas coinciden, se aplica la de mayor %; aplicado en `reservar.ts` (precio que ve el huésped), `PricingPanel.tsx` (recálculo admin, editable/eliminable) y `lib/pricing.ts` (emails de presupuesto y confirmación) como línea aparte "Descuento estancia larga (-X%)"; UI de gestión de reglas por apartamento en `/admin/contenido/precios` (`PreciosClient.tsx` + acciones en `app/admin/contenido/actions.ts`)
 - [x] **Build/typecheck/lint verificados** (`tsc --noEmit` limpio, `next build` correcto, sin errores nuevos de eslint) y `scripts/verificar.mjs` corrido (73/74 OK, fallo preexistente sin relación)
+- [x] **Migración `supabase/migration_descuentos_volumen.sql`** creada y ejecutada en Supabase
 
 ---
 
