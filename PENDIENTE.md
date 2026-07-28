@@ -11,7 +11,18 @@
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
 
 ### Verificación
-- [x] **Corrido `node scripts/verificar.mjs`** (2026-07-27) — 73 OK / 1 fallo (`scripts/informe_2026-07-27T20-08-50.txt`). El único fallo ("Sin badges TOP AIRBNB" en `/es/apartamentos`) es preexistente y no relacionado con nada de este batch. FLOW 1 (reserva completa end-to-end) pasó con el nuevo cálculo de descuentos integrado (sin reglas creadas, no afecta el resultado).
+- [x] **Corrido `node scripts/verificar.mjs`** (2026-07-28) — 73 OK / 1 fallo, preexistente y no relacionado (`scripts/informe_2026-07-28T19-15-46.txt`).
+
+---
+
+## COMPLETADO — batch 2026-07-28 (descuentos por volumen: 3er sitio + prorrateo + nombre)
+
+- [x] **Tercer sitio con el mismo cálculo de precio, que se me había pasado**: el widget de fechas de la ficha de apartamento (`CalendarPicker.tsx`) calcula el precio en el cliente igual que `/reservar`, y también desconocía las reglas de descuento — añadido `volumeDiscounts` + línea de descuento igual que en `/reservar`, admin y emails.
+- [x] **Bug real: una estancia que cruza dos rangos de descuento distintos solo aplicaba uno** (el de la fecha de llegada) — confirmado con datos reales (22 oct → 13 nov con reglas de -10% en octubre y -15% en noviembre, solo salía -10% sobre todo). Redecidido con el usuario: en vez de "gana el de mayor %", ahora se prorratea por noche — cada noche se descuenta según la regla cuyo rango de fechas la cubre (con el % más alto si varias coinciden), y cada regla que aplique aparece como su propia línea en el desglose.
+- [x] **Nombre opcional por regla** — nueva columna `nombre` en `descuentos_volumen` (migración `migration_descuentos_volumen_nombre.sql`, ejecutada); si se rellena en el admin, sale como etiqueta de la línea en vez de "Descuento estancia larga" genérico.
+- [x] **`lib/pricing.ts`** reescrito: `computeNightlyPrices` (per-night, nuevo) + `computeVolumeDiscounts`/`computeVolumeDiscountsForStay` (array de líneas, prorrateado) sustituyen a las versiones de un solo match; `renderPricingTable` acepta `discounts[]` y reconcilia sumando todas las líneas contra el `base` guardado.
+- [x] Propagado a los 4 sitios: `reservar.ts` (huésped + email a Mar), `PricingPanel.tsx` (admin, cada línea editable/eliminable), `CalendarPicker.tsx` y `ReservarContent.tsx` (vistas previas en cliente), `ConfirmacionContent.tsx` (ahora recibe un array `discounts` por query param en vez de un único pct/amount).
+- [x] Build/typecheck/lint verificados, `scripts/verificar.mjs` corrido, probado en navegador con el caso real reportado (22 oct → 13 nov, dos reglas distintas) tanto en local como en producción.
 
 ---
 

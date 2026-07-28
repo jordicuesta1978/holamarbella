@@ -86,7 +86,7 @@ export async function getPrecios() {
 
 // ── Descuentos por volumen de noches ──────────────────────────────────────────
 
-export async function getDescuentosVolumen(slug?: string): Promise<Array<{ id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }>> {
+export async function getDescuentosVolumen(slug?: string): Promise<Array<{ id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null }>> {
   try {
     let q = db.from('descuentos_volumen').select('*').order('apartment_slug').order('fecha_inicio')
     if (slug) q = q.eq('apartment_slug', slug)
@@ -96,9 +96,9 @@ export async function getDescuentosVolumen(slug?: string): Promise<Array<{ id: n
   } catch { return [] }
 }
 
-export async function addDescuentoVolumen(slug: string, desde: string, hasta: string, nochesMinimas: number, porcentaje: number) {
+export async function addDescuentoVolumen(slug: string, desde: string, hasta: string, nochesMinimas: number, porcentaje: number, nombre?: string) {
   const { error } = await db.from('descuentos_volumen').insert({
-    apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, noches_minimas: nochesMinimas, porcentaje,
+    apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, noches_minimas: nochesMinimas, porcentaje, nombre: nombre?.trim() || null,
   })
   if (error) throw new Error(error.message)
   revalidatePath('/admin/contenido/precios')

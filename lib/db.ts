@@ -155,14 +155,14 @@ export async function getMinNightsRanges(slug: string): Promise<Array<{ start: s
   } catch { return [] }
 }
 
-export async function getVolumeDiscounts(slug: string): Promise<Array<{ start: string; end: string; minNights: number; percentage: number }>> {
+export async function getVolumeDiscounts(slug: string): Promise<Array<{ start: string; end: string; minNights: number; percentage: number; name: string | null }>> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabaseAdmin as any
   try {
-    const { data, error } = await db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje').eq('apartment_slug', slug)
+    const { data, error } = await db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje, nombre').eq('apartment_slug', slug)
     if (error) return []
-    return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }) => ({
-      start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje,
+    return (data ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null }) => ({
+      start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje, name: r.nombre,
     }))
   } catch { return [] }
 }

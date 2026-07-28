@@ -44,22 +44,39 @@ function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{
   return groups
 }
 
-type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number; name?: string | null }
 
-// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// Same logic as lib/pricing.ts computeVolumeDiscounts — duplicated here (not
 // imported) so this client component never pulls in the server-only Supabase
-// admin client that lib/pricing.ts's module graph depends on.
-function computeVolumeDiscount(
+// admin client that lib/pricing.ts's module graph depends on. Prorates per
+// night: a rule is active when the stay meets its minimum nights, and each
+// night within an active rule's date range is discounted at that rule's %
+// — a stay crossing two different-rate periods gets one line per rule.
+function computeVolumeDiscounts(
   rules: VolumeDiscount[],
-  checkIn: string,
-  nights: number,
-  subtotal: number,
-): { percentage: number; amount: number } | null {
-  if (!checkIn || nights <= 0 || subtotal <= 0) return null
-  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
-  if (matches.length === 0) return null
-  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
-  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
+  nights: Array<{ date: string; price: number }>,
+): Array<{ label: string; percentage: number; amount: number }> {
+  if (nights.length === 0) return []
+  const activeRules = rules.filter(r => nights.length >= r.minNights)
+  if (activeRules.length === 0) return []
+
+  const groups = new Map<string, { rule: VolumeDiscount; rawAmount: number }>()
+  for (const n of nights) {
+    const matches = activeRules.filter(r => n.date >= r.start && n.date < r.end)
+    if (matches.length === 0) continue
+    const rule = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}`
+    const raw = n.price * rule.percentage / 100
+    const existing = groups.get(key)
+    if (existing) existing.rawAmount += raw
+    else groups.set(key, { rule, rawAmount: raw })
+  }
+
+  return Array.from(groups.values()).map(({ rule, rawAmount }) => ({
+    label: rule.name?.trim() || 'Descuento estancia larga',
+    percentage: rule.percentage,
+    amount: Math.round(rawAmount),
+  }))
 }
 
 type Props = {
@@ -118,14 +135,17 @@ export default function PricingPanel({
   const [tierRows, setTierRows] = useState<Array<{ label: string; amount: number }>>(() =>
     rangeBreakdown.map(g => ({ label: `${g.price}€/n × ${g.count} noche${g.count > 1 ? 's' : ''}`, amount: g.price * g.count }))
   )
-  // Automatic volume discount, recomputed from the current rules — editable
-  // and removable just like the tramos, in case the admin wants to override it.
-  const [discountRow, setDiscountRow] = useState<{ label: string; amount: number } | null>(() => {
-    if (!checkIn || nights <= 0) return null
-    const rangeBase = rangeBreakdown.reduce((s, g) => s + g.price * g.count, 0)
-    const rawSubtotal = rangeBase > 0 ? rangeBase : defaultRate * nights
-    const match = computeVolumeDiscount(volumeDiscounts, checkIn, nights, rawSubtotal)
-    return match ? { label: `Descuento estancia larga (-${match.percentage}%)`, amount: -match.amount } : null
+  // Automatic volume discounts, recomputed from the current rules and
+  // prorated per night — editable and removable just like the tramos, in
+  // case the admin wants to override them. One row per rule that applied.
+  const [discountRows, setDiscountRows] = useState<Array<{ label: string; amount: number }>>(() => {
+    if (!checkIn || !checkOut || nights <= 0) return []
+    const nightsForDiscount = rangeNights.length > 0
+      ? rangeNights
+      : calcNightlyPrices(checkIn, checkOut, [], defaultRate)
+    return computeVolumeDiscounts(volumeDiscounts, nightsForDiscount).map(d => ({
+      label: `${d.label} (-${d.percentage}%)`, amount: -d.amount,
+    }))
   })
   const [cleaningFee, setCleaningFee] = useState(initialCleaningFee)
   const [extras, setExtras] = useState<Extra[]>(initialExtras)
@@ -154,7 +174,8 @@ export default function PricingPanel({
   // base: editable tier rows when there were multiple price tramos; otherwise
   // the range base (single tramo) or manual rate × nights
   const tierRowsTotal = tierRows.reduce((s, r) => s + r.amount, 0)
-  const base = (tierRows.length > 0 ? tierRowsTotal : rate * nights) + (discountRow?.amount ?? 0)
+  const discountRowsTotal = discountRows.reduce((s, r) => s + r.amount, 0)
+  const base = (tierRows.length > 0 ? tierRowsTotal : rate * nights) + discountRowsTotal
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
   const total = base + cleaningFee + extrasTotal
   const pending = Math.max(total - depositPaid, 0)
@@ -163,9 +184,9 @@ export default function PricingPanel({
     setTierRows(prev => prev.map((r, idx) => idx === i ? { ...r, amount } : r))
   const removeTierRow = (i: number) => setTierRows(prev => prev.filter((_, idx) => idx !== i))
 
-  const updateDiscountAmount = (amount: number) =>
-    setDiscountRow(prev => prev ? { ...prev, amount } : prev)
-  const removeDiscountRow = () => setDiscountRow(null)
+  const updateDiscountAmount = (i: number, amount: number) =>
+    setDiscountRows(prev => prev.map((r, idx) => idx === i ? { ...r, amount } : r))
+  const removeDiscountRow = (i: number) => setDiscountRows(prev => prev.filter((_, idx) => idx !== i))
 
   const addCustom = () => {
     if (!newName.trim() || !newAmount) return
@@ -287,17 +308,21 @@ export default function PricingPanel({
           )}
         </div>
 
-        {/* Automatic volume discount */}
-        {discountRow && (
+        {/* Automatic volume discounts */}
+        {discountRows.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <label style={lbl}>Descuento por volumen de noches</label>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0f9f6', borderRadius: 8, padding: '10px 14px', border: '1px solid #b2d4cc', gap: 8 }}>
-              <span style={{ flex: 1, fontSize: 13, color: '#4B766B' }}>{discountRow.label}</span>
-              <input type="number" value={discountRow.amount} onChange={e => updateDiscountAmount(Number(e.target.value))}
-                style={{ ...inp(), width: 80 }} />
-              <button onClick={removeDiscountRow} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 2 }}>
-                <X size={14} />
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {discountRows.map((r, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0f9f6', borderRadius: 8, padding: '10px 14px', border: '1px solid #b2d4cc', gap: 8 }}>
+                  <span style={{ flex: 1, fontSize: 13, color: '#4B766B' }}>{r.label}</span>
+                  <input type="number" value={r.amount} onChange={e => updateDiscountAmount(i, Number(e.target.value))}
+                    style={{ ...inp(), width: 80 }} />
+                  <button onClick={() => removeDiscountRow(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 2 }}>
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -372,9 +397,9 @@ export default function PricingPanel({
           ) : nights > 0 && (
             <div style={rowStyle}><span style={{ color: '#888' }}>Precio base ({nights} noches)</span><span>{rate * nights}€</span></div>
           )}
-          {discountRow && (
-            <div style={rowStyle}><span style={{ color: '#4B766B' }}>{discountRow.label}</span><span style={{ color: '#4B766B' }}>{discountRow.amount}€</span></div>
-          )}
+          {discountRows.map((r, i) => (
+            <div key={i} style={rowStyle}><span style={{ color: '#4B766B' }}>{r.label}</span><span style={{ color: '#4B766B' }}>{r.amount}€</span></div>
+          ))}
           {cleaningFee > 0 && (
             <div style={rowStyle}><span style={{ color: '#888' }}>Limpieza</span><span>{cleaningFee}€</span></div>
           )}

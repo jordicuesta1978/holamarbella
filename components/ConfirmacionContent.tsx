@@ -29,8 +29,10 @@ export default function ConfirmacionContent() {
   const breakdown: Array<{ price: number; count: number }> = (() => {
     try { return breakdownRaw ? JSON.parse(breakdownRaw) : [] } catch { return [] }
   })();
-  const discountPct = searchParams.get('discountPct') || '';
-  const discountAmount = searchParams.get('discountAmount') || '';
+  const discountsRaw = searchParams.get('discounts') || '';
+  const discounts: Array<{ label: string; percentage: number; amount: number }> = (() => {
+    try { return discountsRaw ? JSON.parse(discountsRaw) : [] } catch { return [] }
+  })();
 
   const [aptInfo, setAptInfo] = useState<{ title: string; subtitle: string } | null>(null);
 
@@ -56,7 +58,7 @@ export default function ConfirmacionContent() {
       ? breakdown.map(g => [t('lodging', { count: g.count }), `${g.price}€ × ${g.count} = ${g.price * g.count}€`] as [string, string])
       : nights ? [[t('duration'), t('nights', { count: Number(nights) })] as [string, string]] : []
     ),
-    ...(discountAmount ? [[`${t('longStayDiscount')} (-${discountPct}%)`, `-${discountAmount}€`] as [string, string]] : []),
+    ...discounts.map(d => [`${d.label || t('longStayDiscount')} (-${d.percentage}%)`, `-${d.amount}€`] as [string, string]),
     ...(cleaning ? [[t('cleaning'), `${cleaning}€`] as [string, string]] : []),
     ...(total ? [[t('totalEstimate'), `${total}€`] as [string, string]] : []),
   ];
@@ -80,7 +82,7 @@ export default function ConfirmacionContent() {
       {details.length > 0 && (
         <div className="rounded-2xl border mb-8 overflow-hidden text-left" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }}>
           {details.map(([label, value], i) => (
-            <div key={label} className="flex" style={{ borderTop: i > 0 ? '1px solid var(--outline-variant)' : undefined }}>
+            <div key={i} className="flex" style={{ borderTop: i > 0 ? '1px solid var(--outline-variant)' : undefined }}>
               <div
                 className="px-5 py-3 text-xs font-bold uppercase tracking-wider"
                 style={{ width: '38%', backgroundColor: 'var(--arena)', color: '#888' }}

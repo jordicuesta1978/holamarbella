@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createSession, deleteSession } from '@/lib/session'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
-import { computeNightlyBreakdown, computeVolumeDiscountForStay, renderPricingTable } from '@/lib/pricing'
+import { computeNightlyBreakdown, computeVolumeDiscountsForStay, renderPricingTable } from '@/lib/pricing'
 import { EMAIL_LABELS, fmtEmailDate, type EmailLocale } from '@/lib/email-i18n'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -202,10 +202,9 @@ async function pricingHtml(r: any, apt: { price_min: number; price_max: number }
   const base = r.total_price - cleaningFee - extrasTotal
   const midPrice = Math.round((apt.price_min + apt.price_max) / 2)
   const breakdown = await computeNightlyBreakdown(r.apartment_slug, r.check_in, r.check_out, midPrice)
-  const breakdownTotal = breakdown.reduce((s, g) => s + g.price * g.count, 0)
-  const discount = await computeVolumeDiscountForStay(r.apartment_slug, r.check_in, nights, breakdownTotal)
+  const discounts = await computeVolumeDiscountsForStay(r.apartment_slug, r.check_in, r.check_out, midPrice)
 
-  const tableHtml = renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total: r.total_price, locale, discount })
+  const tableHtml = renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total: r.total_price, locale, discounts })
 
   const depositPaid: number = r.deposit_paid ?? 0
   if (depositPaid <= 0) return tableHtml

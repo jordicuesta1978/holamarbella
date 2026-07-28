@@ -7,7 +7,7 @@ import type { Database } from '@/lib/database.types'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateDailyBookingRef, getBookingRef } from '@/lib/booking-ref'
 import { EMAIL_LABELS, fmtEmailDate, guestWord, nightWord, type EmailLocale } from '@/lib/email-i18n'
-import { computeVolumeDiscount, type VolumeDiscountRule } from '@/lib/pricing'
+import { computeVolumeDiscounts, type VolumeDiscountLine, type VolumeDiscountRule } from '@/lib/pricing'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,8 +56,8 @@ function calcTotalWithRanges(
   priceRanges: Array<{ fecha_inicio: string; fecha_fin: string; precio_noche: number }>,
   midPrice: number,
   cleaningFee: number,
-): { total: number; breakdown: NightBreakdown[] } {
-  const nights: number[] = []
+): { total: number; breakdown: NightBreakdown[]; nightlyPrices: Array<{ date: string; price: number }> } {
+  const nightlyPrices: Array<{ date: string; price: number }> = []
   const s = new Date(checkIn + 'T00:00:00')
   const e = new Date(checkOut + 'T00:00:00')
   for (const d = new Date(s); d < e; d.setDate(d.getDate() + 1)) {
@@ -66,19 +66,19 @@ function calcTotalWithRanges(
     for (const p of priceRanges) {
       if (key >= p.fecha_inicio && key < p.fecha_fin) range = p
     }
-    nights.push(range?.precio_noche ?? midPrice)
+    nightlyPrices.push({ date: key, price: range?.precio_noche ?? midPrice })
   }
-  const base = nights.reduce((sum, p) => sum + p, 0)
+  const base = nightlyPrices.reduce((sum, n) => sum + n.price, 0)
 
   // Group consecutive nights with same price
   const breakdown: NightBreakdown[] = []
-  for (const p of nights) {
+  for (const n of nightlyPrices) {
     const last = breakdown[breakdown.length - 1]
-    if (last && last.price === p) last.count++
-    else breakdown.push({ price: p, count: 1 })
+    if (last && last.price === n.price) last.count++
+    else breakdown.push({ price: n.price, count: 1 })
   }
 
-  return { total: base + cleaningFee, breakdown }
+  return { total: base + cleaningFee, breakdown, nightlyPrices }
 }
 
 export async function crearReserva(
@@ -92,26 +92,23 @@ export async function crearReserva(
   const [{ data: aptData }, { data: priceRangesData }, { data: volumeDiscountsData }] = await Promise.all([
     db.from('apartments').select('price_min, price_max, cleaning_fee').eq('slug', input.apartmentSlug).single(),
     db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', input.apartmentSlug).order('fecha_inicio'),
-    db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje').eq('apartment_slug', input.apartmentSlug),
+    db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje, nombre').eq('apartment_slug', input.apartmentSlug),
   ])
 
   const cleaningFee: number = aptData?.cleaning_fee ?? 40
   const midPrice: number = aptData ? Math.round((aptData.price_min + aptData.price_max) / 2) : 100
   const priceRanges: Array<{ fecha_inicio: string; fecha_fin: string; precio_noche: number }> = priceRangesData ?? []
-  const volumeDiscountRules: VolumeDiscountRule[] = (volumeDiscountsData ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number }) => ({
-    start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje,
+  const volumeDiscountRules: VolumeDiscountRule[] = (volumeDiscountsData ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null }) => ({
+    start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje, name: r.nombre,
   }))
 
-  const { total: rawTotal, breakdown } = (input.checkIn && input.checkOut)
+  const { total: rawTotal, breakdown, nightlyPrices } = (input.checkIn && input.checkOut)
     ? calcTotalWithRanges(input.checkIn, input.checkOut, priceRanges, midPrice, cleaningFee)
-    : { total: 0, breakdown: [] }
+    : { total: 0, breakdown: [], nightlyPrices: [] }
 
-  const nightsCount = breakdown.reduce((s, g) => s + g.count, 0)
-  const lodgingSubtotal = breakdown.reduce((s, g) => s + g.price * g.count, 0)
-  const discount = input.checkIn
-    ? computeVolumeDiscount(volumeDiscountRules, input.checkIn, nightsCount, lodgingSubtotal)
-    : null
-  const calculatedTotal = rawTotal - (discount?.amount ?? 0)
+  const discounts: VolumeDiscountLine[] = computeVolumeDiscounts(volumeDiscountRules, nightlyPrices)
+  const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
+  const calculatedTotal = rawTotal - discountsTotal
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabaseAdmin as any).from('reservas').insert({
@@ -161,7 +158,7 @@ export async function crearReserva(
     cleaningFee,
     totalPrice: calculatedTotal > 0 ? calculatedTotal : undefined,
     breakdown: breakdown.length > 0 ? breakdown : undefined,
-    discount,
+    discounts,
   } : undefined
 
   const locale: EmailLocale = input.locale === 'en' ? 'en' : 'es'
@@ -252,7 +249,7 @@ type PriceCalc = {
   cleaningFee: number
   totalPrice?: number
   breakdown?: NightBreakdown[]
-  discount?: { percentage: number; amount: number } | null
+  discounts?: VolumeDiscountLine[]
 }
 
 function buildPriceRows(priceCalc: PriceCalc, nights: number, locale: EmailLocale = 'es'): string {
@@ -272,17 +269,17 @@ function buildPriceRows(priceCalc: PriceCalc, nights: number, locale: EmailLocal
     nightRows = `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${midPrice}€/${locale === 'en' ? 'night' : 'noche'} × ${nights} ${nightWord(nights, locale)}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${subtotal}€</td></tr>`
   }
 
-  const discountLabel = locale === 'en' ? 'Long-stay discount' : 'Descuento estancia larga'
-  const discountRow = priceCalc.discount
-    ? `<tr><td style="padding:4px 0;font-size:14px;color:#4B766B;">${discountLabel} (-${priceCalc.discount.percentage}%)</td><td align="right" style="font-size:14px;color:#4B766B;font-weight:600;">-${priceCalc.discount.amount}€</td></tr>`
-    : ''
+  const defaultDiscountLabel = locale === 'en' ? 'Long-stay discount' : 'Descuento estancia larga'
+  const discountRows = (priceCalc.discounts ?? []).map(d =>
+    `<tr><td style="padding:4px 0;font-size:14px;color:#4B766B;">${d.label || defaultDiscountLabel} (-${d.percentage}%)</td><td align="right" style="font-size:14px;color:#4B766B;font-weight:600;">-${d.amount}€</td></tr>`
+  ).join('')
 
   return `
     <div style="background:#f0f9f6;border:1.5px solid #4B766B;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
       <p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#4B766B;">${t.estimatedPrice}</p>
       <table width="100%" cellpadding="0" cellspacing="0">
         ${nightRows}
-        ${discountRow}
+        ${discountRows}
         <tr><td style="padding:4px 0;font-size:14px;color:#555;">${t.cleaningFee}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${cleaningFee}€</td></tr>
         <tr><td colspan="2" style="border-top:1px solid #b2d4cc;padding-top:8px;"></td></tr>
         <tr><td style="padding-top:4px;font-size:16px;font-weight:700;color:#1A1A1A;">${t.estimatedTotal}</td><td align="right" style="font-size:16px;font-weight:800;color:#4B766B;">${total}€</td></tr>

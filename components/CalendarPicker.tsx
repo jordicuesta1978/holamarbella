@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation'
 type BlockedRange = { start: string; end: string }
 type PriceRange = { start: string; end: string; price: number }
 type MinNightsRange = { start: string; end: string; min_nights: number }
-type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number; name?: string | null }
 
 type Props = {
   slug: string
@@ -21,20 +21,37 @@ type Props = {
   volumeDiscounts?: VolumeDiscount[]
 }
 
-// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// Same logic as lib/pricing.ts computeVolumeDiscounts — duplicated here (not
 // imported) so this client component never pulls in the server-only Supabase
-// admin client that lib/pricing.ts's module graph depends on.
-function computeVolumeDiscount(
+// admin client that lib/pricing.ts's module graph depends on. Prorates per
+// night: a rule is active when the stay meets its minimum nights, and each
+// night within an active rule's date range is discounted at that rule's %
+// — a stay crossing two different-rate periods gets one line per rule.
+function computeVolumeDiscounts(
   rules: VolumeDiscount[],
-  checkIn: string,
-  nights: number,
-  subtotal: number,
-): { percentage: number; amount: number } | null {
-  if (!checkIn || nights <= 0 || subtotal <= 0) return null
-  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
-  if (matches.length === 0) return null
-  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
-  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
+  nights: Array<{ date: string; price: number }>,
+): Array<{ label: string; percentage: number; amount: number }> {
+  if (nights.length === 0) return []
+  const activeRules = rules.filter(r => nights.length >= r.minNights)
+  if (activeRules.length === 0) return []
+
+  const groups = new Map<string, { rule: VolumeDiscount; rawAmount: number }>()
+  for (const n of nights) {
+    const matches = activeRules.filter(r => n.date >= r.start && n.date < r.end)
+    if (matches.length === 0) continue
+    const rule = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}`
+    const raw = n.price * rule.percentage / 100
+    const existing = groups.get(key)
+    if (existing) existing.rawAmount += raw
+    else groups.set(key, { rule, rawAmount: raw })
+  }
+
+  return Array.from(groups.values()).map(({ rule, rawAmount }) => ({
+    label: rule.name?.trim() || '',
+    percentage: rule.percentage,
+    amount: Math.round(rawAmount),
+  }))
 }
 
 function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
@@ -140,8 +157,8 @@ export default function CalendarPicker({
   // Price calculation for selected range using priceRanges
   const midPrice = Math.round((priceMin + priceMax) / 2)
 
-  const { total, nightlyBreakdown, discount } = useMemo(() => {
-    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [], discount: null as { percentage: number; amount: number } | null }
+  const { total, nightlyBreakdown, discounts } = useMemo(() => {
+    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [], discounts: [] as Array<{ label: string; percentage: number; amount: number }> }
     const nights: Array<{ date: string; price: number }> = []
     const s = new Date(checkIn + 'T00:00:00')
     const e = new Date(checkOut + 'T00:00:00')
@@ -155,8 +172,9 @@ export default function CalendarPicker({
       nights.push({ date: key, price: range?.price ?? midPrice })
     }
     const base = nights.reduce((s, n) => s + n.price, 0)
-    const disc = computeVolumeDiscount(volumeDiscounts, checkIn, nights.length, base)
-    return { total: base - (disc?.amount ?? 0) + cleaningFee, nightlyBreakdown: nights, discount: disc }
+    const discs = computeVolumeDiscounts(volumeDiscounts, nights)
+    const discountsTotal = discs.reduce((s, d) => s + d.amount, 0)
+    return { total: base - discountsTotal + cleaningFee, nightlyBreakdown: nights, discounts: discs }
   }, [checkIn, checkOut, priceRanges, volumeDiscounts, midPrice, cleaningFee])
 
   // Minimum nights calculation
@@ -338,12 +356,12 @@ export default function CalendarPicker({
               </div>
             ))
           )}
-          {discount && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B766B', marginBottom: 6 }}>
-              <span>{t('longStayDiscount')} (-{discount.percentage}%)</span>
-              <span>-{discount.amount}€</span>
+          {discounts.map((d, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B766B', marginBottom: 6 }}>
+              <span>{d.label || t('longStayDiscount')} (-{d.percentage}%)</span>
+              <span>-{d.amount}€</span>
             </div>
-          )}
+          ))}
           {cleaningFee > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 10 }}>
               <span>{t('cleaning')}</span><span>{cleaningFee}€</span>

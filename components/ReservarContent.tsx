@@ -73,22 +73,39 @@ function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{
   return groups
 }
 
-type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number; name?: string | null }
 
-// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// Same logic as lib/pricing.ts computeVolumeDiscounts — duplicated here (not
 // imported) so this client component never pulls in the server-only Supabase
-// admin client that lib/pricing.ts's module graph depends on.
-function computeVolumeDiscount(
+// admin client that lib/pricing.ts's module graph depends on. Prorates per
+// night: a rule is active when the stay meets its minimum nights, and each
+// night within an active rule's date range is discounted at that rule's %
+// — a stay crossing two different-rate periods gets one line per rule.
+function computeVolumeDiscounts(
   rules: VolumeDiscount[],
-  checkIn: string,
-  nights: number,
-  subtotal: number,
-): { percentage: number; amount: number } | null {
-  if (!checkIn || nights <= 0 || subtotal <= 0) return null
-  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
-  if (matches.length === 0) return null
-  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
-  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
+  nights: Array<{ date: string; price: number }>,
+): Array<{ label: string; percentage: number; amount: number }> {
+  if (nights.length === 0) return []
+  const activeRules = rules.filter(r => nights.length >= r.minNights)
+  if (activeRules.length === 0) return []
+
+  const groups = new Map<string, { rule: VolumeDiscount; rawAmount: number }>()
+  for (const n of nights) {
+    const matches = activeRules.filter(r => n.date >= r.start && n.date < r.end)
+    if (matches.length === 0) continue
+    const rule = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}`
+    const raw = n.price * rule.percentage / 100
+    const existing = groups.get(key)
+    if (existing) existing.rawAmount += raw
+    else groups.set(key, { rule, rawAmount: raw })
+  }
+
+  return Array.from(groups.values()).map(({ rule, rawAmount }) => ({
+    label: rule.name?.trim() || '',
+    percentage: rule.percentage,
+    amount: Math.round(rawAmount),
+  }))
 }
 
 const DEFAULT_CLEANING_FEE = 40
@@ -130,8 +147,9 @@ export default function ReservarContent({
     ? calcNightlyPrices(form.checkIn, form.checkOut, priceRanges, midPrice)
     : []
   const subtotal = nightlyPrices.reduce((s, n) => s + n.price, 0)
-  const discount = subtotal > 0 ? computeVolumeDiscount(volumeDiscounts, form.checkIn, nights, subtotal) : null
-  const total = subtotal > 0 ? subtotal - (discount?.amount ?? 0) + cleaningFee : 0
+  const discounts = subtotal > 0 ? computeVolumeDiscounts(volumeDiscounts, nightlyPrices) : []
+  const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
+  const total = subtotal > 0 ? subtotal - discountsTotal + cleaningFee : 0
   const breakdown = groupBreakdown(nightlyPrices)
 
   const set = (field: keyof FormState) =>
@@ -201,7 +219,7 @@ export default function ReservarContent({
           total: String(total),
           // pass breakdown so confirmation can show per-range desglose
           breakdown: JSON.stringify(breakdown),
-          ...(discount ? { discountPct: String(discount.percentage), discountAmount: String(discount.amount) } : {}),
+          ...(discounts.length > 0 ? { discounts: JSON.stringify(discounts) } : {}),
         } : {}),
       });
       router.push(`/confirmacion?${qs.toString()}`);
@@ -385,12 +403,12 @@ export default function ReservarContent({
                         <span style={{ color: 'var(--on-surface)' }}>{g.price * g.count}€</span>
                       </div>
                     ))}
-                    {discount && (
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--primary)' }}>{t('longStayDiscount')} (-{discount.percentage}%)</span>
-                        <span style={{ color: 'var(--primary)' }}>-{discount.amount}€</span>
+                    {discounts.map((d, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--primary)' }}>{d.label || t('longStayDiscount')} (-{d.percentage}%)</span>
+                        <span style={{ color: 'var(--primary)' }}>-{d.amount}€</span>
                       </div>
-                    )}
+                    ))}
                     <div className="flex justify-between text-sm">
                       <span style={{ color: 'var(--on-surface-variant)' }}>{t('cleaning')}</span>
                       <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>
