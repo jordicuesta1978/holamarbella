@@ -126,6 +126,7 @@
     "nights": "{count, plural, one {# noche} other {# noches}}",
     "cleaning": "Gastos de limpieza",
     "totalEstimate": "Total estimado",
+    "longStayDiscount": "Descuento estancia larga",
     "priceNote": "* El precio exacto se confirma al revisar tu solicitud.",
     "minNights": "Estancia mínima: {count, plural, one {# noche} other {# noches}}",
     "rangeBlocked": "Hay días no disponibles en ese rango. Elige otra fecha de salida.",

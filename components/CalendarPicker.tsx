@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation'
 type BlockedRange = { start: string; end: string }
 type PriceRange = { start: string; end: string; price: number }
 type MinNightsRange = { start: string; end: string; min_nights: number }
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number }
 
 type Props = {
   slug: string
@@ -17,6 +18,23 @@ type Props = {
   minNightsDefault?: number
   minNightsRanges?: MinNightsRange[]
   priceRanges?: PriceRange[]
+  volumeDiscounts?: VolumeDiscount[]
+}
+
+// Same logic as lib/pricing.ts computeVolumeDiscount — duplicated here (not
+// imported) so this client component never pulls in the server-only Supabase
+// admin client that lib/pricing.ts's module graph depends on.
+function computeVolumeDiscount(
+  rules: VolumeDiscount[],
+  checkIn: string,
+  nights: number,
+  subtotal: number,
+): { percentage: number; amount: number } | null {
+  if (!checkIn || nights <= 0 || subtotal <= 0) return null
+  const matches = rules.filter(r => checkIn >= r.start && checkIn < r.end && nights >= r.minNights)
+  if (matches.length === 0) return null
+  const best = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+  return { percentage: best.percentage, amount: Math.round(subtotal * best.percentage / 100) }
 }
 
 function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1) }
@@ -32,7 +50,7 @@ function addMonths(y: number, m: number, n: number): [number, number] {
 
 export default function CalendarPicker({
   slug, blockedRanges, priceMin, priceMax, cleaningFee,
-  minNightsDefault = 1, minNightsRanges = [], priceRanges = [],
+  minNightsDefault = 1, minNightsRanges = [], priceRanges = [], volumeDiscounts = [],
 }: Props) {
   const t = useTranslations('calendar')
   const locale = useLocale()
@@ -122,8 +140,8 @@ export default function CalendarPicker({
   // Price calculation for selected range using priceRanges
   const midPrice = Math.round((priceMin + priceMax) / 2)
 
-  const { total, nightlyBreakdown } = useMemo(() => {
-    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [] }
+  const { total, nightlyBreakdown, discount } = useMemo(() => {
+    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [], discount: null as { percentage: number; amount: number } | null }
     const nights: Array<{ date: string; price: number }> = []
     const s = new Date(checkIn + 'T00:00:00')
     const e = new Date(checkOut + 'T00:00:00')
@@ -137,8 +155,9 @@ export default function CalendarPicker({
       nights.push({ date: key, price: range?.price ?? midPrice })
     }
     const base = nights.reduce((s, n) => s + n.price, 0)
-    return { total: base + cleaningFee, nightlyBreakdown: nights }
-  }, [checkIn, checkOut, priceRanges, midPrice, cleaningFee])
+    const disc = computeVolumeDiscount(volumeDiscounts, checkIn, nights.length, base)
+    return { total: base - (disc?.amount ?? 0) + cleaningFee, nightlyBreakdown: nights, discount: disc }
+  }, [checkIn, checkOut, priceRanges, volumeDiscounts, midPrice, cleaningFee])
 
   // Minimum nights calculation
   const requiredMinNights = useMemo(() => {
@@ -318,6 +337,12 @@ export default function CalendarPicker({
                 <span>{g.price * g.count}€</span>
               </div>
             ))
+          )}
+          {discount && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B766B', marginBottom: 6 }}>
+              <span>{t('longStayDiscount')} (-{discount.percentage}%)</span>
+              <span>-{discount.amount}€</span>
+            </div>
           )}
           {cleaningFee > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 10 }}>

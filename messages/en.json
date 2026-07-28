@@ -126,6 +126,7 @@
     "nights": "{count, plural, one {# night} other {# nights}}",
     "cleaning": "Cleaning fee",
     "totalEstimate": "Estimated total",
+    "longStayDiscount": "Long-stay discount",
     "priceNote": "* The exact price is confirmed when we review your request.",
     "minNights": "Minimum stay: {count, plural, one {# night} other {# nights}}",
     "rangeBlocked": "There are unavailable days in that range. Choose another check-out date.",

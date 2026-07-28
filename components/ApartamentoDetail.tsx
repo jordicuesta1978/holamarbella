@@ -67,6 +67,7 @@ export default function ApartamentoDetail({
   blockedRanges = [],
   cleaningFee = 40,
   priceRanges = [],
+  volumeDiscounts = [],
   minNightsDefault = 1,
   minNightsRanges = [],
   storagePhotos = [],
@@ -76,6 +77,7 @@ export default function ApartamentoDetail({
   blockedRanges?: Array<{ start: string; end: string }>;
   cleaningFee?: number;
   priceRanges?: Array<{ start: string; end: string; price: number }>;
+  volumeDiscounts?: Array<{ start: string; end: string; minNights: number; percentage: number }>;
   minNightsDefault?: number;
   minNightsRanges?: Array<{ start: string; end: string; min_nights: number }>;
   storagePhotos?: string[];
@@ -298,6 +300,7 @@ export default function ApartamentoDetail({
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
               priceRanges={priceRanges}
+              volumeDiscounts={volumeDiscounts}
               minNightsDefault={minNightsDefault}
               minNightsRanges={minNightsRanges}
             />
@@ -368,6 +371,7 @@ export default function ApartamentoDetail({
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
               priceRanges={priceRanges}
+              volumeDiscounts={volumeDiscounts}
               minNightsDefault={minNightsDefault}
               minNightsRanges={minNightsRanges}
             />
