@@ -11,7 +11,16 @@
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
 
 ### Verificación
-- [x] **Corrido `node scripts/verificar.mjs`** (2026-07-28) — 73 OK / 1 fallo, preexistente y no relacionado (`scripts/informe_2026-07-28T19-15-46.txt`).
+- [x] **Corrido `node scripts/verificar.mjs`** (2026-07-29) — 73 OK / 1 fallo, preexistente y no relacionado (`scripts/informe_2026-07-29T08-13-45.txt`).
+
+---
+
+## COMPLETADO — batch 2026-07-29 (nombre bilingüe ES/EN por regla de descuento)
+
+- [x] **Columna `nombre_en`** en `descuentos_volumen` (migración `migration_descuentos_volumen_nombre_en.sql`, ejecutada) — junto a la ya existente `nombre` (ES).
+- [x] **Admin**: formulario de reglas con dos campos, "Nombre ES" y "Nombre EN", ambos opcionales.
+- [x] **`computeVolumeDiscounts`** (en los 4 sitios: `lib/pricing.ts`, `reservar.ts`, `ReservarContent.tsx`, `CalendarPicker.tsx`) ahora recibe el `locale` del huésped y elige `nombre`/`nombre_en` para la etiqueta de cada línea de descuento; si no se ha rellenado, cae al genérico "Descuento estancia larga"/"Long-stay discount" ya traducido. El admin (`PricingPanel.tsx`) sigue mostrando siempre el nombre en ES.
+- [x] Verificado en local y producción en ES y EN con las mismas fechas de prueba (22 oct → 13 nov).
 
 ---
 

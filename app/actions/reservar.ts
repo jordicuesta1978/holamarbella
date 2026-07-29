@@ -92,21 +92,22 @@ export async function crearReserva(
   const [{ data: aptData }, { data: priceRangesData }, { data: volumeDiscountsData }] = await Promise.all([
     db.from('apartments').select('price_min, price_max, cleaning_fee').eq('slug', input.apartmentSlug).single(),
     db.from('precios').select('fecha_inicio, fecha_fin, precio_noche').eq('apartment_slug', input.apartmentSlug).order('fecha_inicio'),
-    db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje, nombre').eq('apartment_slug', input.apartmentSlug),
+    db.from('descuentos_volumen').select('fecha_inicio, fecha_fin, noches_minimas, porcentaje, nombre, nombre_en').eq('apartment_slug', input.apartmentSlug),
   ])
 
+  const locale: EmailLocale = input.locale === 'en' ? 'en' : 'es'
   const cleaningFee: number = aptData?.cleaning_fee ?? 40
   const midPrice: number = aptData ? Math.round((aptData.price_min + aptData.price_max) / 2) : 100
   const priceRanges: Array<{ fecha_inicio: string; fecha_fin: string; precio_noche: number }> = priceRangesData ?? []
-  const volumeDiscountRules: VolumeDiscountRule[] = (volumeDiscountsData ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null }) => ({
-    start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje, name: r.nombre,
+  const volumeDiscountRules: VolumeDiscountRule[] = (volumeDiscountsData ?? []).map((r: { fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null; nombre_en: string | null }) => ({
+    start: r.fecha_inicio, end: r.fecha_fin, minNights: r.noches_minimas, percentage: r.porcentaje, name: r.nombre, nameEn: r.nombre_en,
   }))
 
   const { total: rawTotal, breakdown, nightlyPrices } = (input.checkIn && input.checkOut)
     ? calcTotalWithRanges(input.checkIn, input.checkOut, priceRanges, midPrice, cleaningFee)
     : { total: 0, breakdown: [], nightlyPrices: [] }
 
-  const discounts: VolumeDiscountLine[] = computeVolumeDiscounts(volumeDiscountRules, nightlyPrices)
+  const discounts: VolumeDiscountLine[] = computeVolumeDiscounts(volumeDiscountRules, nightlyPrices, locale)
   const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
   const calculatedTotal = rawTotal - discountsTotal
 
@@ -161,7 +162,6 @@ export async function crearReserva(
     discounts,
   } : undefined
 
-  const locale: EmailLocale = input.locale === 'en' ? 'en' : 'es'
   const subjectHuesped = locale === 'en' ? 'Request received!' : '¡Solicitud recibida!'
 
   const emailTasks: Promise<unknown>[] = [

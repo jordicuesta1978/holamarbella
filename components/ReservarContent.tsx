@@ -73,7 +73,7 @@ function groupBreakdown(nights: Array<{ date: string; price: number }>): Array<{
   return groups
 }
 
-type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number; name?: string | null }
+type VolumeDiscount = { start: string; end: string; minNights: number; percentage: number; name?: string | null; nameEn?: string | null }
 
 // Same logic as lib/pricing.ts computeVolumeDiscounts — duplicated here (not
 // imported) so this client component never pulls in the server-only Supabase
@@ -84,6 +84,7 @@ type VolumeDiscount = { start: string; end: string; minNights: number; percentag
 function computeVolumeDiscounts(
   rules: VolumeDiscount[],
   nights: Array<{ date: string; price: number }>,
+  locale: string,
 ): Array<{ label: string; percentage: number; amount: number }> {
   if (nights.length === 0) return []
   const activeRules = rules.filter(r => nights.length >= r.minNights)
@@ -94,7 +95,7 @@ function computeVolumeDiscounts(
     const matches = activeRules.filter(r => n.date >= r.start && n.date < r.end)
     if (matches.length === 0) continue
     const rule = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
-    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}`
+    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}|${rule.nameEn ?? ''}`
     const raw = n.price * rule.percentage / 100
     const existing = groups.get(key)
     if (existing) existing.rawAmount += raw
@@ -102,7 +103,7 @@ function computeVolumeDiscounts(
   }
 
   return Array.from(groups.values()).map(({ rule, rawAmount }) => ({
-    label: rule.name?.trim() || '',
+    label: ((locale === 'en' ? rule.nameEn : rule.name) ?? '').trim(),
     percentage: rule.percentage,
     amount: Math.round(rawAmount),
   }))
@@ -147,7 +148,7 @@ export default function ReservarContent({
     ? calcNightlyPrices(form.checkIn, form.checkOut, priceRanges, midPrice)
     : []
   const subtotal = nightlyPrices.reduce((s, n) => s + n.price, 0)
-  const discounts = subtotal > 0 ? computeVolumeDiscounts(volumeDiscounts, nightlyPrices) : []
+  const discounts = subtotal > 0 ? computeVolumeDiscounts(volumeDiscounts, nightlyPrices, locale) : []
   const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
   const total = subtotal > 0 ? subtotal - discountsTotal + cleaningFee : 0
   const breakdown = groupBreakdown(nightlyPrices)

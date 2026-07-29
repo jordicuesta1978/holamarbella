@@ -2,7 +2,7 @@ import { getPriceRanges, getVolumeDiscounts } from './db'
 import { EMAIL_LABELS, nightWord, type EmailLocale } from './email-i18n'
 
 export type NightBreakdown = { price: number; count: number }
-export type VolumeDiscountRule = { start: string; end: string; minNights: number; percentage: number; name?: string | null }
+export type VolumeDiscountRule = { start: string; end: string; minNights: number; percentage: number; name?: string | null; nameEn?: string | null }
 export type VolumeDiscountLine = { label: string; percentage: number; amount: number }
 
 // Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
@@ -60,6 +60,7 @@ export async function computeNightlyBreakdown(
 export function computeVolumeDiscounts(
   rules: VolumeDiscountRule[],
   nights: Array<{ date: string; price: number }>,
+  locale: EmailLocale = 'es',
 ): VolumeDiscountLine[] {
   if (nights.length === 0) return []
   const activeRules = rules.filter(r => nights.length >= r.minNights)
@@ -70,7 +71,7 @@ export function computeVolumeDiscounts(
     const matches = activeRules.filter(r => n.date >= r.start && n.date < r.end)
     if (matches.length === 0) continue
     const rule = matches.reduce((a, b) => (b.percentage > a.percentage ? b : a))
-    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}`
+    const key = `${rule.start}|${rule.end}|${rule.percentage}|${rule.name ?? ''}|${rule.nameEn ?? ''}`
     const raw = n.price * rule.percentage / 100
     const existing = groups.get(key)
     if (existing) existing.rawAmount += raw
@@ -78,7 +79,7 @@ export function computeVolumeDiscounts(
   }
 
   return Array.from(groups.values()).map(({ rule, rawAmount }) => ({
-    label: rule.name?.trim() || '',
+    label: ((locale === 'en' ? rule.nameEn : rule.name) ?? '').trim(),
     percentage: rule.percentage,
     amount: Math.round(rawAmount),
   }))
@@ -91,12 +92,13 @@ export async function computeVolumeDiscountsForStay(
   checkIn: string,
   checkOut: string,
   midPrice: number,
+  locale: EmailLocale = 'es',
 ): Promise<VolumeDiscountLine[]> {
   const [rules, nights] = await Promise.all([
     getVolumeDiscounts(apartmentSlug),
     computeNightlyPrices(apartmentSlug, checkIn, checkOut, midPrice),
   ])
-  return computeVolumeDiscounts(rules, nights)
+  return computeVolumeDiscounts(rules, nights, locale)
 }
 
 type ExtraLine = { name: string; amount: number; quantity?: number; unit?: string }

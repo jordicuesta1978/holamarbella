@@ -15,7 +15,7 @@ const APTS = [
 
 type Precio = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; precio_noche: number }
 type MinNight = { id: number; apartment_slug: string; start_date: string | null; end_date: string | null; min_nights: number }
-type Descuento = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null }
+type Descuento = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; noches_minimas: number; porcentaje: number; nombre: string | null; nombre_en: string | null }
 
 function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -98,10 +98,11 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
     const noches = Number(fd.get('noches'))
     const porcentaje = Number(fd.get('porcentaje'))
     const nombre = fd.get('nombre') as string
+    const nombreEn = fd.get('nombreEn') as string
     if (!desde || !hastaIncl || desde > hastaIncl || noches <= 0 || porcentaje <= 0) return
     const hasta = addDay(hastaIncl)  // convert inclusive → exclusive for DB
     startTransition(async () => {
-      await addDescuentoVolumen(slug, desde, hasta, noches, porcentaje, nombre)
+      await addDescuentoVolumen(slug, desde, hasta, noches, porcentaje, nombre, nombreEn)
       router.refresh()
     })
   }
@@ -225,7 +226,8 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
           <p style={{ margin: '3px 0 0', fontSize: 11, color: '#aaa' }}>Se aplica automáticamente al alojamiento (no a limpieza/extras) cuando la estancia llega al mínimo de noches de la regla. Si la estancia cruza varios rangos con reglas distintas, cada una se prorratea solo sobre las noches que caen en su rango y aparece como línea aparte en el desglose.</p>
         </div>
         <form action={handleAddDescuento} style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
-          <div><label style={lbl}>Nombre (opcional)</label><input type="text" name="nombre" placeholder="Ej: Descuento temporada baja" style={{ ...inp, width: 200 }} /></div>
+          <div><label style={lbl}>Nombre ES (opcional)</label><input type="text" name="nombre" placeholder="Ej: Descuento temporada baja" style={{ ...inp, width: 180 }} /></div>
+          <div><label style={lbl}>Nombre EN (opcional)</label><input type="text" name="nombreEn" placeholder="Ej: Low season discount" style={{ ...inp, width: 180 }} /></div>
           <div><label style={lbl}>Desde</label><input type="date" name="desde" required style={inp} /></div>
           <div><label style={lbl}>Hasta (inclusive)</label><input type="date" name="hasta" required style={inp} /></div>
           <div><label style={lbl}>Noches mín.</label><input type="number" name="noches" min={1} max={365} defaultValue={7} required style={{ ...inp, width: 80 }} /></div>
@@ -239,7 +241,7 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
           : filteredDescuentos.map((d, i) => (
             <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredDescuentos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
               <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>
-                {d.nombre && <strong>{d.nombre} · </strong>}
+                {d.nombre && <strong>{d.nombre}{d.nombre_en ? ` / ${d.nombre_en}` : ''} · </strong>}
                 {fmt(d.fecha_inicio)} → {fmt(subDay(d.fecha_fin))} · {d.noches_minimas}+ noches
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, background: '#d1fae5', borderRadius: 6, padding: '2px 10px', color: '#065f46' }}>-{d.porcentaje}%</span>

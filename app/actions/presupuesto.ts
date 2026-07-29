@@ -53,7 +53,7 @@ async function pricingHtml(r: any, apt: { price_min: number; price_max: number }
   const base = total - cleaningFee - extrasTotal
   const midPrice = Math.round((apt.price_min + apt.price_max) / 2)
   const breakdown = await computeNightlyBreakdown(r.apartment_slug, r.check_in, r.check_out, midPrice)
-  const discounts = await computeVolumeDiscountsForStay(r.apartment_slug, r.check_in, r.check_out, midPrice)
+  const discounts = await computeVolumeDiscountsForStay(r.apartment_slug, r.check_in, r.check_out, midPrice, locale)
 
   return renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total, locale, discounts })
 }
