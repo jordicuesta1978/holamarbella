@@ -6,6 +6,12 @@
 
 ## PENDIENTE — próximas tareas
 
+### Ajustes post go-live (recopilados con Jordi)
+- [x] **Bloqueos: añadir "Editar"** (hecho, pendiente de subir y probar) — en admin/contenido → Bloqueos activos solo existe "Eliminar". Añadir botón Editar (fechas y motivo) para no tener que borrar y recrear.
+- [x] **Precios: añadir "Editar" en todas las listas** (hecho, pendiente de subir y probar) — en la sección Precios, las tres listas solo tienen "Eliminar": Tarifas configuradas, Noches mínimas y Descuentos por volumen de noches. Añadir Editar en cada una (fechas, importe/noches/% y nombres ES/EN en descuentos). Mismo patrón que Bloqueos, conviene resolverlo todo junto.
+
+- [x] **Favicon propio** (hecho, pendiente de subir) — sustituido el icono por defecto (logo de Vercel/Next) por una "H" blanca sobre cuadrado verde del logo: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png`.
+
 ### Gestor de Contenido (fuera de este batch, sin espec suficiente todavía)
 - [ ] **Amenidades por categorías** — editor interactivo por categoría en admin (AmenidadesEditor.tsx)
 - [ ] **Calendario rediseño Airbnb** — sidebar apartamento + meses verticales + datos por día
