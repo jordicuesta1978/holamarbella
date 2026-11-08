@@ -168,6 +168,7 @@ export async function crearReserva(
     resend.emails.send({
       from: FROM,
       to: input.email,
+      replyTo: MAR,
       subject: subjectHuesped,
       html: emailHuesped(inputWithToken, displayTitle, locale, priceCalc),
     }),

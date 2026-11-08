@@ -116,6 +116,7 @@ export async function solicitarPago(reservaId: number, amount: number, comment?:
   await resend.emails.send({
     from: FROM,
     to: reserva.guest_email,
+    replyTo: MAR,
     subject,
     html: emailPagoGuest(firstName, amount, locale, comment),
   }).catch(() => {})

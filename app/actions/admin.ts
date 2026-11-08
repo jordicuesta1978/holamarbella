@@ -102,6 +102,7 @@ export async function updateReservaStatus(
     await resend.emails.send({
       from: FROM,
       to: r.guest_email,
+      replyTo: process.env.MAR_EMAIL,
       subject: locale === 'en' ? `Booking confirmed! — ${aptTitle}` : `¡Reserva confirmada! — ${aptTitle}`,
       html: await confirmedHtml(r, aptTitle, aptPrices, locale),
     })
@@ -109,6 +110,7 @@ export async function updateReservaStatus(
     await resend.emails.send({
       from: FROM,
       to: r.guest_email,
+      replyTo: process.env.MAR_EMAIL,
       subject: locale === 'en' ? `Update on your request — ${aptTitle}` : `Actualización sobre tu solicitud — ${aptTitle}`,
       html: cancelledHtml(r, aptTitle, cancelMessage, locale),
     })

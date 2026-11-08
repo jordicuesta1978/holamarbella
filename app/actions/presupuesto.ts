@@ -134,6 +134,7 @@ export async function sendQuote(id: number, message: string) {
   await resend.emails.send({
     from: FROM,
     to: reserva.guest_email,
+    replyTo: process.env.MAR_EMAIL,
     subject,
     html: await quoteHtml(reserva, aptTitle, aptPrices, message, locale),
   })
