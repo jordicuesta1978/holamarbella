@@ -16,8 +16,8 @@ mkdirSync(OUT, { recursive: true })
 const BASE_PUBLIC = 'https://holamarbella.vercel.app'
 const BASE_ADMIN  = 'http://localhost:3001'
 const BASE = BASE_PUBLIC  // default for helpers
-const ADMIN_EMAIL = 'jordicom78@gmail.com'
-const ADMIN_PASSWORD = 'changeme'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
 
 const W = 1280
 

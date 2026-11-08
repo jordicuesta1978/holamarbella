@@ -27,8 +27,8 @@ const envVars = Object.fromEntries(
 )
 const SUPABASE_URL = envVars['NEXT_PUBLIC_SUPABASE_URL']
 const SERVICE_KEY = envVars['SUPABASE_SERVICE_ROLE_KEY']
-const ADMIN_EMAIL = envVars['ADMIN_EMAIL'] || 'jordicom78@gmail.com'
-const ADMIN_PASSWORD = envVars['ADMIN_PASSWORD'] || 'changeme'
+const ADMIN_EMAIL = envVars['ADMIN_EMAIL']
+const ADMIN_PASSWORD = envVars['ADMIN_PASSWORD']
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
