@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
-import { addPrecio, deletePrecio, addMinNights, deleteMinNights, addDescuentoVolumen, deleteDescuentoVolumen } from '@/app/admin/contenido/actions'
+import { addPrecio, deletePrecio, updatePrecio, addMinNights, deleteMinNights, updateMinNights, addDescuentoVolumen, deleteDescuentoVolumen, updateDescuentoVolumen } from '@/app/admin/contenido/actions'
 
 const APTS = [
   { slug: 'paloma', label: 'Paloma', priceBase: 115 },
@@ -56,6 +56,7 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
   const router = useRouter()
   const [slug, setSlug] = useState('paloma')
   const [isPending, startTransition] = useTransition()
+  const [editing, setEditing] = useState<{ kind: 'precio' | 'mn' | 'desc'; id: number } | null>(null)
   const now = new Date()
 
   const marks = buildMarks(precios, slug)
@@ -72,6 +73,46 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
     const hasta = addDay(hastaIncl)  // convert inclusive → exclusive for DB
     startTransition(async () => {
       await addPrecio(slug, desde, hasta, precio)
+      router.refresh()
+    })
+  }
+
+  function handleUpdatePrecio(id: number, fd: FormData) {
+    const desde = fd.get('desde') as string
+    const hastaIncl = fd.get('hasta') as string
+    const precio = Number(fd.get('precio'))
+    if (!desde || !hastaIncl || precio <= 0 || desde > hastaIncl) return
+    startTransition(async () => {
+      await updatePrecio(id, desde, addDay(hastaIncl), precio)
+      setEditing(null)
+      router.refresh()
+    })
+  }
+
+  function handleUpdateMN(id: number, fd: FormData) {
+    const desde = (fd.get('desde') as string) || null
+    const hasta = (fd.get('hasta') as string) || null
+    const min = Number(fd.get('min'))
+    if (min <= 0) return
+    if (desde && hasta && desde > hasta) return
+    startTransition(async () => {
+      await updateMinNights(id, desde, hasta, min)
+      setEditing(null)
+      router.refresh()
+    })
+  }
+
+  function handleUpdateDescuento(id: number, fd: FormData) {
+    const desde = fd.get('desde') as string
+    const hastaIncl = fd.get('hasta') as string
+    const noches = Number(fd.get('noches'))
+    const porcentaje = Number(fd.get('porcentaje'))
+    const nombre = fd.get('nombre') as string
+    const nombreEn = fd.get('nombreEn') as string
+    if (!desde || !hastaIncl || desde > hastaIncl || noches <= 0 || porcentaje <= 0) return
+    startTransition(async () => {
+      await updateDescuentoVolumen(id, desde, addDay(hastaIncl), noches, porcentaje, nombre, nombreEn)
+      setEditing(null)
       router.refresh()
     })
   }
@@ -113,6 +154,11 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
 
   const inp: React.CSSProperties = { border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }
   const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }
+
+  const btnEdit: React.CSSProperties = { background: 'none', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }
+  const btnSave: React.CSSProperties = { background: '#4B766B', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1 }
+  const btnCancel: React.CSSProperties = { background: '#f4f5f7', color: '#555', border: 'none', borderRadius: 7, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }
+  const editRow = (last: boolean): React.CSSProperties => ({ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', padding: '12px 20px', background: '#f8fafc', borderBottom: last ? undefined : '1px solid #f5f5f5' })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -180,13 +226,24 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
         {filteredPrecios.length === 0
           ? <p style={{ padding: '20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>Sin tarifas para {aptInfo.label}</p>
           : filteredPrecios.map((p, i) => (
+            editing?.kind === 'precio' && editing.id === p.id ? (
+              <form key={p.id} action={fd => handleUpdatePrecio(p.id, fd)} style={editRow(i === filteredPrecios.length - 1)}>
+                <div><label style={lbl}>Desde</label><input type="date" name="desde" defaultValue={p.fecha_inicio} required style={inp} /></div>
+                <div><label style={lbl}>Hasta (inclusive)</label><input type="date" name="hasta" defaultValue={subDay(p.fecha_fin)} required style={inp} /></div>
+                <div><label style={lbl}>€ / noche</label><input type="number" name="precio" min={1} defaultValue={p.precio_noche} required style={{ ...inp, width: 90 }} /></div>
+                <button type="submit" disabled={isPending} style={btnSave}>{isPending ? 'Guardando…' : 'Guardar'}</button>
+                <button type="button" onClick={() => setEditing(null)} style={btnCancel}>Cancelar</button>
+              </form>
+            ) : (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredPrecios.length - 1 ? '1px solid #f5f5f5' : undefined }}>
               <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>{fmt(p.fecha_inicio)} → {fmt(subDay(p.fecha_fin))}</span>
               <span style={{ fontSize: 15, fontWeight: 800, color: '#4B766B', background: priceColor(p.precio_noche), borderRadius: 6, padding: '2px 10px' }}>{p.precio_noche}€/n</span>
+              <button onClick={() => setEditing({ kind: 'precio', id: p.id })} disabled={isPending} style={btnEdit}>Editar</button>
               <button onClick={() => handleDelPrecio(p.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Eliminar
               </button>
             </div>
+            )
           ))}
       </div>
 
@@ -207,15 +264,26 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
         {filteredMN.length === 0
           ? <p style={{ padding: '16px 20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>Sin reglas para {aptInfo.label}</p>
           : filteredMN.map((mn, i) => (
+            editing?.kind === 'mn' && editing.id === mn.id ? (
+              <form key={mn.id} action={fd => handleUpdateMN(mn.id, fd)} style={editRow(i === filteredMN.length - 1)}>
+                <div><label style={lbl}>Desde (opc.)</label><input type="date" name="desde" defaultValue={mn.start_date ?? ''} style={inp} /></div>
+                <div><label style={lbl}>Hasta (opc.)</label><input type="date" name="hasta" defaultValue={mn.end_date ?? ''} style={inp} /></div>
+                <div><label style={lbl}>Noches mín.</label><input type="number" name="min" min={1} max={365} defaultValue={mn.min_nights} required style={{ ...inp, width: 80 }} /></div>
+                <button type="submit" disabled={isPending} style={btnSave}>{isPending ? 'Guardando…' : 'Guardar'}</button>
+                <button type="button" onClick={() => setEditing(null)} style={btnCancel}>Cancelar</button>
+              </form>
+            ) : (
             <div key={mn.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredMN.length - 1 ? '1px solid #f5f5f5' : undefined }}>
               <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>
                 {mn.start_date ? `${fmt(mn.start_date)} → ${mn.end_date ? fmt(mn.end_date) : '∞'}` : 'Siempre'}
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, background: '#fef9c3', borderRadius: 6, padding: '2px 10px', color: '#1a1a2e' }}>{mn.min_nights} noches mín.</span>
+              <button onClick={() => setEditing({ kind: 'mn', id: mn.id })} disabled={isPending} style={btnEdit}>Editar</button>
               <button onClick={() => handleDelMN(mn.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Eliminar
               </button>
             </div>
+            )
           ))}
       </div>
 
@@ -239,16 +307,30 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
         {filteredDescuentos.length === 0
           ? <p style={{ padding: '16px 20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>Sin reglas para {aptInfo.label}</p>
           : filteredDescuentos.map((d, i) => (
+            editing?.kind === 'desc' && editing.id === d.id ? (
+              <form key={d.id} action={fd => handleUpdateDescuento(d.id, fd)} style={editRow(i === filteredDescuentos.length - 1)}>
+                <div><label style={lbl}>Nombre ES (opcional)</label><input type="text" name="nombre" defaultValue={d.nombre ?? ''} style={{ ...inp, width: 180 }} /></div>
+                <div><label style={lbl}>Nombre EN (opcional)</label><input type="text" name="nombreEn" defaultValue={d.nombre_en ?? ''} style={{ ...inp, width: 180 }} /></div>
+                <div><label style={lbl}>Desde</label><input type="date" name="desde" defaultValue={d.fecha_inicio} required style={inp} /></div>
+                <div><label style={lbl}>Hasta (inclusive)</label><input type="date" name="hasta" defaultValue={subDay(d.fecha_fin)} required style={inp} /></div>
+                <div><label style={lbl}>Noches mín.</label><input type="number" name="noches" min={1} max={365} defaultValue={d.noches_minimas} required style={{ ...inp, width: 80 }} /></div>
+                <div><label style={lbl}>% descuento</label><input type="number" name="porcentaje" min={1} max={100} step={0.5} defaultValue={d.porcentaje} required style={{ ...inp, width: 80 }} /></div>
+                <button type="submit" disabled={isPending} style={btnSave}>{isPending ? 'Guardando…' : 'Guardar'}</button>
+                <button type="button" onClick={() => setEditing(null)} style={btnCancel}>Cancelar</button>
+              </form>
+            ) : (
             <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < filteredDescuentos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
               <span style={{ flex: 1, fontSize: 13, color: '#1a1a2e' }}>
                 {d.nombre && <strong>{d.nombre}{d.nombre_en ? ` / ${d.nombre_en}` : ''} · </strong>}
                 {fmt(d.fecha_inicio)} → {fmt(subDay(d.fecha_fin))} · {d.noches_minimas}+ noches
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, background: '#d1fae5', borderRadius: 6, padding: '2px 10px', color: '#065f46' }}>-{d.porcentaje}%</span>
+              <button onClick={() => setEditing({ kind: 'desc', id: d.id })} disabled={isPending} style={btnEdit}>Editar</button>
               <button onClick={() => handleDelDescuento(d.id)} disabled={isPending} style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 Eliminar
               </button>
             </div>
+            )
           ))}
       </div>
     </div>

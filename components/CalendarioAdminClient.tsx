@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
-import { addBloqueo, deleteBloqueo } from '@/app/admin/contenido/actions'
+import { addBloqueo, deleteBloqueo, updateBloqueo } from '@/app/admin/contenido/actions'
 
 const APTS = [
   { slug: 'paloma', label: 'Paloma' },
@@ -82,8 +82,29 @@ export default function CalendarioAdminClient({ bloqueos, reservas, precios }: P
   const [motivo, setMotivo] = useState('')
   const [hastaInput, setHastaInput] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [editId, setEditId] = useState<number | null>(null)
+  const [eDesde, setEDesde] = useState('')
+  const [eHasta, setEHasta] = useState('')
+  const [eMotivo, setEMotivo] = useState('')
 
   const now = new Date()
+
+  function startEdit(b: Bloqueo) {
+    setEditId(b.id)
+    setEDesde(b.fecha_inicio)
+    setEHasta(b.fecha_fin)
+    setEMotivo(b.motivo ?? '')
+  }
+
+  function handleSaveEdit() {
+    if (editId === null || !eDesde || !eHasta || eHasta <= eDesde) return
+    const id = editId
+    startTransition(async () => {
+      await updateBloqueo(id, eDesde, eHasta, eMotivo)
+      setEditId(null)
+      router.refresh()
+    })
+  }
   const marks = buildMarks(selectedSlug, bloqueos, reservas, precios)
 
   function handleDayClick(dateKey: string, mark: DayMark & { bloqueoId?: number } | undefined) {
@@ -199,11 +220,39 @@ export default function CalendarioAdminClient({ bloqueos, reservas, precios }: P
         {aptBloqueos.length === 0 ? (
           <p style={{ padding: '20px', fontSize: 13, color: '#aaa', textAlign: 'center', margin: 0 }}>No hay bloqueos para este apartamento</p>
         ) : aptBloqueos.map((b, i) => (
+          editId === b.id ? (
+          <div key={b.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', padding: '12px 20px', background: '#f8fafc', borderBottom: i < aptBloqueos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Desde</label>
+              <input type="date" value={eDesde} onChange={e => setEDesde(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Hasta (excl.)</label>
+              <input type="date" value={eHasta} min={eDesde} onChange={e => setEHasta(e.target.value)} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }}>Motivo</label>
+              <input type="text" value={eMotivo} onChange={e => setEMotivo(e.target.value)} style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <button onClick={handleSaveEdit} disabled={isPending || !eDesde || !eHasta || eHasta <= eDesde} style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 7, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: isPending ? 0.6 : 1 }}>
+              {isPending ? 'Guardando…' : 'Guardar'}
+            </button>
+            <button onClick={() => setEditId(null)} style={{ background: '#f4f5f7', color: '#555', border: 'none', borderRadius: 7, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              Cancelar
+            </button>
+          </div>
+          ) : (
           <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: i < aptBloqueos.length - 1 ? '1px solid #f5f5f5' : undefined }}>
             <span style={{ fontSize: 13, color: '#1a1a2e', flex: 1 }}>
               {fmt(b.fecha_inicio)} → {fmt(b.fecha_fin)}
               {b.motivo && <span style={{ color: '#888', marginLeft: 8 }}>· {b.motivo}</span>}
             </span>
+            <button
+              onClick={() => startEdit(b)}
+              style={{ background: 'none', border: '1px solid #cbd5e1', color: '#475569', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Editar
+            </button>
             <button
               onClick={() => setModal({ type: 'del', bloqueoId: b.id, label: b.motivo || 'Bloqueado', date: b.fecha_inicio })}
               style={{ background: 'none', border: '1px solid #fecaca', color: '#e53e3e', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
@@ -211,6 +260,7 @@ export default function CalendarioAdminClient({ bloqueos, reservas, precios }: P
               Eliminar
             </button>
           </div>
+          )
         ))}
       </div>
 

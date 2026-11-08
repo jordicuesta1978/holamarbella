@@ -24,6 +24,12 @@ export async function addMinNights(slug: string, startDate: string | null, endDa
   revalidatePath('/admin/contenido/precios')
 }
 
+export async function updateMinNights(id: number, startDate: string | null, endDate: string | null, minNights: number) {
+  const { error } = await db.from('minimum_nights').update({ start_date: startDate || null, end_date: endDate || null, min_nights: minNights }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+}
+
 export async function deleteMinNights(id: number) {
   await db.from('minimum_nights').delete().eq('id', id)
   revalidatePath('/admin/contenido/precios')
@@ -56,6 +62,12 @@ export async function addBloqueo(slug: string, desde: string, hasta: string, mot
   revalidatePath('/admin/contenido/disponibilidad')
 }
 
+export async function updateBloqueo(id: number, desde: string, hasta: string, motivo: string) {
+  const { error } = await db.from('bloqueos').update({ fecha_inicio: desde, fecha_fin: hasta, motivo }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/disponibilidad')
+}
+
 export async function deleteBloqueo(id: number) {
   await db.from('bloqueos').delete().eq('id', id)
   revalidatePath('/admin/contenido/disponibilidad')
@@ -70,6 +82,12 @@ export async function getBloqueos() {
 
 export async function addPrecio(slug: string, desde: string, hasta: string, precio: number) {
   const { error } = await db.from('precios').insert({ apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, precio_noche: precio })
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+}
+
+export async function updatePrecio(id: number, desde: string, hasta: string, precio: number) {
+  const { error } = await db.from('precios').update({ fecha_inicio: desde, fecha_fin: hasta, precio_noche: precio }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/admin/contenido/precios')
 }
@@ -101,6 +119,15 @@ export async function addDescuentoVolumen(slug: string, desde: string, hasta: st
     apartment_slug: slug, fecha_inicio: desde, fecha_fin: hasta, noches_minimas: nochesMinimas, porcentaje,
     nombre: nombre?.trim() || null, nombre_en: nombreEn?.trim() || null,
   })
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+}
+
+export async function updateDescuentoVolumen(id: number, desde: string, hasta: string, nochesMinimas: number, porcentaje: number, nombre?: string, nombreEn?: string) {
+  const { error } = await db.from('descuentos_volumen').update({
+    fecha_inicio: desde, fecha_fin: hasta, noches_minimas: nochesMinimas, porcentaje,
+    nombre: nombre?.trim() || null, nombre_en: nombreEn?.trim() || null,
+  }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/admin/contenido/precios')
 }
