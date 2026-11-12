@@ -1,14 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getConversacionByToken } from '@/app/actions/mensajes'
 import { CreditCard, CheckCircle, Clock, XCircle, CalendarDays } from 'lucide-react'
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Apartamento Paloma',
-  micu: 'Apartamento Micu',
-  larysol: 'Apartamento Larysol',
-  ami: 'Ático AMI',
-  banesto: 'Ático Banesto',
-}
+import { aptFullName } from '@/lib/apartment-names'
 
 function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -57,7 +50,7 @@ export default async function ConversacionPage({
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <p style={{ margin: '0 0 4px', fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: 0.5 }}>HolaMarBella!</p>
           <h1 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, color: '#fff' }}>
-            Tu reserva · {APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug}
+            Tu reserva · {aptFullName(reserva.apartment_slug)}
           </h1>
           <div style={{ display: 'flex', gap: 20, paddingBottom: 16, fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarDays size={13} style={{ opacity: 0.8 }} /> {fmtDate(reserva.check_in)}</span>
@@ -88,7 +81,7 @@ export default async function ConversacionPage({
               </span>
             )],
             ['Huésped', reserva.guest_name],
-            ['Apartamento', APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug],
+            ['Apartamento', aptFullName(reserva.apartment_slug)],
             ['Llegada', fmtDate(reserva.check_in)],
             ['Salida', fmtDate(reserva.check_out)],
             nights ? ['Duración', `${nights} noche${nights > 1 ? 's' : ''}`] : null,

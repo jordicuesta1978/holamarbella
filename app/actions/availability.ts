@@ -2,15 +2,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
-
-const ALL_SLUGS = ['paloma', 'micu', 'larysol', 'ami', 'banesto']
+import { getApartmentSlugs } from '@/lib/apartment-names'
 
 // Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
 function toKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-async function checkExact(checkIn: string, checkOut: string): Promise<Record<string, boolean>> {
+async function checkExact(checkIn: string, checkOut: string, ALL_SLUGS: string[]): Promise<Record<string, boolean>> {
   const db = supabaseAdmin as any
   const { data: occupied } = await db
     .from('reservas')
@@ -34,11 +33,13 @@ async function checkExact(checkIn: string, checkOut: string): Promise<Record<str
 }
 
 export async function getAvailability(checkIn: string, checkOut: string, flex = 0): Promise<Record<string, boolean>> {
+  // Todos los apartamentos de la base de datos (incluidos los creados desde el gestor)
+  const ALL_SLUGS = await getApartmentSlugs()
   if (!checkIn || !checkOut || checkIn >= checkOut) {
     return Object.fromEntries(ALL_SLUGS.map(s => [s, true]))
   }
 
-  if (flex === 0) return checkExact(checkIn, checkOut)
+  if (flex === 0) return checkExact(checkIn, checkOut, ALL_SLUGS)
 
   // Flexible: apartment is available if ANY date offset within ±flex days works
   const duration = Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)
@@ -51,7 +52,7 @@ export async function getAvailability(checkIn: string, checkOut: string, flex = 
     const d2 = new Date(d)
     d2.setDate(d2.getDate() + duration)
     const altOut = toKey(d2)
-    const avail = await checkExact(altIn, altOut)
+    const avail = await checkExact(altIn, altOut, ALL_SLUGS)
     for (const slug of ALL_SLUGS) {
       if (avail[slug]) results[slug] = true
     }

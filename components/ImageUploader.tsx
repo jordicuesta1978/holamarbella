@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Upload, X, Loader2 } from 'lucide-react'
+import { uploadToStorage } from '@/lib/upload-client'
 
 type Props = {
   bucket: string
@@ -22,19 +23,14 @@ export default function ImageUploader({ bucket, path, name, defaultValue, placeh
     setError(null)
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const filePath = `${path}/${Date.now()}.${ext}`
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('bucket', bucket)
-    fd.append('path', filePath)
-
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const json = await res.json()
-    if (json.url) {
-      setUrl(json.url)
-    } else {
-      setError(json.error || 'Error al subir la imagen')
+    try {
+      const { url: publicUrl } = await uploadToStorage(file, bucket, filePath)
+      setUrl(publicUrl)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al subir la imagen')
     }
     setUploading(false)
+    if (inputRef.current) inputRef.current.value = ''
   }
 
   return (

@@ -8,6 +8,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { generateDailyBookingRef, getBookingRef } from '@/lib/booking-ref'
 import { EMAIL_LABELS, fmtEmailDate, guestWord, nightWord, type EmailLocale } from '@/lib/email-i18n'
 import { computeVolumeDiscounts, type VolumeDiscountLine, type VolumeDiscountRule } from '@/lib/pricing'
+import { aptFullName } from '@/lib/apartment-names'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,13 +20,8 @@ const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const MAR = process.env.MAR_EMAIL
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://holamarbella.vercel.app'
 
-const APT_NAMES_FALLBACK: Record<string, string> = {
-  paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
-  ami: 'Ático AMI', banesto: 'Ático Banesto',
-}
-
 function aptDisplay(slug: string): string {
-  return APT_NAMES_FALLBACK[slug] || slug
+  return aptFullName(slug)
 }
 
 export type ReservaInput = {

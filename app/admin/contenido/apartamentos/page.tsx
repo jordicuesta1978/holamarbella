@@ -1,8 +1,10 @@
-import { getApartamentos, saveApartamentoFull, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder, getApartmentTranslationsForAdmin } from '../actions'
+import NuevoApartamento from './NuevoApartamento'
+import { getApartamentos, saveApartamentoFull, saveApartamentoCoords, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder, getApartmentTranslationsForAdmin } from '../actions'
 import PhotoGallery from '@/components/PhotoGallery'
 import ApartmentTranslations from '@/components/ApartmentTranslations'
 import { TRANSLATABLE_LOCALES } from '@/lib/translations'
 import { computeKeyFeatures } from '@/lib/apartments'
+import { isVideoPath } from '@/lib/media'
 
 function label(text: string, hint?: string) {
   return (
@@ -38,6 +40,8 @@ export default async function ApartamentosContentPage() {
         Edita los datos de cada apartamento. Los cambios se publican en la web automáticamente.
       </p>
 
+      <NuevoApartamento />
+
       {apartments.map((apt, idx) => {
         const topAmenitiesStr = Array.isArray(apt.top_amenities)
           ? apt.top_amenities.join(', ')
@@ -48,11 +52,13 @@ export default async function ApartamentosContentPage() {
           <div key={apt.slug} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             {/* Header */}
             <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 16 }}>
-              <img
-                src={photos[0]?.url || `/images/${apt.slug}/${apt.slug}-1.jpg`}
-                alt={apt.title}
-                style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#e2e8f0' }}
-              />
+              {(() => {
+                const cover = photos.find(p => !isVideoPath(p.path))?.url
+                  ?? (Number(apt.photo_count) > 0 ? `/images/${apt.slug}/${apt.slug}-1.jpg` : null)
+                return cover
+                  ? <img src={cover} alt={apt.title} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, flexShrink: 0, background: '#e2e8f0' }} />
+                  : <div style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0, background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999' }}>Sin foto</div>
+              })()}
               <div style={{ flex: 1 }}>
                 <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{apt.title}</h2>
                 <span style={{ fontSize: 11, color: '#888', fontFamily: 'monospace' }}>{apt.slug}</span>
@@ -68,7 +74,7 @@ export default async function ApartamentosContentPage() {
 
             {/* Photos section */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
-              {label('Galería de fotos', 'La foto marcada como "Principal" aparece en las cards y en la cabecera')}
+              {label('Galería de fotos y vídeos', 'La foto marcada como "Principal" aparece en las cards y en la cabecera. Los vídeos solo se ven dentro de la galería')}
               <PhotoGallery
                 slug={apt.slug}
                 initialPhotos={photos}
@@ -107,7 +113,10 @@ export default async function ApartamentosContentPage() {
                   top_amenities: topAmenArr,
                   active: fd.get('active') === 'on',
                   cleaning_fee: Number(fd.get('cleaning_fee')) || undefined,
+                  rating: fd.get('rating') ? Number(fd.get('rating')) : undefined,
+                  review_count: fd.get('review_count') !== null && fd.get('review_count') !== '' ? Number(fd.get('review_count')) : undefined,
                 })
+                await saveApartamentoCoords(apt.slug, (fd.get('coords') as string) || '').catch(() => {})
               }}
               style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}
             >
@@ -181,10 +190,28 @@ export default async function ApartamentosContentPage() {
                 </div>
               </div>
 
+              {/* Valoración */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  {label('Valoración media', 'Ej: 4.98 (aparece junto a la estrella)')}
+                  {field('rating', apt.rating, 'number', { min: 0, max: 5, step: 0.01 })}
+                </div>
+                <div>
+                  {label('Nº de reseñas', 'Número que aparece entre paréntesis')}
+                  {field('review_count', apt.review_count, 'number', { min: 0 })}
+                </div>
+              </div>
+
               {/* Top amenities */}
               <div>
                 {label('Top amenidades (separadas por coma)', 'Aparecen en la ficha del apartamento')}
                 {field('top_amenities', topAmenitiesStr)}
+              </div>
+
+              {/* Ubicación en el mapa */}
+              <div>
+                {label('Ubicación en el mapa', 'Coordenadas copiadas de Google Maps (clic derecho en el punto → copiar). Ej: 36.5115, -4.8898')}
+                {field('coords', apt.lat != null && apt.lng != null ? `${apt.lat}, ${apt.lng}` : '', 'text', { placeholder: '36.5115, -4.8898' })}
               </div>
 
               {/* Activo */}

@@ -2,17 +2,11 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { getApartmentRefs, type AptRef } from '@/lib/apartment-names'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabaseAdmin as any
 
-const APTS = [
-  { slug: 'paloma', label: 'Paloma' },
-  { slug: 'micu', label: 'Micu' },
-  { slug: 'larysol', label: 'Larysol' },
-  { slug: 'ami', label: 'AMI' },
-  { slug: 'banesto', label: 'Banesto' },
-]
 
 type CellInfo = {
   reservaId: number
@@ -24,7 +18,7 @@ type CellInfo = {
 
 type CalLookup = Record<string, Record<number, CellInfo | null>>
 
-async function getCalendarData(year: number, month: number) {
+async function getCalendarData(year: number, month: number, APTS: AptRef[]) {
   const firstDay = `${year}-${String(month).padStart(2, '0')}-01`
   const daysInMonth = new Date(year, month, 0).getDate()
   const lastDay = `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`
@@ -87,7 +81,8 @@ export default async function CalendarioPage({
     ? monthParam.split('-').map(Number)
     : [now.getFullYear(), now.getMonth() + 1]
 
-  const { lookup, daysInMonth } = await getCalendarData(year, month)
+  const APTS = await getApartmentRefs()
+  const { lookup, daysInMonth } = await getCalendarData(year, month, APTS)
 
   // Day of week for first day (0=Sun → shift to Mon-based)
   const firstDow = new Date(year, month - 1, 1).getDay()

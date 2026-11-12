@@ -2,15 +2,11 @@ import { notFound } from 'next/navigation'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getRegistro } from '../actions'
 import { RegistroDetalleActions } from './RegistroDetalleActions'
+import { aptFullName } from '@/lib/apartment-names'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const dynamic = 'force-dynamic'
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Apartamento Paloma', micu: 'Apartamento Micu',
-  larysol: 'Apartamento Larysol', ami: 'Ático AMI', banesto: 'Ático Banesto',
-}
 
 function fmtDate(d: string | null) {
   if (!d) return '—'
@@ -119,7 +115,7 @@ export default async function RegistroDetallePage({ params }: { params: Promise<
             <Field label="Email" value={r.email} />
             <Field label="Número de viajeros" value={r.num_viajeros ? String(r.num_viajeros) : null} />
             <Field label="Parentesco" value={r.parentesco} />
-            <Field label="Apartamento" value={r.apartment_slug ? (APT_NAMES[r.apartment_slug] ?? r.apartment_slug) : null} />
+            <Field label="Apartamento" value={r.apartment_slug ? aptFullName(r.apartment_slug) : null} />
           </Section>
         </div>
 

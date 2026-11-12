@@ -3,13 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from './AdminNavServer'
 import DashboardRefresh from './DashboardRefresh'
 import { CalendarDays, BookOpen, Users } from 'lucide-react'
+import { aptLabel } from '@/lib/apartment-names'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabaseAdmin as any
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
-}
 
 async function getDashboardData() {
   const [ultimasReservas, ultimosRegistros] = await Promise.all([
@@ -154,7 +151,7 @@ export default async function AdminPage() {
                       {r.guest_name}
                     </p>
                     <p style={{ margin: '3px 0 0', fontSize: 12, color: '#888' }}>
-                      {APT_NAMES[r.apartment_slug] ?? r.apartment_slug} · {fmtDate(r.check_in)} → {fmtDate(r.check_out)}
+                      {aptLabel(r.apartment_slug)} · {fmtDate(r.check_in)} → {fmtDate(r.check_out)}
                     </p>
                   </div>
                   <span style={{
@@ -207,7 +204,7 @@ export default async function AdminPage() {
                       {r.nombre} {r.apellidos}
                     </p>
                     <p style={{ margin: '3px 0 0', fontSize: 12, color: '#888' }}>
-                      {APT_NAMES[r.apartment_slug] ?? r.apartment_slug ?? '—'}
+                      {aptLabel(r.apartment_slug)}
                     </p>
                   </div>
                   <span style={{ fontSize: 12, color: '#aaa', flexShrink: 0, whiteSpace: 'nowrap' }}>

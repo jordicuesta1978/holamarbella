@@ -1,15 +1,8 @@
 import { getResenas, saveResena, deleteResena, moveResena } from '../actions'
-
-const APTS = [
-  { slug: 'paloma', label: 'Paloma' },
-  { slug: 'micu', label: 'Micu' },
-  { slug: 'larysol', label: 'Larysol' },
-  { slug: 'ami', label: 'AMI' },
-  { slug: 'banesto', label: 'Banesto' },
-]
+import { getApartmentRefs } from '@/lib/apartment-names'
 
 export default async function ResenasPage() {
-  const resenas = await getResenas().catch(() => [])
+  const [resenas, APTS] = await Promise.all([getResenas().catch(() => []), getApartmentRefs()])
   const renderId = Date.now()
 
   return (

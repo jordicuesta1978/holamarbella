@@ -21,6 +21,19 @@
 
 ---
 
+## COMPLETADO — batch 2026-11-12 (admin: blog, editor, apartamentos nuevos, vídeos)
+
+- [x] **Blog: botón "Subir" también en Imagen hero** — antes solo admitía URL. Etiquetas aclaradas: la hero es la que se usa en cabecera y tarjetas; la destacada solo si no hay hero.
+- [x] **Editor: botón "Imagen" abre el explorador de archivos** y sube la imagen a Storage (bucket `blog`), en vez del `prompt()` de URL. En ES y EN.
+- [x] **Editor: barra ampliada** — color de fuente (paleta de 7 colores de marca + por defecto), alineación izq/centro/der/justificado, sangría +/− (hasta 4 niveles), interlineado (Normal/Compacto/Amplio) y lista numerada. Se guarda como estilo en línea, así que la web pública lo muestra igual. Añadido `list-style` a `.article-body` (las listas no mostraban viñetas por el reset de Tailwind).
+- [x] **Apartamentos: "Añadir apartamento"** en Gestor → Apartamentos. Se crea INACTIVO; luego fotos, datos y tick "Activo". Quitadas todas las listas fijas de slugs (`availability.ts`, `getGlobalBlockedDates`, calendario, disponibilidad, precios, configuración, reseñas) → ahora salen de la tabla `apartments` (`lib/apartment-names.ts`). Nombres en emails/admin: se mantienen los de siempre y los nuevos salen del título.
+- [x] **Apartamentos: ubicación en el mapa editable** (campo coordenadas) + valoración y nº de reseñas editables. ⚠️ Requiere ejecutar `supabase/migration_apartment_coords.sql`.
+- [x] **Galería: vídeos** (MP4/MOV/WebM, máx. 50 MB). En la web arrancan solos, silenciados, en bucle y solo cuando están en pantalla; los verticales se ven enteros con fondo difuminado del propio vídeo (canvas, sin descargarlo dos veces). En pantalla completa, con controles para activar el sonido. La "Principal" siempre es una foto.
+- [x] **Subidas directas a Supabase** (`/api/upload/sign` + `lib/upload-client.ts`): ya no pasan por Vercel, que cortaba a ~4,5 MB. `/api/upload` y la firma ahora exigen sesión de admin (antes cualquiera podía subir/borrar).
+- [x] Typecheck y `next build` OK.
+
+---
+
 ## COMPLETADO — batch 2026-07-29 (nombre bilingüe ES/EN por regla de descuento)
 
 - [x] **Columna `nombre_en`** en `descuentos_volumen` (migración `migration_descuentos_volumen_nombre_en.sql`, ejecutada) — junto a la ya existente `nombre` (ES).

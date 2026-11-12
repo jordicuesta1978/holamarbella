@@ -2,12 +2,9 @@ import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
+import { aptLabel } from '@/lib/apartment-names'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
-}
 
 async function getReservas(status?: string): Promise<any[]> {
   let q = (supabaseAdmin as any)
@@ -136,7 +133,7 @@ export default async function ReservasPage({
                       <td style={{ padding: '10px 12px', color: '#888', fontFamily: 'monospace', fontSize: 11, whiteSpace: 'nowrap' }}>
                         {r.booking_ref || getBookingRef(r.id, r.apartment_slug, r.check_in || r.created_at)}
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{APT_NAMES[r.apartment_slug] ?? r.apartment_slug}</td>
+                      <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{aptLabel(r.apartment_slug)}</td>
                       <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{fmt(r.check_in)}</td>
                       <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{fmt(r.check_out)}</td>
                       <td style={{ padding: '10px 12px' }}>

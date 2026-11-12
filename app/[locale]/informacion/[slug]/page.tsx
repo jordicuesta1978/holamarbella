@@ -233,6 +233,8 @@ export default async function ArticuloPage({
         .article-body li {
           margin-bottom: 8px;
         }
+        .article-body ul { list-style: disc; }
+        .article-body ol { list-style: decimal; }
         .article-body strong { color: #1a1a2e; }
         .article-body em { color: #555; }
         .article-body blockquote {

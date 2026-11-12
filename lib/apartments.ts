@@ -34,6 +34,7 @@ export type Apartment = {
   amenityCategories: AmenityCategory[];
   photoCount: number;
   primaryPhotoUrl?: string;
+  coords?: { lat: number; lng: number };
   priceRange: [number, number];
   reviews: ApartmentReview[];
 };

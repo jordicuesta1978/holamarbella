@@ -5,9 +5,11 @@ import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
 const MapboxMap = dynamic(() => import('./MapboxMap'), { ssr: false });
+import GalleryMedia from './GalleryMedia';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { getPhotos } from '@/lib/apartments';
+import { isVideoPath } from '@/lib/media';
 import CalendarPicker from '@/components/CalendarPicker';
 import type { Apartment } from '@/lib/apartments';
 import {
@@ -83,6 +85,7 @@ export default function ApartamentoDetail({
   storagePhotos?: string[];
 }) {
   const t = useTranslations('detail');
+  const mapCoords = apartment.coords ?? APT_COORDS[slug];
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [amenitiesOpen, setAmenitiesOpen] = useState(false);
@@ -130,14 +133,14 @@ export default function ApartamentoDetail({
               className="snap-start shrink-0 rounded-xl overflow-hidden"
               style={{ width: '80vw', aspectRatio: '4/3' }}
             >
-              <img src={src} alt={`${apartment.title} ${i + 1}`} className="w-full h-full object-cover" />
+              <GalleryMedia src={src} alt={`${apartment.title} ${i + 1}`} className="w-full h-full" />
             </button>
           ))}
         </div>
 
         <div className="hidden md:grid md:grid-cols-[3fr_2fr] gap-2 h-[520px] max-w-7xl mx-auto px-8 py-6">
           <button onClick={() => openLightbox(0)} className="rounded-2xl overflow-hidden block h-full group">
-            <img src={photos[0]} alt={apartment.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <GalleryMedia src={photos[0]} alt={apartment.title} className="w-full h-full group-hover:scale-105 transition-transform duration-500" />
           </button>
           <div className="grid grid-cols-2 grid-rows-2 gap-2">
             {photos.slice(1, 5).map((src, i) => (
@@ -147,7 +150,7 @@ export default function ApartamentoDetail({
                 className={`overflow-hidden block group ${i === 3 ? 'relative' : ''}`}
                 style={{ borderRadius: i === 1 ? '0 1rem 0 0' : i === 3 ? '0 0 1rem 0' : undefined }}
               >
-                <img src={src} alt={`${apartment.title} ${i + 2}`} className="w-full h-full object-cover group-hover:brightness-90 transition-all duration-300" />
+                <GalleryMedia src={src} alt={`${apartment.title} ${i + 2}`} className="w-full h-full group-hover:brightness-90 transition-all duration-300" />
                 {i === 3 && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                     <div className="flex items-center gap-2 bg-white text-black text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
@@ -238,8 +241,8 @@ export default function ApartamentoDetail({
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--on-surface)' }}>{t('location')}</h2>
             <p className="text-sm mb-4" style={{ color: 'var(--on-surface-variant)' }}>{t('locationCity')}</p>
-            {APT_COORDS[slug] && process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
-              <MapboxMap lng={APT_COORDS[slug].lng} lat={APT_COORDS[slug].lat} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN} />
+            {mapCoords && process.env.NEXT_PUBLIC_MAPBOX_TOKEN ? (
+              <MapboxMap lng={mapCoords.lng} lat={mapCoords.lat} token={process.env.NEXT_PUBLIC_MAPBOX_TOKEN} />
             ) : (
               <div className="w-full rounded-2xl flex items-center justify-center" style={{ height: 280, backgroundColor: 'var(--arena)', border: '1px solid var(--outline-variant)' }}>
                 <div className="text-center">
@@ -404,14 +407,20 @@ export default function ApartamentoDetail({
           <button onClick={(e) => { e.stopPropagation(); prevPhoto(); }} className="absolute left-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label={t('prevPhoto')}>
             <ChevronLeft size={32} />
           </button>
-          <img src={photos[lightboxIndex]} alt={`${apartment.title} ${lightboxIndex + 1}`} className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+          {isVideoPath(photos[lightboxIndex]) ? (
+            <GalleryMedia key={photos[lightboxIndex]} src={photos[lightboxIndex]} alt={`${apartment.title} ${lightboxIndex + 1}`} fit="contain" controls className="w-[90vw] h-[75vh] rounded-xl" onClick={e => e.stopPropagation()} />
+          ) : (
+            <img src={photos[lightboxIndex]} alt={`${apartment.title} ${lightboxIndex + 1}`} className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl" onClick={e => e.stopPropagation()} />
+          )}
           <button onClick={(e) => { e.stopPropagation(); nextPhoto(); }} className="absolute right-4 text-white p-3 rounded-full transition-colors hover:bg-white/20" aria-label={t('nextPhoto')}>
             <ChevronRight size={32} />
           </button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 overflow-x-auto max-w-[90vw] px-2">
             {photos.map((src, i) => (
               <button key={i} onClick={e => { e.stopPropagation(); setLightboxIndex(i); }} className={`shrink-0 rounded-md overflow-hidden transition-all ${i === lightboxIndex ? 'ring-2 ring-white' : 'opacity-50 hover:opacity-80'}`} style={{ width: 48, height: 36 }}>
-                <img src={src} alt="" className="w-full h-full object-cover" />
+                {isVideoPath(src)
+                  ? <video src={src} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+                  : <img src={src} alt="" className="w-full h-full object-cover" />}
               </button>
             ))}
           </div>

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { verifySession } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  if (!(await verifySession())) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   try {
     const form = await req.formData()
     const file = form.get('file') as File | null
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!(await verifySession())) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   try {
     const { bucket, path } = await req.json()
     if (!bucket || !path) return NextResponse.json({ error: 'Missing bucket or path' }, { status: 400 })

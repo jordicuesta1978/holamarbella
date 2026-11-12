@@ -165,6 +165,8 @@ export async function saveApartamentoFull(slug: string, fields: {
   top_amenities?: string[]
   active?: boolean
   cleaning_fee?: number
+  rating?: number
+  review_count?: number
 }) {
   const { active, cleaning_fee, ...rest } = fields
 
@@ -181,6 +183,85 @@ export async function saveApartamentoFull(slug: string, fields: {
 
   revalidatePath('/admin/contenido/apartamentos')
   revalidatePath('/apartamentos')
+  revalidatePath(`/apartamentos/${slug}`)
+}
+
+function slugifyApt(s: string) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Crea un apartamento nuevo. Se crea INACTIVO para que no salga en la web
+ * hasta que tenga fotos, precios y textos; luego se activa con el tick "Activo".
+ * Devuelve el slug generado (único).
+ */
+export async function createApartamento(fields: {
+  name: string
+  title?: string
+  subtitle?: string
+  description?: string
+  persons: number
+  bedrooms: number
+  bed: string
+  bathrooms: number
+  license?: string
+  price_min: number
+  price_max: number
+}): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
+  const name = fields.name.trim()
+  if (!name) return { ok: false, error: 'Falta el nombre' }
+  const base = slugifyApt(name)
+  if (!base) return { ok: false, error: 'El nombre no es válido' }
+
+  // Slug único: mirador, mirador-2, mirador-3…
+  const { data: existing } = await db.from('apartments').select('slug')
+  const taken = new Set(((existing ?? []) as Array<{ slug: string }>).map(r => r.slug))
+  let slug = base
+  for (let i = 2; taken.has(slug); i++) slug = `${base}-${i}`
+
+  const priceMin = Math.max(1, Math.round(fields.price_min || 0))
+  const priceMax = Math.max(priceMin, Math.round(fields.price_max || priceMin))
+
+  const { error } = await db.from('apartments').insert({
+    slug,
+    title: fields.title?.trim() || name,
+    subtitle: fields.subtitle?.trim() || '',
+    description: fields.description?.trim() || '',
+    persons: Math.max(1, Math.round(fields.persons || 2)),
+    bedrooms: Math.max(0, Math.round(fields.bedrooms || 1)),
+    bed: fields.bed?.trim() || '1 cama doble',
+    bathrooms: Math.max(1, Math.round(fields.bathrooms || 1)),
+    license: fields.license?.trim() || '',
+    price_min: priceMin,
+    price_max: priceMax,
+    review_count: 0,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  // Inactivo por defecto (columna añadida en una migración anterior; si no existe, se ignora)
+  await db.from('apartments').update({ active: false }).eq('slug', slug)
+
+  revalidatePath('/admin/contenido/apartamentos')
+  revalidatePath('/admin/contenido/precios')
+  revalidatePath('/admin/contenido/disponibilidad')
+  revalidatePath('/admin/calendario')
+  return { ok: true, slug }
+}
+
+/** Guarda la ubicación del mapa. Acepta "36.5115, -4.8898" (copiado de Google Maps). */
+export async function saveApartamentoCoords(slug: string, raw: string) {
+  const txt = (raw ?? '').trim()
+  let lat: number | null = null
+  let lng: number | null = null
+  if (txt) {
+    const m = txt.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/)
+    if (m) {
+      lat = Number(m[1]); lng = Number(m[2])
+      if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) { lat = null; lng = null }
+    }
+  }
+  // Columnas lat/lng (migration_apartment_coords.sql). Si aún no existen, no rompe.
+  await db.from('apartments').update({ lat, lng }).eq('slug', slug)
   revalidatePath(`/apartamentos/${slug}`)
 }
 

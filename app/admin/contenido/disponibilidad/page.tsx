@@ -1,6 +1,7 @@
 import { getBloqueos, getPrecios } from '../actions'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import CalendarioAdminClient from '@/components/CalendarioAdminClient'
+import { getApartmentRefs } from '@/lib/apartment-names'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -12,9 +13,10 @@ function localDateStr(d: Date): string {
 export default async function DisponibilidadPage() {
   const db = supabaseAdmin as any
 
-  const [bloqueos, precios] = await Promise.all([
+  const [bloqueos, precios, apartments] = await Promise.all([
     getBloqueos().catch(() => []),
     getPrecios().catch(() => []),
+    getApartmentRefs(),
   ])
 
   const today = localDateStr(new Date())
@@ -31,6 +33,7 @@ export default async function DisponibilidadPage() {
       bloqueos={bloqueos}
       reservas={reservasData ?? []}
       precios={precios}
+      apartments={apartments}
     />
   )
 }

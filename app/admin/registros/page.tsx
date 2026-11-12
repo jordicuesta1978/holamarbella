@@ -1,14 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { RegistroRowActions } from './RegistroRowActions'
+import { aptLabel } from '@/lib/apartment-names'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const dynamic = 'force-dynamic'
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
-}
 
 const TH: React.CSSProperties = {
   padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700,
@@ -71,7 +68,7 @@ export default async function RegistrosPage() {
                       <span style={{ fontFamily: 'monospace' }}>{r.numero_documento}</span>
                     </td>
                     <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{fmtDate(r.fecha_nacimiento)}</td>
-                    <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{r.apartment_slug ? (APT_NAMES[r.apartment_slug] ?? r.apartment_slug) : '—'}</td>
+                    <td style={{ padding: '10px 12px', color: '#555', whiteSpace: 'nowrap' }}>{r.apartment_slug ? aptLabel(r.apartment_slug) : '—'}</td>
                     <td style={{ padding: '10px 12px', color: '#888', whiteSpace: 'nowrap' }}>{fmtDateTime(r.created_at)}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                       {r.verificado

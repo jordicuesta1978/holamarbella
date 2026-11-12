@@ -7,16 +7,12 @@ import { revalidatePath } from 'next/cache'
 import type { Extra } from './admin'
 import { computeNightlyBreakdown, computeVolumeDiscountsForStay, renderPricingTable } from '@/lib/pricing'
 import { EMAIL_LABELS, fmtEmailDate, type EmailLocale } from '@/lib/email-i18n'
+import { aptFullName } from '@/lib/apartment-names'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 
 const db = supabaseAdmin as any
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
-  ami: 'Ático AMI', banesto: 'Ático Banesto',
-}
 
 function fmt(d: string | null, locale: EmailLocale = 'es'): string {
   return fmtEmailDate(d, locale)
@@ -126,7 +122,7 @@ export async function sendQuote(id: number, message: string) {
   if (updError) throw new Error(updError.message)
 
   const apt = await db.from('apartments').select('title, price_min, price_max').eq('slug', reserva.apartment_slug).single()
-  const aptTitle = APT_NAMES[reserva.apartment_slug] || apt.data?.title || reserva.apartment_slug
+  const aptTitle = aptFullName(reserva.apartment_slug, apt.data?.title)
   const aptPrices = { price_min: apt.data?.price_min ?? 80, price_max: apt.data?.price_max ?? 160 }
   const locale: EmailLocale = reserva.locale === 'en' ? 'en' : 'es'
   const subject = locale === 'en' ? `Your booking quote — ${aptTitle}` : `Presupuesto de tu reserva — ${aptTitle}`

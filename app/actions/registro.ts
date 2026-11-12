@@ -2,15 +2,11 @@
 
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { aptFullName } from '@/lib/apartment-names'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const MAR = process.env.MAR_EMAIL
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
-  ami: 'Ático AMI', banesto: 'Ático Banesto',
-}
 
 export type RegistroInput = {
   apartmentSlug?: string
@@ -94,7 +90,7 @@ function emailMar(d: RegistroInput): string {
   const fecha = new Date().toLocaleDateString('es-ES', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
-  const apt = d.apartmentSlug ? (APT_NAMES[d.apartmentSlug] ?? d.apartmentSlug) : '—'
+  const apt = d.apartmentSlug ? aptFullName(d.apartmentSlug) : '—'
   const docLine = `${d.tipoDocumento} ${d.numeroDocumento}${d.numeroSoporte ? ` (soporte ${d.numeroSoporte})` : ''}`
   const residence = [d.direccion, d.codigoPostal, d.localidad, d.pais].filter(Boolean).join(', ')
   const sexoLabel = d.sexo === 'M' ? 'Masculino' : d.sexo === 'F' ? 'Femenino' : '—'

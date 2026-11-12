@@ -5,13 +5,7 @@ import { useRouter } from 'next/navigation'
 import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
 import { addPrecio, deletePrecio, updatePrecio, addMinNights, deleteMinNights, updateMinNights, addDescuentoVolumen, deleteDescuentoVolumen, updateDescuentoVolumen } from '@/app/admin/contenido/actions'
 
-const APTS = [
-  { slug: 'paloma', label: 'Paloma', priceBase: 115 },
-  { slug: 'micu', label: 'Micu', priceBase: 107 },
-  { slug: 'larysol', label: 'Larysol', priceBase: 122 },
-  { slug: 'ami', label: 'AMI', priceBase: 130 },
-  { slug: 'banesto', label: 'Banesto', priceBase: 137 },
-]
+type AptOption = { slug: string; label: string; priceBase: number }
 
 type Precio = { id: number; apartment_slug: string; fecha_inicio: string; fecha_fin: string; precio_noche: number }
 type MinNight = { id: number; apartment_slug: string; start_date: string | null; end_date: string | null; min_nights: number }
@@ -52,9 +46,9 @@ function buildMarks(precios: Precio[], slug: string): Record<string, DayMark> {
   return marks
 }
 
-export default function PreciosClient({ precios, minNights, descuentos }: { precios: Precio[]; minNights: MinNight[]; descuentos: Descuento[] }) {
+export default function PreciosClient({ precios, minNights, descuentos, apartments: APTS }: { precios: Precio[]; minNights: MinNight[]; descuentos: Descuento[]; apartments: AptOption[] }) {
   const router = useRouter()
-  const [slug, setSlug] = useState('paloma')
+  const [slug, setSlug] = useState(APTS[0]?.slug ?? '')
   const [isPending, startTransition] = useTransition()
   const [editing, setEditing] = useState<{ kind: 'precio' | 'mn' | 'desc'; id: number } | null>(null)
   const now = new Date()
@@ -63,7 +57,7 @@ export default function PreciosClient({ precios, minNights, descuentos }: { prec
   const filteredPrecios = precios.filter(p => p.apartment_slug === slug)
   const filteredMN = minNights.filter(m => m.apartment_slug === slug)
   const filteredDescuentos = descuentos.filter(d => d.apartment_slug === slug)
-  const aptInfo = APTS.find(a => a.slug === slug)!
+  const aptInfo = APTS.find(a => a.slug === slug) ?? { slug, label: slug, priceBase: 100 }
 
   function handleAddPrecio(fd: FormData) {
     const desde = fd.get('desde') as string

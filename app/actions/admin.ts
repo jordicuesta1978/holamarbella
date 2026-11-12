@@ -7,15 +7,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
 import { computeNightlyBreakdown, computeVolumeDiscountsForStay, renderPricingTable } from '@/lib/pricing'
 import { EMAIL_LABELS, fmtEmailDate, type EmailLocale } from '@/lib/email-i18n'
+import { aptFullName } from '@/lib/apartment-names'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
-
-const APT_NAMES: Record<string, string> = {
-  paloma: 'Paloma', micu: 'Micu', larysol: 'Larysol', ami: 'AMI', banesto: 'Banesto',
-}
 function aptDisplay(slug: string, fallbackTitle: string): string {
-  return APT_NAMES[slug] ? `Apartamento ${APT_NAMES[slug]}` : fallbackTitle
+  return aptFullName(slug, fallbackTitle)
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────

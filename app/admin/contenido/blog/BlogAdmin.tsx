@@ -93,11 +93,11 @@ function NuevoArticulo() {
         {/* Imágenes */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
-            {label('Imagen hero (URL)')}
-            {input({ type: 'text', name: 'hero_image', placeholder: 'https://…' })}
+            {label('Imagen hero (cabecera y tarjetas)')}
+            <ImageUploader bucket="blog" path="articulos/nueva/hero" name="hero_image" placeholder="URL o sube una imagen" />
           </div>
           <div>
-            {label('Imagen destacada (subir)')}
+            {label('Imagen destacada (se usa si no hay hero)')}
             <ImageUploader bucket="blog" path="articulos/nueva" name="imagen_url" placeholder="URL o sube una imagen" />
           </div>
         </div>
@@ -105,13 +105,13 @@ function NuevoArticulo() {
         {/* Contenido ES */}
         <div>
           {label('Contenido ES')}
-          <TipTapEditor name="contenido" minHeight={200} />
+          <TipTapEditor name="contenido" minHeight={200} uploadPath="articulos/nueva/contenido" />
         </div>
 
         {/* Contenido EN */}
         <div>
           {label('Contenido EN')}
-          <TipTapEditor name="contenido_en" minHeight={200} />
+          <TipTapEditor name="contenido_en" minHeight={200} uploadPath="articulos/nueva/contenido" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -248,11 +248,11 @@ function ArticuloRow({ a }: { a: ArticuloRow }) {
           {/* Imágenes */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              {label('Imagen hero (URL)')}
-              {input({ type: 'text', name: 'hero_image', defaultValue: a.hero_image ?? '' })}
+              {label('Imagen hero (cabecera y tarjetas)')}
+              <ImageUploader bucket="blog" path={`articulos/${a.id}/hero`} name="hero_image" defaultValue={a.hero_image ?? ''} placeholder="URL o sube una imagen" />
             </div>
             <div>
-              {label('Imagen destacada')}
+              {label('Imagen destacada (se usa si no hay hero)')}
               <ImageUploader bucket="blog" path={`articulos/${a.id}`} name="imagen_url" defaultValue={a.imagen_url ?? ''} placeholder="URL o sube una imagen" />
             </div>
           </div>
@@ -260,13 +260,13 @@ function ArticuloRow({ a }: { a: ArticuloRow }) {
           {/* Contenido ES */}
           <div>
             {label('Contenido ES')}
-            <TipTapEditor name="contenido" defaultValue={a.contenido} minHeight={180} />
+            <TipTapEditor name="contenido" defaultValue={a.contenido} minHeight={180} uploadPath={`articulos/${a.id}/contenido`} />
           </div>
 
           {/* Contenido EN */}
           <div>
             {label('Contenido EN')}
-            <TipTapEditor name="contenido_en" defaultValue={a.contenido_en ?? ''} minHeight={180} />
+            <TipTapEditor name="contenido_en" defaultValue={a.contenido_en ?? ''} minHeight={180} uploadPath={`articulos/${a.id}/contenido`} />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -5,13 +5,6 @@ import { useRouter } from 'next/navigation'
 import CalendarGrid, { type DayMark } from '@/components/CalendarGrid'
 import { addBloqueo, deleteBloqueo, updateBloqueo } from '@/app/admin/contenido/actions'
 
-const APTS = [
-  { slug: 'paloma', label: 'Paloma' },
-  { slug: 'micu', label: 'Micu' },
-  { slug: 'larysol', label: 'Larysol' },
-  { slug: 'ami', label: 'AMI' },
-  { slug: 'banesto', label: 'Banesto' },
-]
 
 // Local date key — avoid toISOString() which shifts the date back in UTC+N timezones
 function toKey(d: Date): string {
@@ -26,6 +19,7 @@ type Props = {
   bloqueos: Bloqueo[]
   reservas: Reserva[]
   precios: Precio[]
+  apartments: Array<{ slug: string; label: string }>
 }
 
 function fmt(d: string) {
@@ -75,9 +69,9 @@ type ModalState =
   | { type: 'del'; bloqueoId: number; label: string; date: string }
   | null
 
-export default function CalendarioAdminClient({ bloqueos, reservas, precios }: Props) {
+export default function CalendarioAdminClient({ bloqueos, reservas, precios, apartments: APTS }: Props) {
   const router = useRouter()
-  const [selectedSlug, setSelectedSlug] = useState('paloma')
+  const [selectedSlug, setSelectedSlug] = useState(APTS[0]?.slug ?? '')
   const [modal, setModal] = useState<ModalState>(null)
   const [motivo, setMotivo] = useState('')
   const [hastaInput, setHastaInput] = useState('')

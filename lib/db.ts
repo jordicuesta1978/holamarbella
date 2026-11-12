@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { supabaseAdmin } from './supabase-admin'
 import type { Apartment, ApartmentReview, AmenityCategory } from './apartments'
 import { computeKeyFeatures } from './apartments'
+import { isVideoPath } from './media'
 import { getApartmentTranslation, getApartmentTranslations, type ApartmentTranslation } from './translations'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,6 +59,7 @@ function mapRow(row: any, primaryPhotoUrl?: string): Apartment {
     license: row.license,
     photoCount: row.photo_count,
     primaryPhotoUrl,
+    coords: row.lat != null && row.lng != null ? { lat: Number(row.lat), lng: Number(row.lng) } : undefined,
     priceRange: [row.price_min, row.price_max],
     topAmenities: row.top_amenities as string[],
     amenityCategories: row.amenity_categories as AmenityCategory[],
@@ -103,7 +105,7 @@ export async function getApartments(locale: Locale = 'es'): Promise<Apartment[]>
   ])
   return rows.map((row, i) => {
     const order = orders[i]
-    const primaryPath = order?.[0]
+    const primaryPath = order?.find(p => !isVideoPath(p))
     const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
     return applyTranslation(mapRow(row, primaryPhotoUrl), translations[row.slug] ?? null)
   })
@@ -183,7 +185,10 @@ export async function getBlockedRanges(slug: string): Promise<Array<{ start: str
 }
 
 export async function getGlobalBlockedDates(): Promise<string[]> {
-  const SLUGS = ['paloma', 'micu', 'larysol', 'ami', 'banesto']
+  // Apartamentos activos según la base de datos (antes era una lista fija)
+  const { data: activeRows } = await supabase.from('apartments').select('slug').neq('active', false)
+  const SLUGS = ((activeRows ?? []) as Array<{ slug: string }>).map(r => r.slug)
+  if (SLUGS.length === 0) return []
   const today = localDateStr(new Date())
   const sixMonths = daysFromNow(180)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,8 +209,8 @@ export async function getGlobalBlockedDates(): Promise<string[]> {
       occupied[key].add(slug)
     }
   }
-  for (const r of (reservas ?? [])) addRange(r.apartment_slug, r.check_in, r.check_out)
-  for (const b of (bloqueos ?? [])) addRange(b.apartment_slug, b.fecha_inicio, b.fecha_fin)
+  for (const r of (reservas ?? [])) if (SLUGS.includes(r.apartment_slug)) addRange(r.apartment_slug, r.check_in, r.check_out)
+  for (const b of (bloqueos ?? [])) if (SLUGS.includes(b.apartment_slug)) addRange(b.apartment_slug, b.fecha_inicio, b.fecha_fin)
 
   // A date is "globally blocked" only if all active apartments are occupied
   return Object.entries(occupied)
@@ -222,7 +227,7 @@ export async function getApartmentBySlug(slug: string, locale: Locale = 'es'): P
   ])
   if (error || !apt) return null
 
-  const primaryPath = order?.[0]
+  const primaryPath = order?.find(p => !isVideoPath(p))
   const primaryPhotoUrl = primaryPath ? SUPABASE_STORAGE_BASE + primaryPath : undefined
   const apartment = applyTranslation(mapRow(apt, primaryPhotoUrl), translation)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

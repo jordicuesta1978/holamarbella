@@ -1,10 +1,9 @@
 import { getApartments } from '@/lib/db'
 import { getCleaningFees, saveCleaningFee } from '../actions'
-
-const APTS = ['paloma', 'micu', 'larysol', 'ami', 'banesto']
+import { getApartmentSlugs } from '@/lib/apartment-names'
 
 export default async function ConfiguracionPage() {
-  const [apartments, fees] = await Promise.all([getApartments(), getCleaningFees().catch(() => ({}))])
+  const [apartments, fees, APTS] = await Promise.all([getApartments(), getCleaningFees().catch(() => ({})), getApartmentSlugs()])
 
   return (
     <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>

@@ -6,6 +6,7 @@ import PricingPanel from './PricingPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
 import { getPriceRanges, getVolumeDiscounts } from '@/lib/db'
+import { aptFullName } from '@/lib/apartment-names'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getReserva(id: number): Promise<any | null> {
@@ -69,11 +70,7 @@ export default async function ReservaDetailPage({
       : null
 
   // Build mailto URL for "Contactar cliente"
-  const APT_NAMES: Record<string, string> = {
-    paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol',
-    ami: 'Ático AMI', banesto: 'Ático Banesto',
-  }
-  const aptName = APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
+  const aptName = aptFullName(reserva.apartment_slug)
   const bookingRef = reserva.booking_ref || getBookingRef(reserva.id, reserva.apartment_slug, reserva.check_in ?? reserva.created_at)
   const firstName = (reserva.guest_name as string).split(' ')[0]
   const midPrice = Math.round((aptPrices.price_min + aptPrices.price_max) / 2)
@@ -153,10 +150,7 @@ export default async function ReservaDetailPage({
             <h2 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888' }}>Estancia</h2>
           </div>
           {[
-            ['Apartamento', (() => {
-              const APT_NAMES: Record<string, string> = { paloma: 'Apartamento Paloma', micu: 'Apartamento Micu', larysol: 'Apartamento Larysol', ami: 'Ático AMI', banesto: 'Ático Banesto' }
-              return APT_NAMES[reserva.apartment_slug] || reserva.apartment_slug
-            })()],
+            ['Apartamento', aptFullName(reserva.apartment_slug)],
             ['Llegada', fmt(reserva.check_in)],
             ['Salida', fmt(reserva.check_out)],
             ['Duración', nights ? `${nights} noche${nights > 1 ? 's' : ''}` : '—'],
