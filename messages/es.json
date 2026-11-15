@@ -2,7 +2,7 @@
   "nav": {
     "apartamentos": "Apartamentos",
     "registro": "Registro de viajeros",
-    "informacion": "Información",
+    "informacion": "Guía local",
     "normas": "Normas de la casa"
   },
   "footer": {
@@ -201,12 +201,12 @@
     "loading": "Cargando..."
   },
   "informacion": {
-    "title": "Información y Consejos",
-    "subtitle": "Guías, consejos y artículos sobre Marbella. Todo lo que necesitas saber para disfrutar al máximo tu estancia.",
-    "eyebrow": "Marbella · Guías y consejos",
+    "title": "Guía local",
+    "subtitle": "Dónde comer, qué hacer y los secretos que solo conocemos los de aquí.",
+    "eyebrow": "Guía local",
     "heroTitle": "Todo sobre",
     "heroTitleItalic": "Marbella",
-    "heroSubtitle": "Guías, restaurantes, playas y todo lo que necesitas para disfrutar al máximo tu estancia.",
+    "heroSubtitle": "Dónde comer, qué hacer y los secretos que solo conocemos los de aquí.",
     "empty": "Próximamente — artículos y guías sobre Marbella.",
     "readMore": "Leer más →"
   },

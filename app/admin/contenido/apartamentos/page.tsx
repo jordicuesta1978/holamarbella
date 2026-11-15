@@ -1,4 +1,5 @@
 import NuevoApartamento from './NuevoApartamento'
+import LinkTextarea from '@/components/LinkTextarea'
 import { getApartamentos, saveApartamentoFull, saveApartamentoCoords, getApartamentoPhotos, setApartamentoPrimaryPhoto, savePhotoOrder, getApartmentTranslationsForAdmin } from '../actions'
 import PhotoGallery from '@/components/PhotoGallery'
 import ApartmentTranslations from '@/components/ApartmentTranslations'
@@ -135,10 +136,10 @@ export default async function ApartamentosContentPage() {
               {/* Descripción */}
               <div>
                 {label('Descripción', 'Texto largo que aparece en la ficha del apartamento')}
-                <textarea
+                <LinkTextarea
                   name="description"
                   defaultValue={apt.description ?? ''}
-                  rows={3}
+                  rows={4}
                   style={{ width: '100%', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
                 />
               </div>

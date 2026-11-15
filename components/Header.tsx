@@ -16,7 +16,7 @@ export default function Header() {
   const NAV_LINKS = [
     { label: t('apartamentos'), href: '/apartamentos' },
     { label: t('registro'), href: '/registro-viajeros' },
-    { label: t('informacion'), href: '/informacion' },
+    { label: t('informacion'), href: locale === 'en' ? '/local-guide' : '/guia-local' },
     { label: t('normas'), href: '/normas' },
   ];
 

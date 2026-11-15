@@ -11,6 +11,8 @@ import Footer from '@/components/Footer';
 import { getPhotos } from '@/lib/apartments';
 import { isVideoPath } from '@/lib/media';
 import CalendarPicker from '@/components/CalendarPicker';
+import RichText from '@/components/RichText';
+import { plainRichText } from '@/lib/links';
 import type { Apartment } from '@/lib/apartments';
 import {
   X, ChevronLeft, ChevronRight, Grid3X3, Check, Wifi, Wind,
@@ -115,9 +117,7 @@ export default function ApartamentoDetail({
     return () => { document.body.style.overflow = ''; };
   }, [lightboxOpen, amenitiesOpen]);
 
-  const descWords = apartment.description.split(' ');
-  const shortDesc = descWords.slice(0, 30).join(' ');
-  const isLong = descWords.length > 30;
+  const isLong = plainRichText(apartment.description).split(/\s+/).filter(Boolean).length > 30;
 
   return (
     <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
@@ -205,7 +205,7 @@ export default function ApartamentoDetail({
           <div className="py-8 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
             <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--on-surface)' }}>{t('description')}</h2>
             <p className="text-base leading-relaxed" style={{ color: 'var(--on-surface-variant)' }}>
-              {expanded || !isLong ? apartment.description : `${shortDesc}...`}
+              <RichText text={apartment.description} maxWords={expanded || !isLong ? undefined : 30} />
             </p>
             {isLong && (
               <button onClick={() => setExpanded(e => !e)} className="mt-3 text-sm font-bold underline underline-offset-4" style={{ color: 'var(--primary)' }}>

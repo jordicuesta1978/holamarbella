@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { saveApartmentTranslation } from '@/app/admin/contenido/actions'
+import LinkTextarea from '@/components/LinkTextarea'
 
 // Nombres legibles por locale. Si falta uno, se muestra el código en mayúsculas.
 const LOCALE_NAMES: Record<string, string> = {
@@ -148,11 +149,11 @@ export default function ApartmentTranslations({
 
         <div>
           <span style={{ fontSize: 11, color: '#aaa' }}>Descripción</span>
-          <textarea
+          <LinkTextarea
             value={cur.description}
             placeholder={esReference.description}
-            onChange={e => update({ description: e.target.value })}
-            rows={3}
+            onValueChange={v => update({ description: v })}
+            rows={4}
             style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
           />
         </div>

@@ -9,8 +9,9 @@ import { TextStyle, Color } from '@tiptap/extension-text-style'
 import { useState } from 'react'
 import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  IndentIncrease, IndentDecrease, Loader2, ImagePlus, ListOrdered,
+  IndentIncrease, IndentDecrease, Loader2, ImagePlus, ListOrdered, Link2, Unlink,
 } from 'lucide-react'
+import { normalizeUrl, isExternalUrl } from '@/lib/links'
 import { uploadToStorage, pickFiles, uniqueFileName } from '@/lib/upload-client'
 
 // ── Paleta de colores de la marca (limitada a propósito para que el blog sea coherente)
@@ -127,13 +128,22 @@ export default function TipTapEditor({ name, defaultValue = '', minHeight = 180,
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [colorOpen, setColorOpen] = useState(false)
+  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
   // Fuerza el re-render de la barra al mover el cursor (estado activo de los botones)
   const [, setTick] = useState(0)
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+          autolink: true,
+          defaultProtocol: 'https',
+          HTMLAttributes: { rel: 'noopener noreferrer', target: null },
+        },
+      }),
       Image,
       TextStyle,
       Color,
@@ -178,6 +188,30 @@ export default function TipTapEditor({ name, defaultValue = '', minHeight = 180,
       setUploadError(e instanceof Error ? e.message : 'Error al subir la imagen')
     }
     setUploading(false)
+  }
+
+  function openLink() {
+    if (!editor) return
+    setLinkUrl((editor.getAttributes('link').href as string | undefined) ?? '')
+    setLinkOpen(true)
+  }
+
+  function applyLink() {
+    if (!editor) return
+    const href = normalizeUrl(linkUrl)
+    setLinkOpen(false)
+    if (!href) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+    const attrs = { href, target: isExternalUrl(href) ? '_blank' : null }
+    const { empty } = editor.state.selection
+    if (empty && !editor.isActive('link')) {
+      // Sin texto seleccionado: inserta la propia URL como enlace
+      editor.chain().focus().insertContent({ type: 'text', text: linkUrl.trim(), marks: [{ type: 'link', attrs }] }).run()
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink(attrs).run()
+    }
   }
 
   const currentColor = (editor?.getAttributes('textStyle').color as string | undefined) ?? null
@@ -270,11 +304,38 @@ export default function TipTapEditor({ name, defaultValue = '', minHeight = 180,
           {LINE_HEIGHTS.map(l => <option key={l.label} value={l.value ?? ''}>Interlineado: {l.label}</option>)}
         </select>
         {sep}
+        {btn(<><Link2 size={14} /> Enlace</>, openLink, editor?.isActive('link') || linkOpen, 'Añadir enlace (selecciona antes el texto)', 'link')}
+        {editor?.isActive('link') && btn(<Unlink size={14} />, () => editor?.chain().focus().extendMarkRange('link').unsetLink().run(), false, 'Quitar enlace', 'unlink')}
+        {sep}
         {btn(
           uploading ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Subiendo…</> : <><ImagePlus size={14} /> Imagen</>,
           insertImage, false, 'Insertar imagen desde tu equipo', 'img'
         )}
       </div>
+
+      {linkOpen && (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', padding: '8px 10px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          <input
+            type="url"
+            inputMode="url"
+            autoFocus
+            value={linkUrl}
+            onChange={e => setLinkUrl(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink() } if (e.key === 'Escape') setLinkOpen(false) }}
+            placeholder="Pega la dirección: https://…"
+            style={{ flex: '1 1 220px', border: '1px solid #e2e8f0', borderRadius: 6, padding: '5px 8px', fontSize: 12, outline: 'none' }}
+          />
+          <button type="button" onClick={applyLink} style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            Aplicar
+          </button>
+          <button type="button" onClick={() => setLinkOpen(false)} style={{ background: 'none', border: 'none', color: '#888', fontSize: 12, cursor: 'pointer' }}>
+            Cancelar
+          </button>
+          <span style={{ flexBasis: '100%', fontSize: 11, color: '#aaa' }}>
+            Los enlaces a otras webs se abren en una pestaña nueva. Deja la dirección vacía y pulsa Aplicar para quitar el enlace.
+          </span>
+        </div>
+      )}
 
       {uploadError && <p style={{ margin: 0, padding: '4px 14px', fontSize: 11, color: '#e53e3e' }}>{uploadError}</p>}
 
@@ -296,6 +357,7 @@ export default function TipTapEditor({ name, defaultValue = '', minHeight = 180,
         .tiptap li { margin-bottom: 4px; }
         .tiptap strong { font-weight: 700; }
         .tiptap em { font-style: italic; }
+        .tiptap a { color: #4B766B; text-decoration: underline; cursor: text; }
         .tiptap img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
         .tiptap img.ProseMirror-selectednode { outline: 2px solid #4B766B; }
         .tiptap p.is-editor-empty:first-child::before {

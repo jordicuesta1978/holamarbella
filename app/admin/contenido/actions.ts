@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
+import { shortSlug, slugify } from '@/lib/slug'
 
 const db = supabaseAdmin as any
 
@@ -328,6 +329,8 @@ export interface ArticuloRow {
   titulo: string
   titulo_en?: string | null
   slug: string
+  slug_en?: string | null
+  slugs_antiguos?: string[] | null
   contenido: string
   contenido_en?: string | null
   publicado: boolean
@@ -351,6 +354,7 @@ export async function saveArticulo(
   data: {
     titulo: string
     slug: string
+    slug_en?: string
     contenido: string
     publicado: boolean
     imagen_url?: string
@@ -363,9 +367,13 @@ export async function saveArticulo(
     hero_image?: string
   }
 ) {
+  // Slug escrito a mano → se respeta (solo se normaliza). Vacío → se genera corto a partir del título.
+  const slug = data.slug ? slugify(data.slug) : shortSlug(data.titulo)
+  const slugEn = data.slug_en ? slugify(data.slug_en) : (data.titulo_en ? shortSlug(data.titulo_en) : null)
   const payload: Record<string, unknown> = {
     titulo: data.titulo,
-    slug: data.slug,
+    slug,
+    slug_en: slugEn && slugEn !== slug ? slugEn : null,
     contenido: data.contenido,
     publicado: data.publicado,
     imagen_url: data.imagen_url || null,
@@ -378,13 +386,23 @@ export async function saveArticulo(
     hero_image: data.hero_image || null,
   }
   if (id) {
+    // Si cambia el slug, guardamos el anterior para que los enlaces ya compartidos sigan funcionando
+    const { data: prev } = await db.from('articulos').select('slug, slug_en, slugs_antiguos').eq('id', id).single()
+    if (prev) {
+      const antiguos = new Set<string>((prev.slugs_antiguos as string[] | null) ?? [])
+      for (const old of [prev.slug, prev.slug_en] as Array<string | null>) {
+        if (old && old !== payload.slug && old !== payload.slug_en) antiguos.add(old)
+      }
+      payload.slugs_antiguos = [...antiguos]
+    }
     payload.updated_at = new Date().toISOString()
     await db.from('articulos').update(payload).eq('id', id)
   } else {
     await db.from('articulos').insert(payload)
   }
   revalidatePath('/admin/contenido/blog')
-  revalidatePath('/informacion')
+  revalidatePath('/[locale]/guia-local', 'layout')
+  revalidatePath('/[locale]/local-guide', 'layout')
 }
 
 export async function deleteArticulo(id: number) {

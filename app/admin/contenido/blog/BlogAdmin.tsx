@@ -5,9 +5,7 @@ import ImageUploader from '@/components/ImageUploader'
 import TipTapEditor from '@/components/TipTapEditor'
 import { saveArticulo, deleteArticulo, type ArticuloRow } from '../actions'
 
-function slugify(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-}
+import { shortSlug } from '@/lib/slug'
 
 const label = (text: string) => (
   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#888', marginBottom: 4 }}>
@@ -31,7 +29,7 @@ function NuevoArticulo() {
     startTransition(async () => {
       await saveArticulo(null, {
         titulo: t,
-        slug: slugify(t),
+        slug: shortSlug(t),
         contenido: fd.get('contenido') as string || '',
         publicado: fd.get('publicado') === 'on',
         imagen_url: fd.get('imagen_url') as string || '',
@@ -117,7 +115,7 @@ function NuevoArticulo() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
             <input type="checkbox" name="publicado" style={{ cursor: 'pointer' }} />
-            Publicar en /informacion
+            Publicar en la Guía local
           </label>
           <button type="submit" style={{ background: '#4B766B', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             Crear artículo
@@ -139,6 +137,7 @@ function ArticuloRow({ a }: { a: ArticuloRow }) {
       await saveArticulo(a.id, {
         titulo: fd.get('titulo') as string,
         slug: fd.get('slug') as string,
+        slug_en: fd.get('slug_en') as string || '',
         contenido: fd.get('contenido') as string,
         publicado: fd.get('publicado') === 'on',
         imagen_url: fd.get('imagen_url') as string || '',
@@ -215,11 +214,20 @@ function ArticuloRow({ a }: { a: ArticuloRow }) {
             </div>
           </div>
 
-          {/* Slug */}
-          <div>
-            {label('Slug')}
-            {input({ type: 'text', name: 'slug', defaultValue: a.slug, style: { fontFamily: 'monospace', color: '#888', fontSize: 12 } })}
+          {/* Slugs (final de la URL de cada idioma) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              {label('URL ES · /es/guia-local/…')}
+              {input({ type: 'text', name: 'slug', defaultValue: a.slug, style: { fontFamily: 'monospace', color: '#888', fontSize: 12 } })}
+            </div>
+            <div>
+              {label('URL EN · /en/local-guide/…')}
+              {input({ type: 'text', name: 'slug_en', defaultValue: a.slug_en ?? '', placeholder: 'se genera del título EN', style: { fontFamily: 'monospace', color: '#888', fontSize: 12 } })}
+            </div>
           </div>
+          <p style={{ margin: '-6px 0 0', fontSize: 11, color: '#aaa' }}>
+            Si cambias la URL, la anterior sigue funcionando y redirige a la nueva.
+          </p>
 
           {/* Categorías */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

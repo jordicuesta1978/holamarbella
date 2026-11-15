@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Loader2 } from 'lucide-react'
 import { createApartamento } from '../actions'
+import LinkTextarea from '@/components/LinkTextarea'
 
 const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#888', marginBottom: 4 }
 const hint: React.CSSProperties = { display: 'block', fontSize: 11, color: '#aaa', fontStyle: 'italic', marginBottom: 4 }
@@ -86,7 +87,7 @@ export default function NuevoApartamento() {
 
           <div>
             <label style={lbl}>Descripción</label>
-            <textarea name="description" rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
+            <LinkTextarea name="description" rows={3} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getApartmentBySlug, getBlockedRanges, getPriceRanges, getMinNightsRanges, getStoragePhotos, getVolumeDiscounts } from '@/lib/db';
 import ApartamentoDetail from '@/components/ApartamentoDetail';
+import { plainRichText } from '@/lib/links';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!apt) return {};
   return {
     title: `${apt.title} · HolaMarbella`,
-    description: apt.description.slice(0, 160),
+    description: plainRichText(apt.description).slice(0, 160),
   };
 }
 
