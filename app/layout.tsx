@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Serif } from "next/font/google";
 import "./globals.css";
+import VercelAnalytics from "@/components/VercelAnalytics";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} ${notoSerif.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <VercelAnalytics />
+      </body>
     </html>
   );
 }
