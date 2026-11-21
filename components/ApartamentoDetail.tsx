@@ -70,6 +70,7 @@ export default function ApartamentoDetail({
   slug,
   blockedRanges = [],
   cleaningFee = 40,
+  vatParams,
   priceRanges = [],
   volumeDiscounts = [],
   minNightsDefault = 1,
@@ -80,6 +81,7 @@ export default function ApartamentoDetail({
   slug: string;
   blockedRanges?: Array<{ start: string; end: string }>;
   cleaningFee?: number;
+  vatParams?: import('@/lib/vat').VatParams;
   priceRanges?: Array<{ start: string; end: string; price: number }>;
   volumeDiscounts?: Array<{ start: string; end: string; minNights: number; percentage: number }>;
   minNightsDefault?: number;
@@ -302,6 +304,7 @@ export default function ApartamentoDetail({
               priceMin={apartment.priceRange[0]}
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
+              vatParams={vatParams}
               priceRanges={priceRanges}
               volumeDiscounts={volumeDiscounts}
               minNightsDefault={minNightsDefault}
@@ -361,6 +364,7 @@ export default function ApartamentoDetail({
                 {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€{' '}
                 <span className="text-base font-normal text-stone-400">{t('perNight')}</span>
               </p>
+              <p className="text-xs text-stone-400 mt-0.5">{t('vatNotIncluded')}</p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-yellow-400 text-sm">★</span>
                 <span className="text-sm font-semibold">{apartment.rating.toFixed(2)}</span>
@@ -373,6 +377,7 @@ export default function ApartamentoDetail({
               priceMin={apartment.priceRange[0]}
               priceMax={apartment.priceRange[1]}
               cleaningFee={cleaningFee}
+              vatParams={vatParams}
               priceRanges={priceRanges}
               volumeDiscounts={volumeDiscounts}
               minNightsDefault={minNightsDefault}
@@ -389,6 +394,7 @@ export default function ApartamentoDetail({
             {apartment.priceRange[0]}€ – {apartment.priceRange[1]}€
           </span>
           <span className="text-sm text-stone-400"> {t('perNight')}</span>
+          <p className="text-xs text-stone-400">{t('vatNotIncluded')}</p>
         </div>
         <a href="#calendario" className="text-white font-bold text-sm px-6 py-3 rounded-full uppercase tracking-widest transition-opacity hover:opacity-90" style={{ backgroundColor: 'var(--primary)' }}>
           {t('viewDates')}

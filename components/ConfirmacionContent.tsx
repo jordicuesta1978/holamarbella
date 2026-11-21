@@ -25,6 +25,8 @@ export default function ConfirmacionContent() {
   const nights = searchParams.get('nights') || '';
   const cleaning = searchParams.get('cleaning') || '';
   const total = searchParams.get('total') || '';
+  const vat = searchParams.get('vat') || '';
+  const vatRate = searchParams.get('vatRate') || '';
   const breakdownRaw = searchParams.get('breakdown') || '';
   const breakdown: Array<{ price: number; count: number }> = (() => {
     try { return breakdownRaw ? JSON.parse(breakdownRaw) : [] } catch { return [] }
@@ -59,6 +61,7 @@ export default function ConfirmacionContent() {
       : nights ? [[t('duration'), t('nights', { count: Number(nights) })] as [string, string]] : []
     ),
     ...discounts.map(d => [`${d.label || t('longStayDiscount')} (-${d.percentage}%)`, `-${d.amount}€`] as [string, string]),
+    ...(vat ? [[t('vat', { rate: Number(vatRate) }), `${vat}€`] as [string, string]] : []),
     ...(cleaning ? [[t('cleaning'), `${cleaning}€`] as [string, string]] : []),
     ...(total ? [[t('totalEstimate'), `${total}€`] as [string, string]] : []),
   ];

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { computeVat, DEFAULT_VAT_PARAMS, type VatParams } from '@/lib/vat'
 
 type BlockedRange = { start: string; end: string }
 type PriceRange = { start: string; end: string; price: number }
@@ -15,6 +16,7 @@ type Props = {
   priceMin: number
   priceMax: number
   cleaningFee: number
+  vatParams?: VatParams
   minNightsDefault?: number
   minNightsRanges?: MinNightsRange[]
   priceRanges?: PriceRange[]
@@ -69,6 +71,7 @@ function addMonths(y: number, m: number, n: number): [number, number] {
 export default function CalendarPicker({
   slug, blockedRanges, priceMin, priceMax, cleaningFee,
   minNightsDefault = 1, minNightsRanges = [], priceRanges = [], volumeDiscounts = [],
+  vatParams = DEFAULT_VAT_PARAMS,
 }: Props) {
   const t = useTranslations('calendar')
   const locale = useLocale()
@@ -158,8 +161,8 @@ export default function CalendarPicker({
   // Price calculation for selected range using priceRanges
   const midPrice = Math.round((priceMin + priceMax) / 2)
 
-  const { total, nightlyBreakdown, discounts } = useMemo(() => {
-    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [], discounts: [] as Array<{ label: string; percentage: number; amount: number }> }
+  const { total, nightlyBreakdown, discounts, vat } = useMemo(() => {
+    if (!checkIn || !checkOut) return { total: 0, nightlyBreakdown: [], discounts: [] as Array<{ label: string; percentage: number; amount: number }>, vat: { rate: 0, amount: 0 } }
     const nights: Array<{ date: string; price: number }> = []
     const s = new Date(checkIn + 'T00:00:00')
     const e = new Date(checkOut + 'T00:00:00')
@@ -175,8 +178,10 @@ export default function CalendarPicker({
     const base = nights.reduce((s, n) => s + n.price, 0)
     const discs = computeVolumeDiscounts(volumeDiscounts, nights, locale)
     const discountsTotal = discs.reduce((s, d) => s + d.amount, 0)
-    return { total: base - discountsTotal + cleaningFee, nightlyBreakdown: nights, discounts: discs }
-  }, [checkIn, checkOut, priceRanges, volumeDiscounts, midPrice, cleaningFee, locale])
+    // HMB-001 — IVA solo sobre el alojamiento, estancias de hasta N noches
+    const v = computeVat(base - discountsTotal, nights.length, vatParams)
+    return { total: base - discountsTotal + v.amount + cleaningFee, nightlyBreakdown: nights, discounts: discs, vat: v }
+  }, [checkIn, checkOut, priceRanges, volumeDiscounts, midPrice, cleaningFee, locale, vatParams])
 
   // Minimum nights calculation
   const requiredMinNights = useMemo(() => {
@@ -363,6 +368,11 @@ export default function CalendarPicker({
               <span>-{d.amount}€</span>
             </div>
           ))}
+          {vat.amount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 6 }}>
+              <span>{t('vat', { rate: vat.rate })}</span><span>{vat.amount}€</span>
+            </div>
+          )}
           {cleaningFee > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555', marginBottom: 10 }}>
               <span>{t('cleaning')}</span><span>{cleaningFee}€</span>

@@ -8,6 +8,7 @@ import { ChevronLeft, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import type { Apartment } from '@/lib/apartments';
 import { crearReserva } from '@/app/actions/reservar';
 import { getAvailability } from '@/app/actions/availability';
+import { computeVat, DEFAULT_VAT_PARAMS, type VatParams } from '@/lib/vat';
 
 function calcNights(a: string, b: string): number {
   if (!a || !b) return 0;
@@ -116,12 +117,14 @@ export default function ReservarContent({
   priceRanges = [],
   volumeDiscounts = [],
   cleaningFee = DEFAULT_CLEANING_FEE,
+  vatParams = DEFAULT_VAT_PARAMS,
 }: {
   apartment: Apartment
   slug: string
   priceRanges?: PriceRange[]
   volumeDiscounts?: VolumeDiscount[]
   cleaningFee?: number
+  vatParams?: VatParams
 }) {
   const t = useTranslations('reservar');
   const locale = useLocale();
@@ -150,7 +153,9 @@ export default function ReservarContent({
   const subtotal = nightlyPrices.reduce((s, n) => s + n.price, 0)
   const discounts = subtotal > 0 ? computeVolumeDiscounts(volumeDiscounts, nightlyPrices, locale) : []
   const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
-  const total = subtotal > 0 ? subtotal - discountsTotal + cleaningFee : 0
+  // HMB-001 — IVA solo sobre el alojamiento, estancias de hasta N noches
+  const vat = computeVat(subtotal - discountsTotal, nightlyPrices.length, vatParams)
+  const total = subtotal > 0 ? subtotal - discountsTotal + vat.amount + cleaningFee : 0
   const breakdown = groupBreakdown(nightlyPrices)
 
   const set = (field: keyof FormState) =>
@@ -218,6 +223,7 @@ export default function ReservarContent({
           nights: String(nights),
           cleaning: String(cleaningFee),
           total: String(total),
+          ...(vat.amount > 0 ? { vatRate: String(vat.rate), vat: String(vat.amount) } : {}),
           // pass breakdown so confirmation can show per-range desglose
           breakdown: JSON.stringify(breakdown),
           ...(discounts.length > 0 ? { discounts: JSON.stringify(discounts) } : {}),
@@ -410,6 +416,17 @@ export default function ReservarContent({
                         <span style={{ color: 'var(--primary)' }}>-{d.amount}€</span>
                       </div>
                     ))}
+                    {vat.amount > 0 ? (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--on-surface-variant)' }}>{t('vat', { rate: vat.rate })}</span>
+                        <span style={{ color: 'var(--on-surface)' }}>{vat.amount}€</span>
+                      </div>
+                    ) : nights > vatParams.maxNights && (
+                      <div className="flex justify-between text-sm">
+                        <span style={{ color: 'var(--on-surface-variant)' }}>{t('noVat', { max: vatParams.maxNights })}</span>
+                        <span style={{ color: 'var(--on-surface)' }}>0€</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span style={{ color: 'var(--on-surface-variant)' }}>{t('cleaning')}</span>
                       <span style={{ color: 'var(--on-surface)' }}>{cleaningFee}€</span>
@@ -422,7 +439,7 @@ export default function ReservarContent({
                 ) : (
                   <div className="flex justify-between text-sm">
                     <span style={{ color: 'var(--on-surface-variant)' }}>{t('perNight')}</span>
-                    <span className="font-bold" style={{ color: 'var(--primary)' }}>{apartment.priceRange[0]}€ – {apartment.priceRange[1]}€</span>
+                    <span className="font-bold text-right" style={{ color: 'var(--primary)' }}>{apartment.priceRange[0]}€ – {apartment.priceRange[1]}€<span className="block text-xs font-normal" style={{ color: 'var(--on-surface-variant)' }}>{t('vatNotIncluded')}</span></span>
                   </div>
                 )}
               </div>

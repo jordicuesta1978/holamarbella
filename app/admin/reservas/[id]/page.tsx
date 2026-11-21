@@ -5,7 +5,7 @@ import ReopenReservaButton from './ReopenReservaButton'
 import PricingPanel from './PricingPanel'
 import AdminNavServer from '@/app/admin/AdminNavServer'
 import { getBookingRef } from '@/lib/booking-ref'
-import { getPriceRanges, getVolumeDiscounts } from '@/lib/db'
+import { getPriceRanges, getVolumeDiscounts, getVatParams } from '@/lib/db'
 import { aptFullName } from '@/lib/apartment-names'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -205,6 +205,8 @@ export default async function ReservaDetailPage({
           initialExtras={reserva.extras ?? []}
           initialTotal={reserva.total_price}
           initialDepositPaid={reserva.deposit_paid ?? 0}
+          vatParams={await getVatParams()}
+          initialVat={reserva.iva_importe ?? 0}
           priceRanges={priceRanges}
           volumeDiscounts={volumeDiscounts}
           checkIn={reserva.check_in ?? undefined}

@@ -114,7 +114,8 @@
     "perNight": "/ noche",
     "reservar": "Solicitar reserva",
     "viewDates": "Ver fechas",
-    "reservarSection": "Reservar"
+    "reservarSection": "Reservar",
+    "vatNotIncluded": "IVA no incluido"
   },
   "calendar": {
     "selectDates": "Selecciona fechas",
@@ -130,7 +131,9 @@
     "priceNote": "* El precio exacto se confirma al revisar tu solicitud.",
     "minNights": "Estancia mínima: {count, plural, one {# noche} other {# noches}}",
     "rangeBlocked": "Hay días no disponibles en ese rango. Elige otra fecha de salida.",
-    "reservar": "Solicitar reserva"
+    "reservar": "Solicitar reserva",
+    "vat": "IVA {rate}% (alojamiento)",
+    "noVat": "Sin IVA (más de {max} noches)"
   },
   "reservar": {
     "back": "Volver al apartamento",
@@ -174,7 +177,10 @@
     "totalEstimate": "Total estimado",
     "perNight": "Precio / noche",
     "priceNote": "El precio exacto será confirmado al revisar tu solicitud.",
-    "longStayDiscount": "Descuento estancia larga"
+    "longStayDiscount": "Descuento estancia larga",
+    "vat": "IVA {rate}% (alojamiento)",
+    "noVat": "Sin IVA (más de {max} noches)",
+    "vatNotIncluded": "IVA no incluido"
   },
   "confirmacion": {
     "sent": "¡Solicitud enviada{name}!",
@@ -198,7 +204,9 @@
     "viewReservation": "Ver mi reserva",
     "backHome": "Volver al inicio",
     "otherApartments": "Ver otros apartamentos",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "vat": "IVA {rate}% (alojamiento)",
+    "noVat": "Sin IVA (más de {max} noches)"
   },
   "informacion": {
     "title": "Guía local",

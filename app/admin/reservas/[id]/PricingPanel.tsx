@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { savePricing, updateReservaStatus, type Extra } from '@/app/actions/admin'
+import { computeVat, DEFAULT_VAT_PARAMS, type VatParams } from '@/lib/vat'
 import { sendQuote } from '@/app/actions/presupuesto'
 import { Plus, X, Loader2, Send, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 
@@ -95,6 +96,8 @@ type Props = {
   initialQuoteMessage?: string
   quoteStatus?: string
   quoteSentAt?: string | null
+  vatParams?: VatParams
+  initialVat?: number
 }
 
 export default function PricingPanel({
@@ -113,6 +116,8 @@ export default function PricingPanel({
   initialQuoteMessage = '',
   quoteStatus,
   quoteSentAt,
+  vatParams = DEFAULT_VAT_PARAMS,
+  initialVat = 0,
 }: Props) {
   const router = useRouter()
   const midPrice = Math.round((priceMin + priceMax) / 2)
@@ -125,7 +130,7 @@ export default function PricingPanel({
   // Fallback rate (only used when no price range matches these dates at all):
   // back-calculate from the saved total, or fall back to the apartment's mid price
   const defaultRate = initialTotal && nights > 0
-    ? Math.round((initialTotal - initialCleaningFee - initialExtras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)) / nights)
+    ? Math.round((initialTotal - initialCleaningFee - initialVat - initialExtras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)) / nights)
     : midPrice
 
   const [rate, setRate] = useState(defaultRate)
@@ -177,7 +182,9 @@ export default function PricingPanel({
   const discountRowsTotal = discountRows.reduce((s, r) => s + r.amount, 0)
   const base = (tierRows.length > 0 ? tierRowsTotal : rate * nights) + discountRowsTotal
   const extrasTotal = extras.reduce((s, e) => s + e.amount * (e.quantity ?? 1), 0)
-  const total = base + cleaningFee + extrasTotal
+  // HMB-001 — IVA solo sobre el alojamiento, estancias de hasta N noches
+  const vat = computeVat(base, nights, vatParams)
+  const total = base + vat.amount + cleaningFee + extrasTotal
   const pending = Math.max(total - depositPaid, 0)
 
   const updateTierAmount = (i: number, amount: number) =>
@@ -400,6 +407,11 @@ export default function PricingPanel({
           {discountRows.map((r, i) => (
             <div key={i} style={rowStyle}><span style={{ color: '#4B766B' }}>{r.label}</span><span style={{ color: '#4B766B' }}>{r.amount}€</span></div>
           ))}
+          {vat.amount > 0 ? (
+            <div style={rowStyle}><span style={{ color: '#888' }}>IVA {vat.rate}% (alojamiento)</span><span>{vat.amount}€</span></div>
+          ) : nights > vatParams.maxNights && (
+            <div style={rowStyle}><span style={{ color: '#888' }}>Sin IVA (más de {vatParams.maxNights} noches)</span><span>0€</span></div>
+          )}
           {cleaningFee > 0 && (
             <div style={rowStyle}><span style={{ color: '#888' }}>Limpieza</span><span>{cleaningFee}€</span></div>
           )}

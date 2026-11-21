@@ -3,6 +3,7 @@ import { supabaseAdmin } from './supabase-admin'
 import type { Apartment, ApartmentReview, AmenityCategory } from './apartments'
 import { computeKeyFeatures } from './apartments'
 import { isVideoPath } from './media'
+import { DEFAULT_VAT_PARAMS, type VatParams } from './vat'
 import { getApartmentTranslation, getApartmentTranslations, type ApartmentTranslation } from './translations'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,4 +242,20 @@ export async function getApartmentBySlug(slug: string, locale: Locale = 'es'): P
     source_url: r.source_url ?? null,
   }))
   return apartment
+}
+
+// HMB-001 — parámetros del IVA (tabla `parametros`). Si la tabla o las claves
+// no existen, se usan los valores por defecto (10% hasta 30 noches).
+export async function getVatParams(): Promise<VatParams> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabaseAdmin as any
+  try {
+    const { data, error } = await db.from('parametros').select('clave, valor').in('clave', ['iva_porcentaje', 'iva_noches_max'])
+    if (error || !data) return DEFAULT_VAT_PARAMS
+    const map = new Map<string, number>((data as Array<{ clave: string; valor: number }>).map(r => [r.clave, Number(r.valor)]))
+    return {
+      rate: map.get('iva_porcentaje') ?? DEFAULT_VAT_PARAMS.rate,
+      maxNights: map.get('iva_noches_max') ?? DEFAULT_VAT_PARAMS.maxNights,
+    }
+  } catch { return DEFAULT_VAT_PARAMS }
 }

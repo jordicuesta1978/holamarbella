@@ -114,7 +114,8 @@
     "perNight": "/ night",
     "reservar": "Request booking",
     "viewDates": "See dates",
-    "reservarSection": "Book"
+    "reservarSection": "Book",
+    "vatNotIncluded": "VAT not included"
   },
   "calendar": {
     "selectDates": "Select dates",
@@ -130,7 +131,9 @@
     "priceNote": "* The exact price is confirmed when we review your request.",
     "minNights": "Minimum stay: {count, plural, one {# night} other {# nights}}",
     "rangeBlocked": "There are unavailable days in that range. Choose another check-out date.",
-    "reservar": "Request booking"
+    "reservar": "Request booking",
+    "vat": "VAT {rate}% (accommodation)",
+    "noVat": "No VAT (over {max} nights)"
   },
   "reservar": {
     "back": "Back to the apartment",
@@ -174,7 +177,10 @@
     "totalEstimate": "Estimated total",
     "perNight": "Price / night",
     "priceNote": "The exact price will be confirmed when we review your request.",
-    "longStayDiscount": "Long-stay discount"
+    "longStayDiscount": "Long-stay discount",
+    "vat": "VAT {rate}% (accommodation)",
+    "noVat": "No VAT (over {max} nights)",
+    "vatNotIncluded": "VAT not included"
   },
   "confirmacion": {
     "sent": "Request sent{name}!",
@@ -198,7 +204,9 @@
     "viewReservation": "View my booking",
     "backHome": "Back to home",
     "otherApartments": "See other apartments",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "vat": "VAT {rate}% (accommodation)",
+    "noVat": "No VAT (over {max} nights)"
   },
   "informacion": {
     "title": "Local Guide",

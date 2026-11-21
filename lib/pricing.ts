@@ -1,5 +1,6 @@
 import { getPriceRanges, getVolumeDiscounts } from './db'
 import { EMAIL_LABELS, nightWord, type EmailLocale } from './email-i18n'
+import { vatLabel } from './vat'
 
 export type NightBreakdown = { price: number; count: number }
 export type VolumeDiscountRule = { start: string; end: string; minNights: number; percentage: number; name?: string | null; nameEn?: string | null }
@@ -117,8 +118,9 @@ export function renderPricingTable(opts: {
   total: number
   locale?: EmailLocale
   discounts?: VolumeDiscountLine[]
+  vat?: { rate: number; amount: number }
 }): string {
-  const { breakdown, base, nights, cleaningFee, extras, total, locale = 'es', discounts = [] } = opts
+  const { breakdown, base, nights, cleaningFee, extras, total, locale = 'es', discounts = [], vat } = opts
   const t = EMAIL_LABELS[locale]
   const breakdownTotal = breakdown.reduce((s, g) => s + g.price * g.count, 0)
   const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
@@ -160,6 +162,7 @@ export function renderPricingTable(opts: {
   <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin:20px 0 24px;">
     ${lodgingRows}
     ${discountRows}
+    ${vat && vat.amount > 0 ? `<tr><td ${tdL}>${vatLabel(vat.rate, locale)}</td><td ${tdR}>${vat.amount}€</td></tr>` : ''}
     ${cleaningFee > 0 ? `<tr><td ${tdL}>${t.cleaningFee}</td><td ${tdR}>${cleaningFee}€</td></tr>` : ''}
     ${extraRows}
     <tr><td ${tdLBold}>${t.total}</td><td ${tdRBold}>${total}€</td></tr>

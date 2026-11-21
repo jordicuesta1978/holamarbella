@@ -46,12 +46,13 @@ async function pricingHtml(r: any, apt: { price_min: number; price_max: number }
   const cleaningFee: number = r.cleaning_fee ?? 0
   const extrasTotal = extras.reduce((s: number, e: Extra) => s + e.amount * (e.quantity ?? 1), 0)
   const total = r.total_price ?? 0
-  const base = total - cleaningFee - extrasTotal
+  const vatAmount: number = r.iva_importe ?? 0
+  const base = total - cleaningFee - extrasTotal - vatAmount
   const midPrice = Math.round((apt.price_min + apt.price_max) / 2)
   const breakdown = await computeNightlyBreakdown(r.apartment_slug, r.check_in, r.check_out, midPrice)
   const discounts = await computeVolumeDiscountsForStay(r.apartment_slug, r.check_in, r.check_out, midPrice, locale)
 
-  return renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total, locale, discounts })
+  return renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total, locale, discounts, vat: { rate: Number(r.iva_porcentaje ?? 0), amount: vatAmount } })
 }
 
 function paymentMethodsHtml(locale: EmailLocale): string {

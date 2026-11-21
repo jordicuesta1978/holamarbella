@@ -552,3 +552,18 @@ export async function moveResena(id: number, direction: 'up' | 'down') {
 
   revalidatePath('/admin/contenido/resenas')
 }
+
+// ── IVA corta temporada (HMB-001) ─────────────────────────────────────────────
+
+export async function saveVatParams(rate: number, maxNights: number) {
+  if (!Number.isFinite(rate) || rate < 0 || rate > 100) throw new Error('Porcentaje de IVA no válido')
+  if (!Number.isInteger(maxNights) || maxNights < 0) throw new Error('Número de noches no válido')
+  const now = new Date().toISOString()
+  const { error } = await db.from('parametros').upsert([
+    { clave: 'iva_porcentaje', valor: rate, updated_at: now },
+    { clave: 'iva_noches_max', valor: maxNights, updated_at: now },
+  ], { onConflict: 'clave' })
+  if (error) throw new Error(error.message)
+  revalidatePath('/admin/contenido/precios')
+  revalidatePath('/', 'layout')
+}

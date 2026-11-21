@@ -9,6 +9,8 @@ import { generateDailyBookingRef, getBookingRef } from '@/lib/booking-ref'
 import { EMAIL_LABELS, fmtEmailDate, guestWord, nightWord, type EmailLocale } from '@/lib/email-i18n'
 import { computeVolumeDiscounts, type VolumeDiscountLine, type VolumeDiscountRule } from '@/lib/pricing'
 import { aptFullName } from '@/lib/apartment-names'
+import { computeVat, vatLabel } from '@/lib/vat'
+import { getVatParams } from '@/lib/db'
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -105,7 +107,10 @@ export async function crearReserva(
 
   const discounts: VolumeDiscountLine[] = computeVolumeDiscounts(volumeDiscountRules, nightlyPrices, locale)
   const discountsTotal = discounts.reduce((s, d) => s + d.amount, 0)
-  const calculatedTotal = rawTotal - discountsTotal
+  // HMB-001 — IVA solo sobre el alojamiento (ya con descuentos), hasta N noches
+  const lodgingBase = rawTotal > 0 ? rawTotal - cleaningFee - discountsTotal : 0
+  const vat = computeVat(lodgingBase, nightlyPrices.length, await getVatParams())
+  const calculatedTotal = rawTotal > 0 ? rawTotal - discountsTotal + vat.amount : 0
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabaseAdmin as any).from('reservas').insert({
@@ -120,6 +125,8 @@ export async function crearReserva(
     notes: input.mensaje,
     conversation_token: conversationToken,
     total_price: calculatedTotal > 0 ? calculatedTotal : null,
+    iva_porcentaje: vat.rate,
+    iva_importe: vat.amount,
     locale: input.locale === 'en' ? 'en' : 'es',
   })
 
@@ -156,6 +163,7 @@ export async function crearReserva(
     totalPrice: calculatedTotal > 0 ? calculatedTotal : undefined,
     breakdown: breakdown.length > 0 ? breakdown : undefined,
     discounts,
+    vat,
   } : undefined
 
   const subjectHuesped = locale === 'en' ? 'Request received!' : '¡Solicitud recibida!'
@@ -247,6 +255,7 @@ type PriceCalc = {
   totalPrice?: number
   breakdown?: NightBreakdown[]
   discounts?: VolumeDiscountLine[]
+  vat?: { rate: number; amount: number }
 }
 
 function buildPriceRows(priceCalc: PriceCalc, nights: number, locale: EmailLocale = 'es'): string {
@@ -277,6 +286,7 @@ function buildPriceRows(priceCalc: PriceCalc, nights: number, locale: EmailLocal
       <table width="100%" cellpadding="0" cellspacing="0">
         ${nightRows}
         ${discountRows}
+        ${priceCalc.vat && priceCalc.vat.amount > 0 ? `<tr><td style="padding:4px 0;font-size:14px;color:#555;">${vatLabel(priceCalc.vat.rate, locale)}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${priceCalc.vat.amount}€</td></tr>` : ''}
         <tr><td style="padding:4px 0;font-size:14px;color:#555;">${t.cleaningFee}</td><td align="right" style="font-size:14px;color:#1A1A1A;font-weight:600;">${cleaningFee}€</td></tr>
         <tr><td colspan="2" style="border-top:1px solid #b2d4cc;padding-top:8px;"></td></tr>
         <tr><td style="padding-top:4px;font-size:16px;font-weight:700;color:#1A1A1A;">${t.estimatedTotal}</td><td align="right" style="font-size:16px;font-weight:800;color:#4B766B;">${total}€</td></tr>

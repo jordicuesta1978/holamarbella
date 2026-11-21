@@ -8,6 +8,8 @@ import { Resend } from 'resend'
 import { computeNightlyBreakdown, computeVolumeDiscountsForStay, renderPricingTable } from '@/lib/pricing'
 import { EMAIL_LABELS, fmtEmailDate, type EmailLocale } from '@/lib/email-i18n'
 import { aptFullName } from '@/lib/apartment-names'
+import { computeVat } from '@/lib/vat'
+import { getVatParams } from '@/lib/db'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
@@ -146,12 +148,20 @@ export async function savePricing(
   depositPaid: number = 0
 ) {
   const extrasTotal = extras.reduce((sum, e) => sum + e.amount * (e.quantity ?? 1), 0)
-  const total = baseAmount + cleaningFee + extrasTotal
+
+  // HMB-001 — el IVA se recalcula en servidor a partir de las noches de la reserva
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: r } = await (supabaseAdmin as any).from('reservas').select('check_in, check_out').eq('id', id).single()
+  const nights = r?.check_in && r?.check_out
+    ? Math.round((new Date(r.check_out).getTime() - new Date(r.check_in).getTime()) / 86400000)
+    : 0
+  const vat = computeVat(baseAmount, nights, await getVatParams())
+  const total = baseAmount + vat.amount + cleaningFee + extrasTotal
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabaseAdmin as any)
     .from('reservas')
-    .update({ cleaning_fee: cleaningFee, extras, total_price: total, deposit_paid: depositPaid })
+    .update({ cleaning_fee: cleaningFee, extras, total_price: total, deposit_paid: depositPaid, iva_porcentaje: vat.rate, iva_importe: vat.amount })
     .eq('id', id)
 
   if (error) throw new Error(error.message)
@@ -198,12 +208,13 @@ async function pricingHtml(r: any, apt: { price_min: number; price_max: number }
   const extras: Extra[] = r.extras ?? []
   const cleaningFee: number = r.cleaning_fee ?? 0
   const extrasTotal = extras.reduce((s: number, e: Extra) => s + e.amount * (e.quantity ?? 1), 0)
-  const base = r.total_price - cleaningFee - extrasTotal
+  const vatAmount: number = r.iva_importe ?? 0
+  const base = r.total_price - cleaningFee - extrasTotal - vatAmount
   const midPrice = Math.round((apt.price_min + apt.price_max) / 2)
   const breakdown = await computeNightlyBreakdown(r.apartment_slug, r.check_in, r.check_out, midPrice)
   const discounts = await computeVolumeDiscountsForStay(r.apartment_slug, r.check_in, r.check_out, midPrice, locale)
 
-  const tableHtml = renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total: r.total_price, locale, discounts })
+  const tableHtml = renderPricingTable({ breakdown, base, nights, cleaningFee, extras, total: r.total_price, locale, discounts, vat: { rate: Number(r.iva_porcentaje ?? 0), amount: vatAmount } })
 
   const depositPaid: number = r.deposit_paid ?? 0
   if (depositPaid <= 0) return tableHtml
