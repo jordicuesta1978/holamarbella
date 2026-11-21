@@ -1,9 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Check } from 'lucide-react'
 import { crearRegistro, type RegistroInput } from '@/app/actions/registro'
+import { validateRegistro } from '@/lib/registro-validation'
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string
+      reset: (id?: string) => void
+    }
+  }
+}
 
 const EMPTY = {
   nombre: '',
@@ -63,13 +73,43 @@ function Field({
   )
 }
 
-export default function RegistroViajerosForm() {
+export default function RegistroViajerosForm({
+  formToken,
+  turnstileSiteKey,
+}: {
+  formToken: string
+  turnstileSiteKey?: string
+}) {
   const t = useTranslations('registro')
   const [f, setF] = useState<FormState>(EMPTY)
   const [errors, setErrors] = useState<Record<string, boolean>>({})
+  const [formatError, setFormatError] = useState(false)
+  const [done, setDone] = useState(false)
+  const [hp, setHp] = useState('')
+  const [tsToken, setTsToken] = useState('')
+  const tsRef = useRef<HTMLDivElement>(null)
+  const tsId = useRef<string | undefined>(undefined)
+
+  // Cloudflare Turnstile (solo si hay site key configurada)
+  useEffect(() => {
+    if (!turnstileSiteKey || done || !tsRef.current) return
+    const render = () => {
+      if (!window.turnstile || !tsRef.current || tsId.current) return
+      tsId.current = window.turnstile.render(tsRef.current, {
+        sitekey: turnstileSiteKey,
+        callback: (tok: string) => setTsToken(tok),
+        'expired-callback': () => setTsToken(''),
+      })
+    }
+    if (window.turnstile) { render(); return }
+    const s = document.createElement('script')
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+    s.async = true
+    s.onload = render
+    document.head.appendChild(s)
+  }, [turnstileSiteKey, done])
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
 
   const set = (k: keyof FormState) => (v: string) => {
     setF(prev => ({ ...prev, [k]: v }))
@@ -79,15 +119,11 @@ export default function RegistroViajerosForm() {
   const isDni = f.tipoDocumento === 'DNI'
 
   function validate(): boolean {
-    const req: (keyof FormState)[] = [
-      'nombre', 'apellidos', 'sexo', 'tipoDocumento', 'numeroDocumento',
-      'nacionalidad', 'fechaNacimiento', 'direccion', 'localidad', 'codigoPostal',
-      'pais', 'telefonoMovil', 'numViajeros',
-    ]
-    if (isDni) req.push('numeroSoporte')
+    const { errors: ve } = validateRegistro({ ...f, numeroSoporte: isDni ? f.numeroSoporte : '' })
     const next: Record<string, boolean> = {}
-    for (const k of req) if (!String(f[k]).trim()) next[k] = true
+    for (const k of Object.keys(ve)) next[k] = true
     setErrors(next)
+    setFormatError(Object.values(ve).includes('invalid'))
     return Object.keys(next).length === 0
   }
 
@@ -102,7 +138,7 @@ export default function RegistroViajerosForm() {
       sexo: f.sexo,
       tipoDocumento: f.tipoDocumento,
       numeroDocumento: f.numeroDocumento.trim(),
-      numeroSoporte: f.numeroSoporte.trim() || undefined,
+      numeroSoporte: isDni ? f.numeroSoporte.trim() || undefined : undefined,
       nacionalidad: f.nacionalidad.trim(),
       fechaNacimiento: f.fechaNacimiento,
       direccion: f.direccion.trim(),
@@ -116,10 +152,22 @@ export default function RegistroViajerosForm() {
       parentesco: f.parentesco.trim() || undefined,
     }
     try {
-      const res = await crearRegistro(input)
+      const res = await crearRegistro(input, { formToken, hp, turnstileToken: tsToken })
       if (res.ok) {
         setDone(true)
         window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else if (res.error === 'invalid') {
+        const next: Record<string, boolean> = {}
+        for (const k of res.fields ?? []) next[k] = true
+        setErrors(next)
+        setFormatError(true)
+        if (!res.fields?.length) setServerError(t('errorGeneric'))
+      } else if (res.error === 'reload') {
+        setServerError(t('errorReload'))
+      } else if (res.error === 'captcha') {
+        setServerError(t('errorCaptcha'))
+        if (tsId.current) window.turnstile?.reset(tsId.current)
+        setTsToken('')
       } else {
         setServerError(t('errorGeneric'))
       }
@@ -141,7 +189,7 @@ export default function RegistroViajerosForm() {
         <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--primary)' }}>{t('successTitle')}</h2>
         <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface-variant)' }}>{t('successText')}</p>
         <button
-          onClick={() => { setF(EMPTY); setDone(false) }}
+          onClick={() => { setF(EMPTY); setDone(false); setTsToken(''); tsId.current = undefined }}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm uppercase tracking-widest text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: 'var(--primary)' }}
         >
@@ -154,7 +202,7 @@ export default function RegistroViajerosForm() {
   const opt = t('optional')
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border p-6 md:p-8" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }} noValidate>
+    <form onSubmit={onSubmit} className="relative rounded-2xl border p-6 md:p-8" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'white' }} noValidate>
       {/* Datos personales */}
       <h3 className={SECTION_CLS} style={{ color: 'var(--primary)' }}>{t('personalTitle')}</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -203,12 +251,24 @@ export default function RegistroViajerosForm() {
         </div>
       </div>
 
+      {/* Campo trampa: invisible para personas, los bots lo rellenan */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+        <label>
+          Website
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} />
+        </label>
+      </div>
+
+      {turnstileSiteKey && <div ref={tsRef} className="mt-6" />}
+
       {serverError && <p className="mt-6 text-sm font-semibold" style={{ color: '#dc2626' }}>{serverError}</p>}
-      {Object.keys(errors).length > 0 && <p className="mt-6 text-sm" style={{ color: '#dc2626' }}>{t('checkRequired')}</p>}
+      {Object.keys(errors).length > 0 && (
+        <p className="mt-6 text-sm" style={{ color: '#dc2626' }}>{formatError ? t('checkFormat') : t('checkRequired')}</p>
+      )}
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || (!!turnstileSiteKey && !tsToken)}
         className="mt-8 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full font-bold text-sm uppercase tracking-widest text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         style={{ backgroundColor: 'var(--primary)' }}
       >

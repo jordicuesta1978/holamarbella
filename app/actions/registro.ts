@@ -3,6 +3,8 @@
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { aptFullName } from '@/lib/apartment-names'
+import { validateRegistro } from '@/lib/registro-validation'
+import { verifyFormToken, verifyTurnstile } from '@/lib/form-token'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
@@ -29,9 +31,51 @@ export type RegistroInput = {
   parentesco?: string
 }
 
+export type RegistroMeta = {
+  /** token firmado generado al cargar la página */
+  formToken?: string
+  /** campo trampa invisible: un humano nunca lo rellena */
+  hp?: string
+  /** token de Cloudflare Turnstile (solo si está configurado) */
+  turnstileToken?: string
+}
+
+export type RegistroResult =
+  | { ok: true }
+  | { ok: false; error: 'reload' | 'invalid' | 'captcha' | 'generic'; fields?: string[] }
+
 export async function crearRegistro(
-  input: RegistroInput
-): Promise<{ ok: true } | { ok: false; error: string }> {
+  input: RegistroInput,
+  meta: RegistroMeta = {}
+): Promise<RegistroResult> {
+  // 1) Campo trampa: si viene relleno es un bot. Respondemos "ok" sin guardar ni avisar.
+  if (meta.hp && meta.hp.trim()) {
+    console.warn('[registro] descartado: campo trampa relleno')
+    return { ok: true }
+  }
+
+  // 2) Token de la página: tiene que existir, ser válido y no ser de hace < 4 s.
+  const tk = await verifyFormToken(meta.formToken, 'registro')
+  if (!tk.ok) {
+    console.warn(`[registro] descartado: ${tk.reason}`)
+    if (tk.reason.startsWith('enviado en')) return { ok: true } // demasiado rápido para un humano
+    return { ok: false, error: 'reload' }
+  }
+
+  // 3) Captcha opcional (Cloudflare Turnstile)
+  if (!(await verifyTurnstile(meta.turnstileToken))) {
+    console.warn('[registro] descartado: turnstile')
+    return { ok: false, error: 'captcha' }
+  }
+
+  // 4) Validación de formato en servidor
+  const v = validateRegistro(input)
+  const bad = Object.keys(v.errors)
+  if (bad.length || v.suspicious) {
+    console.warn(`[registro] rechazado: ${v.suspicious ? 'texto aleatorio; ' : ''}campos ${bad.join(', ')}`)
+    return { ok: false, error: 'invalid', fields: bad }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabaseAdmin as any).from('registros_viajeros').insert({
     apartment_slug: input.apartmentSlug || null,
@@ -54,7 +98,10 @@ export async function crearRegistro(
     parentesco: input.parentesco || null,
   })
 
-  if (error) return { ok: false, error: error.message }
+  if (error) {
+    console.error('[registro] error al guardar:', error.message)
+    return { ok: false, error: 'generic' }
+  }
 
   // Aviso a Mar (no bloquea el éxito del registro si falla el email)
   if (MAR) {
@@ -62,7 +109,7 @@ export async function crearRegistro(
       await resend.emails.send({
         from: FROM,
         to: MAR,
-        subject: `🛂 Nuevo registro de viajero — ${input.nombre} ${input.apellidos}`,
+        subject: `🛂 Nuevo registro de viajero — ${oneLine(`${input.nombre} ${input.apellidos}`)}`,
         html: emailMar(input),
       })
     } catch {
@@ -71,6 +118,20 @@ export async function crearRegistro(
   }
 
   return { ok: true }
+}
+
+/** Escapa HTML para que nada de lo que escribe el usuario se interprete como código en el email */
+function esc(v: unknown): string {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function oneLine(v: string): string {
+  return v.replace(/[\r\n\t]+/g, ' ').slice(0, 120)
 }
 
 function fmtDate(d: string): string {
@@ -82,7 +143,7 @@ function row(label: string, value: string): string {
   if (!value) return ''
   return `<tr>
     <td style="padding:10px 16px;background:#f9f7f4;width:42%;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;border-top:1px solid #e8e0d0;vertical-align:top;">${label}</td>
-    <td style="padding:10px 16px;font-size:14px;color:#1A1A1A;line-height:1.6;border-top:1px solid #e8e0d0;">${value}</td>
+    <td style="padding:10px 16px;font-size:14px;color:#1A1A1A;line-height:1.6;border-top:1px solid #e8e0d0;">${esc(value)}</td>
   </tr>`
 }
 

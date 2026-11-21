@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import RegistroViajerosForm from '@/components/RegistroViajerosForm'
+import { createFormToken } from '@/lib/form-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RegistroViajerosPage() {
   const t = await getTranslations('registro')
+  const formToken = await createFormToken('registro')
 
   return (
     <div style={{ backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}>
@@ -34,7 +36,10 @@ export default async function RegistroViajerosPage() {
         <p className="text-base leading-relaxed mb-8" style={{ color: 'var(--on-surface)' }}>
           {t.rich('intro', { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
-        <RegistroViajerosForm />
+        <RegistroViajerosForm
+          formToken={formToken}
+          turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+        />
       </main>
 
       <Footer />
